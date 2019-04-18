@@ -1,12 +1,12 @@
-/****************************************************************************
-* Copyright (C) 2018-2019, Jovibor: https://github.com/jovibor/				*
-* This is an extended and quite featured version of CMFCListCtrl class.		*
-* The main difference is in CListEx::Create method, which takes one			*
-* additional arg - pointer to LISTEXCREATESTRUCT structure, which fields are		*
-* described below.															*
-* Also, this class has set of additional public methods to help customize	*
-* your control in many different aspects.									*
-****************************************************************************/
+/********************************************************************************
+* Copyright (C) 2018-2019, Jovibor: https://github.com/jovibor/					*
+* Github repository URL: https://github.com/jovibor/ListEx						*
+* This software is available under the "MIT License"							*
+* This is an extended and featured version of CMFCListCtrl class.				*
+* CListEx - list control class with the ability to set tooltips on arbitrary	*
+* cells, and also with a lots of other stuff to customize your control in many	*
+* different aspects. For more info see official documentation on Github.		*
+********************************************************************************/
 #include "pch.h"
 #include "ListEx.h"
 #include "strsafe.h"
@@ -153,18 +153,23 @@ BEGIN_MESSAGE_MAP(CListEx, CMFCListCtrl)
 	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
-BOOL CListEx::Create(const LISTEXCREATESTRUCT & lcs)
+bool CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 {
-	if (!lcs.fDialogCtrl && !CMFCListCtrl::Create(lcs.dwStyle | WS_CHILD | WS_VISIBLE | LVS_OWNERDRAWFIXED | LVS_REPORT,
-		lcs.rc, lcs.pParentWnd, lcs.nID))
-		return FALSE;
+	if (lcs.fDialogCtrl)
+		SetWindowLongPtrW(m_hWnd, GWL_STYLE, GetWindowLongPtrW(m_hWnd, GWL_STYLE) | LVS_OWNERDRAWFIXED | LVS_REPORT);
+	else if (!CMFCListCtrl::Create(lcs.dwStyle | WS_CHILD | WS_VISIBLE | LVS_OWNERDRAWFIXED | LVS_REPORT,
+		lcs.rect, lcs.pwndParent, lcs.nID))
+		return false;
+
+	if (lcs.pstColor)
+		m_stColor = *lcs.pstColor;
 
 	m_hwndTt = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr,
 		TTS_BALLOON | TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 		nullptr, nullptr, nullptr, nullptr);
 	if (!m_hwndTt)
-		return FALSE;
+		return false;
 	SetWindowTheme(m_hwndTt, nullptr, L""); //To prevent Windows from changing theme of Balloon window.
 
 	m_stToolInfo.cbSize = TTTOOLINFOW_V1_SIZE;
@@ -172,17 +177,13 @@ BOOL CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 	m_stToolInfo.uId = 0x1;
 	::SendMessageW(m_hwndTt, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)& m_stToolInfo);
 	::SendMessageW(m_hwndTt, TTM_SETMAXTIPWIDTH, 0, (LPARAM)400); //to allow use of newline \n.
+	::SendMessageW(m_hwndTt, TTM_SETTIPTEXTCOLOR, (WPARAM)m_stColor.clrTooltipText, 0);
+	::SendMessageW(m_hwndTt, TTM_SETTIPBKCOLOR, (WPARAM)m_stColor.clrTooltipBk, 0);
 
+	m_dwGridWidth = lcs.dwListGridWidth;
 	m_stNMII.hdr.code = LISTEX_MSG_MENUSELECTED;
 	m_stNMII.hdr.idFrom = GetDlgCtrlID();
 	m_stNMII.hdr.hwndFrom = m_hWnd;
-
-	if (lcs.pstColor)
-		m_stColor = *lcs.pstColor;
-
-	::SendMessageW(m_hwndTt, TTM_SETTIPTEXTCOLOR, (WPARAM)m_stColor.clrTooltipText, 0);
-	::SendMessageW(m_hwndTt, TTM_SETTIPBKCOLOR, (WPARAM)m_stColor.clrTooltipBk, 0);
-	m_dwGridWidth = lcs.dwListGridWidth;
 
 	LOGFONTW lf { };
 	if (lcs.pListLogFont)
@@ -205,7 +206,14 @@ BOOL CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 	m_fCreated = true;
 	Update(0);
 
-	return TRUE;
+	return true;
+}
+
+void CListEx::CreateDialogCtrl()
+{
+	LISTEXCREATESTRUCT lcs;
+	lcs.fDialogCtrl = true;
+	Create(lcs);
 }
 
 bool CListEx::IsCreated()
@@ -391,7 +399,7 @@ void CListEx::SetHeaderColumnColor(DWORD nColumn, COLORREF clr)
 
 void CListEx::InitHeader()
 {
-	m_stListHeader.SubclassDlgItem(0, this);
+	GetHeaderCtrl().SubclassDlgItem(0, this);
 }
 
 void CListEx::MeasureItem(LPMEASUREITEMSTRUCT lpMIS)

@@ -1,12 +1,12 @@
-/****************************************************************************
-* Copyright (C) 2018-2019, Jovibor: https://github.com/jovibor/				*
-* This is an extended and featured version of CMFCListCtrl class.			*
-* The main difference is in CListEx::Create method, which takes one			*
-* additional arg - pointer to LISTEXCREATESTRUCT structure, which fields are*
-* described below.															*
-* Also, this class has set of additional public methods to help customize	*
-* List control in many different aspects.									*
-****************************************************************************/
+/********************************************************************************
+* Copyright (C) 2018-2019, Jovibor: https://github.com/jovibor/					*
+* Github repository URL: https://github.com/jovibor/ListEx						*
+* This software is available under the "MIT License"							*
+* This is an extended and featured version of CMFCListCtrl class.				*
+* CListEx - list control class with the ability to set tooltips on arbitrary	*
+* cells, and also with a lots of other stuff to customize your control in many	*
+* different aspects. For more info see official documentation on Github.		*
+********************************************************************************/
 #pragma once
 #include <afxwin.h>
 #include <unordered_map>
@@ -39,11 +39,11 @@ namespace LISTEX {
 	struct LISTEXCREATESTRUCT {
 		PLISTEXCOLORSTRUCT	pstColor { };					//All control's colors. If nullptr defaults are used.
 		DWORD				dwStyle;						//Control's styles. Zero for default.
-		const				CRect rc;						//Initial rect.
-		CWnd*				pParentWnd { };					//Parent window.
+		CRect				rect;							//Initial rect.
+		CWnd*				pwndParent { };					//Parent window.
 		UINT				nID { };						//Control Id.
-		const				LOGFONT* pListLogFont { };		//List font.
-		const				LOGFONT* pHeaderLogFont { };	//List header font.
+		const LOGFONT*		pListLogFont { };				//List font.
+		const LOGFONT*		pHeaderLogFont { };				//List header font.
 		DWORD				dwListGridWidth { 1 };			//Width of the list grid.
 		DWORD				dwHeaderHeight { 20 };			//List header height.
 		bool				fDialogCtrl { false };			//If it's a list within dialog.
@@ -85,9 +85,9 @@ namespace LISTEX {
 		DECLARE_DYNAMIC(CListEx)
 		CListEx() {}
 		virtual ~CListEx() {}
-		BOOL Create(const LISTEXCREATESTRUCT& lcs);
+		bool Create(const LISTEXCREATESTRUCT& lcs);
+		void CreateDialogCtrl();
 		bool IsCreated();
-		CListExHdr& GetHeaderCtrl() override { return m_stListHeader; }
 		void SetColor(const LISTEXCOLORSTRUCT& lcs);
 		void SetFont(const LOGFONTW* pLogFontNew);
 		void SetFontSize(UINT uiSize);
@@ -103,6 +103,7 @@ namespace LISTEX {
 		void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
 		DECLARE_MESSAGE_MAP()
 	protected:
+		CListExHdr& GetHeaderCtrl() override { return m_stListHeader; }
 		void InitHeader() override;
 		bool HasTooltip(int iItem, int iSubitem, std::wstring** ppwstrText = nullptr, std::wstring** ppwstrCaption = nullptr);
 		bool HasMenu(int iItem, int iSubitem, CMenu** ppMenu = nullptr);
