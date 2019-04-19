@@ -39,6 +39,9 @@
     <ClInclude Include="..\ListEx\ListEx.h">
       <Filter>ListEx</Filter>
     </ClInclude>
+    <ClInclude Include="..\ListEx\ListExHdr.h">
+      <Filter>ListEx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ListExSample.cpp">
@@ -51,6 +54,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ListEx\ListEx.cpp">
+      <Filter>ListEx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ListEx\ListExHdr.cpp">
       <Filter>ListEx</Filter>
     </ClCompile>
   </ItemGroup>

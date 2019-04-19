@@ -29,6 +29,7 @@ protected:
 	CListEx m_myList;
 	CMenu m_menuCell;
 	CMenu m_menuList;
+	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
 };
 
 constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;

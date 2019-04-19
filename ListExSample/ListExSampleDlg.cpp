@@ -29,8 +29,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
+	SetIcon(m_hIcon, TRUE);	
+	SetIcon(m_hIcon, FALSE);
 
 	m_myList.CreateDialogCtrl();
 	m_myList.SetHeaderHeight(30);
@@ -107,4 +107,35 @@ void CListExSampleDlg::OnPaint()
 HCURSOR CListExSampleDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
+}
+
+BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
+{
+	const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+
+	if (pNMI->hdr.idFrom == IDC_LISTEX)
+	{
+		if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
+		{
+			CString ss;
+			switch (pNMI->lParam)
+			{
+			case IDC_LIST_MENU_CELL_FIRST:
+				ss.Format(L"Cell's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			case IDC_LIST_MENU_CELL_SECOND:
+				ss.Format(L"Cell's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			case IDC_LIST_MENU_GLOBAL_FIRST:
+				ss.Format(L"List's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			case IDC_LIST_MENU_GLOBAL_SECOND:
+				ss.Format(L"List's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			}
+			MessageBoxW(ss);
+		}
+	}
+
+	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }

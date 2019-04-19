@@ -1,15 +1,16 @@
 /********************************************************************************
 * Copyright (C) 2018-2019, Jovibor: https://github.com/jovibor/					*
 * Github repository URL: https://github.com/jovibor/ListEx						*
-* This software is available under the "MIT License"							*
+* This software is available under the "MIT License".							*
 * This is an extended and featured version of CMFCListCtrl class.				*
 * CListEx - list control class with the ability to set tooltips on arbitrary	*
 * cells, and also with a lots of other stuff to customize your control in many	*
-* different aspects. For more info see official documentation on Github.		*
+* different aspects. For more info see official documentation on github.		*
 ********************************************************************************/
 #pragma once
 #include <afxwin.h>
 #include <unordered_map>
+#include "ListExHdr.h"
 
 namespace LISTEX {
 	/********************************************************************************************
@@ -34,11 +35,11 @@ namespace LISTEX {
 	using PLISTEXCOLORSTRUCT = LISTEXCOLORSTRUCT *;
 
 	/********************************************************************************************
-	* LISTEXCREATESTRUCT - Main helper struct for CListEx::Create method.						*
+	* LISTEXCREATESTRUCT - Main initialization helper struct for CListEx::Create method.		*
 	********************************************************************************************/
 	struct LISTEXCREATESTRUCT {
 		PLISTEXCOLORSTRUCT	pstColor { };					//All control's colors. If nullptr defaults are used.
-		DWORD				dwStyle;						//Control's styles. Zero for default.
+		DWORD				dwStyle { };					//Control's styles. Zero for default.
 		CRect				rect;							//Initial rect.
 		CWnd*				pwndParent { };					//Parent window.
 		UINT				nID { };						//Control Id.
@@ -47,33 +48,6 @@ namespace LISTEX {
 		DWORD				dwListGridWidth { 1 };			//Width of the list grid.
 		DWORD				dwHeaderHeight { 20 };			//List header height.
 		bool				fDialogCtrl { false };			//If it's a list within dialog.
-	};
-
-	/********************************************
-	* CListExHdr class definition.				*
-	********************************************/
-	class CListExHdr : public CMFCHeaderCtrl
-	{
-	public:
-		CListExHdr();
-		virtual ~CListExHdr() {}
-		void SetHeight(DWORD dwHeight);
-		void SetFont(const LOGFONTW* pLogFontNew);
-		void SetColor(COLORREF clrText, COLORREF clrBk);
-		void SetColumnColor(DWORD dwColumn, COLORREF clr);
-	protected:
-		afx_msg void OnDrawItem(CDC* pDC, int iItem, CRect rect, BOOL bIsPressed, BOOL bIsHighlighted) override;
-		afx_msg LRESULT OnLayout(WPARAM wParam, LPARAM lParam);
-		DECLARE_MESSAGE_MAP()
-	private:
-		CFont m_fontHdr;
-		COLORREF m_clrBkNWA { GetSysColor(COLOR_WINDOW) }; //Bk of non working area.
-		COLORREF m_clrText { GetSysColor(COLOR_WINDOWTEXT) };
-		COLORREF m_clrBk { GetSysColor(COLOR_WINDOW) };
-		HDITEMW m_hdItem { }; //For drawing.
-		WCHAR m_wstrHeaderText[MAX_PATH] { };
-		DWORD m_dwHeaderHeight { 19 }; //Standard (default) height.
-		std::unordered_map<DWORD, COLORREF> m_umapClrColumn { }; //Color of individual columns.
 	};
 
 	/********************************************
@@ -92,7 +66,6 @@ namespace LISTEX {
 		void SetFont(const LOGFONTW* pLogFontNew);
 		void SetFontSize(UINT uiSize);
 		UINT GetFontSize();
-		//To remove tooltip from specific subitem just set it again with empty (L"") string.
 		void SetCellTooltip(int iItem, int iSubitem, const std::wstring& wstrTooltip, const std::wstring& wstrCaption = { });
 		void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
 		void SetListMenu(CMenu* pMenu);
@@ -132,16 +105,16 @@ namespace LISTEX {
 		LISTEXCOLORSTRUCT m_stColor { };
 		CFont m_fontList;
 		CPen m_penGrid;
-		bool m_fTtShown { false };
 		HWND m_hwndTt { };
 		TOOLINFO m_stToolInfo { };
+		bool m_fTtShown { false };
 		LVHITTESTINFO m_stCurrCell { };
-		DWORD m_dwGridWidth { 1 };
-		CMenu* m_pListMenu { };
-		//Container for List item's tooltips.
-		std::unordered_map<int, std::unordered_map<int, std::tuple<std::wstring/*tip text*/, std::wstring/*caption text*/>>> m_umapCellTt { };
-		std::unordered_map<int, std::unordered_map<int, CMenu*>> m_umapCellMenu { };
-		std::unordered_map<int, std::unordered_map<int, DWORD_PTR>> m_umapCellData { };
+		DWORD m_dwGridWidth { 1 };		//Grid width.
+		CMenu* m_pListMenu { };			//List global menu, if set.
+		std::unordered_map<int, std::unordered_map<int,
+			std::tuple<std::wstring/*tip text*/, std::wstring/*caption text*/>>> m_umapCellTt { }; //Cell's tooltips.
+		std::unordered_map<int, std::unordered_map<int, CMenu*>> m_umapCellMenu { };			//Cell's menus.
+		std::unordered_map<int, std::unordered_map<int, DWORD_PTR>> m_umapCellData { };			//Cell's custom data.
 		NMITEMACTIVATE m_stNMII { };
 		const ULONG_PTR ID_TIMER_TOOLTIP { 0x01 };
 	};
@@ -152,7 +125,7 @@ namespace LISTEX {
 
 	constexpr auto LISTEX_MSG_MENUSELECTED = 0x00001000;
 
-	/*******************Setting the manifest for ComCtl32.dll version 6.***********************/
+	/*******************Setting a manifest for ComCtl32.dll version 6.***********************/
 #ifdef _UNICODE
 #if defined _M_IX86
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")

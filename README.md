@@ -10,7 +10,7 @@
 * [Menu](#menu)
     * [Menu Example](#menu-example)
     * [Handle Menu Clicks](#handle-menu-clicks)
-* [Public Methods](#)
+* [Public Methods](#public-methods)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -22,7 +22,7 @@ When I faced a necessity in **List control** with the ability to display tooltip
 ## [](#)Long Story Short
 `CListEx` is a `CMFCListCtrl` derived class with cells tooltip ability, and even more.<br>
 It works with `LVS_OWNERDRAWFIXED` and `LVS_REPORT` styles.<br>
-The tooltiping itself is achieved with the public method:
+The tooltiping is achieved with the public method:
 
 ```cpp
 void SetCellTooltip(int iItem, int iSubitem, const std::wstring& strTooltip, 
@@ -35,9 +35,9 @@ To remove tooltip from a cell just set it again with empty string `L""`.<br>
 Control was built and tested in **Visual Studio 2019**.
 
 ## [](#)Usage
-The usage of the control is pretty easy:
+The usage of the control is quite simple:
 1. Copy **ListEx** folder into your project's folder.
-2. Add all files from that folder into your project.
+2. Add all files from **ListEx** folder into your project.
 3. Add `#include "ListEx/ListEx.h"` where you suppose to use the control.
 
 Control uses its own namespace - `LISTEX`. So it's up to you, whether to use namespace prefix before declarations: 
@@ -52,21 +52,21 @@ using namespace LISTEX;
 ## [](#)Create
 ### [](#)Manually
 `Create` is the main method to create list control. It takes one argument - reference to the `LISTEXCREATESTRUCT` structure.
-The `LISTEXCREATESTRUCT` is a helper structure which fields are described below:
+The `LISTEXCREATESTRUCT` is a helper structure which fields are described below. This struct is also used in `SetColor` method.
 
 ```cpp
 struct LISTEXCREATESTRUCT 
 {
     PLISTEXCOLORSTRUCT	pstColor { }; //All control's colors. If nullptr defaults are used.
-    DWORD				dwStyle;						//Control's styles. Zero for default.
-    const				CRect rc;						//Initial rect.
-    CWnd*				pwndParent { };					//Parent window.
-    UINT				nID { };						//Control Id.
-    const				LOGFONT* pListLogFont { };		//List font.
-    const				LOGFONT* pHeaderLogFont { };	//List header font.
-    DWORD				dwListGridWidth { 1 };			//Width of the list grid.
-    DWORD				dwHeaderHeight { 20 };			//List header height.
-    bool				fDialogCtrl { false };			//If it's a list within dialog.
+    DWORD				dwStyle; //Control's styles. Zero for default.
+    const				CRect rc; //Initial rect.
+    CWnd*				pwndParent { };	//Parent window.
+    UINT				nID { }; //Control Id.
+    const				LOGFONT* pListLogFont { }; //List font.
+    const				LOGFONT* pHeaderLogFont { }; //List header font.
+    DWORD				dwListGridWidth { 1 }; //Width of the list grid.
+    DWORD				dwHeaderHeight { 20 }; //List header height.
+    bool				fDialogCtrl { false }; //If it's a list within dialog.
 };
 ```
 `pstColor` is a pointer to the `LISTEXCOLORSTRUCT` structure which fields are described below:
@@ -89,7 +89,7 @@ struct LISTEXCOLORSTRUCT
 };
 using PLISTEXCOLORSTRUCT = LISTEXCOLORSTRUCT *;
 ```
-This struct is also used in `SetColor` method.<br>
+Below is a simple example of the control's creation:
 ```cpp
 CListEx myList;
 .
@@ -101,7 +101,7 @@ lcs.rect = CRect(0, 0, 500, 300);
 
 myList.Create(lcs);
 ```
-With `LISTEXCREATESTRUCT` structure you can set a plethora of list’s aspects:
+With `LISTEXCREATESTRUCT` structure you can adjust a plethora of list’s aspects:
 
 * Color of the list text and bk (background). Bk is set separately for odd and even rows
 * Color of the list header
@@ -114,13 +114,13 @@ With `LISTEXCREATESTRUCT` structure you can set a plethora of list’s aspects:
 * Color of row when it's selected
 
 ### [](#)In Dialog
-To create list control in **Dialog** you can manually create it with the [Create](#manually) method.<br>
-But most of the times you prefer to place a list control onto the **Dialog** template dragging it from the **Toolbox** within Visual studio.<br>
-To use the latter approach you need to do the following:
-1. Place list control on your dialog and make it desirable size.
-2. Right click on the control's window and choose **Add variable**
-3. In the **Variable type:** field write: `CListEx`
-4. Somewhere in `OnInitDialog` function make a call to `myList.CreateDialogCtrl();`
+To create the control in **Dialog** you can manually do it with the [Create](#manually) method.<br>
+But most of the times you prefer to place a _list control_ onto the **Dialog** template by dragging it from the **Toolbox** within **Visual studio**.<br>
+To use the latter approach follow these steps:
+1. Put standard list control from the toolbox onto your dialog template and make it desirable size.
+2. Right click on the control and choose **Add variable** from the drop-down menu.
+3. In the `Variable type:` field put `CListEx`
+4. In `OnInitDialog` method make a call to `myList.CreateDialogCtrl();`
 
 ## [](#)Tooltips
 To set a tooltip for a given cell, just write:
@@ -128,7 +128,7 @@ To set a tooltip for a given cell, just write:
 ```cpp
 myList.SetCellTooltip(0, 1, L"Tooltip text", L"Tooltip caption:");
 ```
-This will set a tooltip for cell (0, 1) with the text: "Tooltip text", and the caption "Tooltip caption".
+This will set a tooltip for cell (0, 1) with the text: **_Tooltip text_**, and the caption **_Tooltip caption_**.
 
 ## [](#)Menu
 `CListEx` class possesses innate ability to set popup menu for individual cells, as well as for the whole list.
@@ -194,26 +194,33 @@ When user clicks a menu `CListEx` sends `WM_NOTIFY` message, with `NMITEMACTIVAT
 ```cpp
 BOOL CMyDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
-    const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
-    
-    if (pNMI->hdr.idFrom == IDC_MYLISTEX_ID)
-    {
-        if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
-        {
-            switch (pNMI->lParam)
-            {
-            case IDC_LIST_MENU_CELL_FIRST:
-                break;
-            case IDC_LIST_MENU_CELL_SECOND:
-                break;
-            case IDC_LIST_MENU_GLOBAL_FIRST:
-                break;
-            case IDC_LIST_MENU_GLOBAL_SECOND:
-                break;
-            }
-        }
-    }
-    return CDialogEx::OnNotify(wParam, lParam, pResult);
+   	const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+
+	if (pNMI->hdr.idFrom == IDC_LISTEX)
+	{
+		if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
+		{
+			CString ss;
+			switch (pNMI->lParam)
+			{
+			case IDC_LIST_MENU_CELL_FIRST:
+				ss.Format(L"Cell's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			case IDC_LIST_MENU_CELL_SECOND:
+				ss.Format(L"Cell's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			case IDC_LIST_MENU_GLOBAL_FIRST:
+				ss.Format(L"List's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			case IDC_LIST_MENU_GLOBAL_SECOND:
+				ss.Format(L"List's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+				break;
+			}
+			MessageBoxW(ss);
+		}
+	}
+
+	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 ```
 `CListEx` fills `NMITEMACTIVATE` struct with `NMITEMACTIVATE::hdr.code` equals `LISTEX_MSG_MENUSELECTED`. And `menuId` is stored as `NMITEMACTIVATE::lParam`.
@@ -242,13 +249,15 @@ void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
 Nothing is simpler, see code below:
 ```cpp
-LISTCREATESTRUCT lcs;
+LISTEXCREATESTRUCT lcs;
+lcs.rect = CRect(0, 0, 500, 300)
+lcs.pwndParent = this;
 lcs.dwHeaderHeight = 50;
 lcs.clrListBkRow1 = RGB(255, 255, 0);
 lcs.clrListBkRow2 = RGB(255, 255, 0);
 CListEx myList;
 myList.Create(lcs);
-...
+
 myList.InsertColumn(...);
 myList.InsertItem(...);
 ```

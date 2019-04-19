@@ -1,7 +1,3 @@
-
-// ListExSample.cpp : Defines the class behaviors for the application.
-//
-
 #include "pch.h"
 #include "framework.h"
 #include "ListExSample.h"
@@ -11,15 +7,9 @@
 #define new DEBUG_NEW
 #endif
 
-
-// CListExSampleApp
-
 BEGIN_MESSAGE_MAP(CListExSampleApp, CWinApp)
 	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
-
-
-// CListExSampleApp construction
 
 CListExSampleApp::CListExSampleApp()
 {
@@ -27,22 +17,11 @@ CListExSampleApp::CListExSampleApp()
 	// Place all significant initialization in InitInstance
 }
 
-
-// The one and only CListExSampleApp object
-
 CListExSampleApp theApp;
-
-
-// CListExSampleApp initialization
 
 BOOL CListExSampleApp::InitInstance()
 {
 	CWinApp::InitInstance();
-
-
-	// Create the shell manager, in case the dialog contains
-	// any shell tree view or shell list view controls.
-	CShellManager *pShellManager = new CShellManager;
 
 	// Activate "Windows Native" visual manager for enabling themes in MFC controls
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
@@ -54,7 +33,7 @@ BOOL CListExSampleApp::InitInstance()
 	// Change the registry key under which our settings are stored
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
-	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+	SetRegistryKey(_T("ListEx Sample Application"));
 
 	CListExSampleDlg dlg;
 	m_pMainWnd = &dlg;
@@ -73,12 +52,6 @@ BOOL CListExSampleApp::InitInstance()
 	{
 		TRACE(traceAppMsg, 0, "Warning: dialog creation failed, so application is terminating unexpectedly.\n");
 		TRACE(traceAppMsg, 0, "Warning: if you are using MFC controls on the dialog, you cannot #define _AFX_NO_MFC_CONTROLS_IN_DIALOGS.\n");
-	}
-
-	// Delete the shell manager created above.
-	if (pShellManager != nullptr)
-	{
-		delete pShellManager;
 	}
 
 #if !defined(_AFXDLL) && !defined(_AFX_NO_MFC_CONTROLS_IN_DIALOGS)
