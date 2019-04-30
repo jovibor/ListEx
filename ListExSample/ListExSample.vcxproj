@@ -193,7 +193,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\ListEx\ListEx.h" />
-    <ClInclude Include="..\ListEx\ListExHdr.h" />
+    <ClInclude Include="..\ListEx\src\CListEx.h" />
+    <ClInclude Include="..\ListEx\src\CListExHdr.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="ListExSample.h" />
     <ClInclude Include="ListExSampleDlg.h" />
@@ -202,8 +203,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ListEx\ListEx.cpp" />
-    <ClCompile Include="..\ListEx\ListExHdr.cpp" />
+    <ClCompile Include="..\ListEx\src\CListEx.cpp" />
+    <ClCompile Include="..\ListEx\src\CListExHdr.cpp" />
     <ClCompile Include="ListExSample.cpp" />
     <ClCompile Include="ListExSampleDlg.cpp" />
     <ClCompile Include="pch.cpp">

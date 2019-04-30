@@ -17,7 +17,7 @@ CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
 void CListExSampleDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LISTEX, m_myList);
+	DDX_Control(pDX, IDC_LISTEX, *m_myList);
 }
 
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
@@ -32,37 +32,37 @@ BOOL CListExSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);	
 	SetIcon(m_hIcon, FALSE);
 
-	m_myList.CreateDialogCtrl();
-	m_myList.SetHeaderHeight(30);
+	m_myList->CreateDialogCtrl();
+	m_myList->SetHeaderHeight(30);
 
 	LISTEXCOLORSTRUCT lcs;
 	lcs.clrHeaderText = RGB(250, 250, 250);
-	m_myList.SetColor(lcs);
+	m_myList->SetColor(lcs);
 
-	m_myList.InsertColumn(0, L"Test column 0", 0, 200);
-	m_myList.SetHeaderColumnColor(0, RGB(50, 50, 50));
-	m_myList.InsertItem(0, L"Test item - row:0/column:0");
-	m_myList.InsertItem(1, L"Test item - row:1/column:0");
-	m_myList.InsertItem(2, L"Test item - row:2/column:0");
-	m_myList.InsertItem(3, L"Test item - row:3/column:0");
-	m_myList.InsertItem(4, L"Test item - row:4/column:0");
-	m_myList.SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
+	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
+	m_myList->SetHeaderColumnColor(0, RGB(50, 50, 50));
+	m_myList->InsertItem(0, L"Test item - row:0/column:0");
+	m_myList->InsertItem(1, L"Test item - row:1/column:0");
+	m_myList->InsertItem(2, L"Test item - row:2/column:0");
+	m_myList->InsertItem(3, L"Test item - row:3/column:0");
+	m_myList->InsertItem(4, L"Test item - row:4/column:0");
+	m_myList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
 
-	m_myList.InsertColumn(1, L"Test column 1", 0, 200);
-	m_myList.SetHeaderColumnColor(1, RGB(125, 125, 125));
-	m_myList.SetItemText(0, 1, L"Test item - row:0/column:1");
-	m_myList.SetItemText(1, 1, L"Test item - row:1/column:1");
-	m_myList.SetItemText(2, 1, L"Test item - row:2/column:1");
-	m_myList.SetItemText(3, 1, L"Test item - row:3/column:1");
-	m_myList.SetItemText(4, 1, L"Test item - row:4/column:1");
+	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
+	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
+	m_myList->SetItemText(0, 1, L"Test item - row:0/column:1");
+	m_myList->SetItemText(1, 1, L"Test item - row:1/column:1");
+	m_myList->SetItemText(2, 1, L"Test item - row:2/column:1");
+	m_myList->SetItemText(3, 1, L"Test item - row:3/column:1");
+	m_myList->SetItemText(4, 1, L"Test item - row:4/column:1");
 
-	m_myList.InsertColumn(2, L"Test column 2", 0, 200);
-	m_myList.SetHeaderColumnColor(2, RGB(200, 200, 200));
-	m_myList.SetItemText(0, 2, L"Test item - row:0/column:2");
-	m_myList.SetItemText(1, 2, L"Test item - row:1/column:2");
-	m_myList.SetItemText(2, 2, L"Test item - row:2/column:2");
-	m_myList.SetItemText(3, 2, L"Test item - row:3/column:2");
-	m_myList.SetItemText(4, 2, L"Test item - row:4/column:2");
+	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
+	m_myList->SetHeaderColumnColor(2, RGB(200, 200, 200));
+	m_myList->SetItemText(0, 2, L"Test item - row:0/column:2");
+	m_myList->SetItemText(1, 2, L"Test item - row:1/column:2");
+	m_myList->SetItemText(2, 2, L"Test item - row:2/column:2");
+	m_myList->SetItemText(3, 2, L"Test item - row:3/column:2");
+	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2");
 
 	m_menuCell.CreatePopupMenu();
 	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu...");
@@ -72,8 +72,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu...");
 	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu...");
 
-	m_myList.SetListMenu(&m_menuList);
-	m_myList.SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
+	m_myList->SetListMenu(&m_menuList);
+	m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
 
 
 	return TRUE;

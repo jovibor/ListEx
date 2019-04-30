@@ -39,6 +39,15 @@ The usage of the control is quite simple:
 1. Copy **ListEx** folder into your project's folder.
 2. Add all files from **ListEx** folder into your project.
 3. Add `#include "ListEx/ListEx.h"` where you suppose to use the control.
+4. Declare `IListExPtr` variable: `IListExPtr myList { CreateListEx() };`
+
+`IListExPtr` is, in fact, a pointer to the `IListEx` pure abstract base class, wrapped either in `std::unique_ptr` or `std::shared_ptr`. You can choose whatever is best for you by comment/uncomment one of this alliases in `ListEx.h`:
+```cpp
+	//using IListExPtr = IListExUnPtr;
+	using IListExPtr = IListExShPtr;
+```
+This wrapper is used mainly for convenience, so you don't have to bother about object lifetime, it will be destroyed automatically.
+That's why there is a call to the factory function `CreateListEx()`, to properly initialize a pointer.<br>
 
 Control uses its own namespace - `LISTEX`. So it's up to you, whether to use namespace prefix before declarations: 
 ```cpp
@@ -57,7 +66,7 @@ The `LISTEXCREATESTRUCT` is a helper structure which fields are described below.
 ```cpp
 struct LISTEXCREATESTRUCT 
 {
-    PLISTEXCOLORSTRUCT	pstColor { }; //All control's colors. If nullptr defaults are used.
+    LISTEXCOLORSTRUCT	stColor { }; //All control's colors.
     DWORD				dwStyle; //Control's styles. Zero for default.
     const				CRect rc; //Initial rect.
     CWnd*				pwndParent { };	//Parent window.
@@ -69,29 +78,28 @@ struct LISTEXCREATESTRUCT
     bool				fDialogCtrl { false }; //If it's a list within dialog.
 };
 ```
-`pstColor` is a pointer to the `LISTEXCOLORSTRUCT` structure which fields are described below:
+`stColor` is a member of the `LISTEXCOLORSTRUCT` structure which fields are described below:
 ```cpp
 struct LISTEXCOLORSTRUCT
 {
-	COLORREF		clrListText { GetSysColor(COLOR_WINDOWTEXT) };				//List text color.
-	COLORREF		clrListBkRow1 { GetSysColor(COLOR_WINDOW) };				//List Bk color of the odd rows.
-	COLORREF		clrListBkRow2 { GetSysColor(COLOR_WINDOW) };				//List Bk color of the even rows.
-	COLORREF		clrListGrid { RGB(220, 220, 220) };							//List grid color.
-	COLORREF		clrListTextSelected { GetSysColor(COLOR_HIGHLIGHTTEXT) };	//Selected item text color.
-	COLORREF		clrListBkSelected { GetSysColor(COLOR_HIGHLIGHT) };			//Selected item bk color.
-	COLORREF		clrTooltipText { GetSysColor(COLOR_INFOTEXT) };				//Tooltip window text color.
-	COLORREF		clrTooltipBk { GetSysColor(COLOR_INFOBK) };					//Tooltip window bk color.
-	COLORREF		clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) };		//Text color of a cell that has tooltip.
-	COLORREF		clrListBkCellTt { RGB(170, 170, 230) };						//Bk color of a cell that has tooltip.
-	COLORREF		clrHeaderText { GetSysColor(COLOR_WINDOWTEXT) };			//List header text color.
-	COLORREF		clrHeaderBk { GetSysColor(COLOR_WINDOW) };					//List header bk color.
-	COLORREF		clrBkNWA { GetSysColor(COLOR_WINDOW) };						//Bk of non working area.
+    COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };				//List text color.
+    COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };				//List Bk color of the odd rows.
+    COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };				//List Bk color of the even rows.
+    COLORREF clrListGrid { RGB(220, 220, 220) };						//List grid color.
+    COLORREF clrListTextSelected { GetSysColor(COLOR_HIGHLIGHTTEXT) };	//Selected item text color.
+    COLORREF clrListBkSelected { GetSysColor(COLOR_HIGHLIGHT) };		//Selected item bk color.
+    COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };			//Tooltip window text color.
+    COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };				//Tooltip window bk color.
+    COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) };		//Text color of a cell that has tooltip.
+    COLORREF clrListBkCellTt { RGB(170, 170, 230) };					//Bk color of a cell that has tooltip.
+    COLORREF clrHeaderText { GetSysColor(COLOR_WINDOWTEXT) };			//List header text color.
+    COLORREF clrHeaderBk { GetSysColor(COLOR_WINDOW) };					//List header bk color.
+    COLORREF clrBkNWA { GetSysColor(COLOR_WINDOW) };					//Bk of non working area.
 };
-using PLISTEXCOLORSTRUCT = LISTEXCOLORSTRUCT *;
 ```
-Below is a simple example of the control's creation:
+Below is a simple example of the **control**'s creation:
 ```cpp
-CListEx myList;
+IListExPtr myList { CreateListEx() };
 .
 .
 LISTEXCREATESTRUCT lcs;
@@ -99,7 +107,7 @@ lcs.pwndParent = this;
 lcs.nID = ID_MY_LIST;
 lcs.rect = CRect(0, 0, 500, 300);
 
-myList.Create(lcs);
+myList->Create(lcs);
 ```
 With `LISTEXCREATESTRUCT` structure you can adjust a plethora of list’s aspects:
 
@@ -114,19 +122,30 @@ With `LISTEXCREATESTRUCT` structure you can adjust a plethora of list’s aspect
 * Color of row when it's selected
 
 ### [](#)In Dialog
-To create the control in **Dialog** you can manually do it with the [Create](#manually) method.<br>
-But most of the times you prefer to place a _list control_ onto the **Dialog** template by dragging it from the **Toolbox** within **Visual studio**.<br>
+To create the **control** in **Dialog** you can manually do it with the [Create](#manually) method.<br>
+But most of the times you prefer to place a **list control** onto the **Dialog** template by dragging it from the **Toolbox** within **Visual studio**.<br>
 To use the latter approach follow these steps:
-1. Put standard list control from the toolbox onto your dialog template and make it desirable size.
-2. Right click on the control and choose **Add variable** from the drop-down menu.
-3. In the `Variable type:` field put `CListEx`
-4. In `OnInitDialog` method make a call to `myList.CreateDialogCtrl();`
+1. Put standard **list control** from the toolbox onto your dialog template and make it desirable size.
+2. Declare `IListExPtr` member varable within your dialog class: `IListExPtr m_myList { CreateListEx() };`
+3. Add the folowing code to the `DoDataExchange` method of your dialog class:<br>
+```cpp
+DDX_Control(pDX, IDC_LISTEX, *m_myList);
+```
+So, that it looks like in the example below:
+```cpp
+void CMyDlg::DoDataExchange(CDataExchange* pDX)
+{
+	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_LISTEX, *m_myList);
+}
+```
+4. In `OnInitDialog` method make a call to `m_myList->CreateDialogCtrl();`
 
 ## [](#)Tooltips
 To set a tooltip for a given cell, just write:
 
 ```cpp
-myList.SetCellTooltip(0, 1, L"Tooltip text", L"Tooltip caption:");
+myList->SetCellTooltip(0, 1, L"Tooltip text", L"Tooltip caption:");
 ```
 This will set a tooltip for cell (0, 1) with the text: **_Tooltip text_**, and the caption **_Tooltip caption_**.
 
@@ -161,7 +180,7 @@ class CMyDlg : public CDialogEx
 private:
   CMenu m_menuCell;
   CMenu m_menuList;
-  CListEx m_myList;
+  IListExPtr m_myList { CreateListEx() };
   .
   .
 }
@@ -170,11 +189,11 @@ private:
 //MyDlg.cpp
 CMyDlg::OnInitDialog()
 {
-  m_myList.CreateDialogCtrl();
-  m_myList.InsertColumn(0, L"First column", 0, 100);
-  m_myList.InsertColumn(...);
-  m_myList.InsertItem(...);. 
-  m_myList.SetItemText(...);
+  m_myList->CreateDialogCtrl();
+  m_myList->InsertColumn(0, L"First column", 0, 100);
+  m_myList->InsertColumn(...);
+  m_myList->InsertItem(...);. 
+  m_myList->SetItemText(...);
 
   m_menuCell.CreatePopupMenu();
   m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu...");
@@ -184,8 +203,8 @@ CMyDlg::OnInitDialog()
   m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu...");
   m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu...");
 
-  m_myList.SetListMenu(&m_menuList);
-  m_myList.SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
+  m_myList->SetListMenu(&m_menuList);
+  m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
 }
 ```
 ### [](#)Handle Menu Clicks
@@ -253,13 +272,14 @@ LISTEXCREATESTRUCT lcs;
 lcs.rect = CRect(0, 0, 500, 300)
 lcs.pwndParent = this;
 lcs.dwHeaderHeight = 50;
-lcs.clrListBkRow1 = RGB(255, 255, 0);
-lcs.clrListBkRow2 = RGB(255, 255, 0);
-CListEx myList;
-myList.Create(lcs);
+lcs.stColor.clrListBkRow1 = RGB(255, 255, 0);
+lcs.stColor.clrListBkRow2 = RGB(255, 255, 0);
 
-myList.InsertColumn(...);
-myList.InsertItem(...);
+IListExPtr myList { CreateListEx() };
+myList->Create(lcs);
+
+myList->InsertColumn(...);
+myList->InsertItem(...);
 ```
 Here, we set both - even and odd rows (`clrListBkRow1` and `clrListBkRow2`) to the same yellow color.
 

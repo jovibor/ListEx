@@ -8,11 +8,21 @@
 * different aspects. For more info see official documentation on github.		*
 ********************************************************************************/
 #include "pch.h"
-#include "ListExHdr.h"
-#include "ListEx.h"
+#include "CListExHdr.h"
+#include "CListEx.h"
 #include "strsafe.h"
 
 using namespace LISTEX;
+
+namespace LISTEX {
+	/********************************************
+	* CreateRawListEx function implementation.	*
+	********************************************/
+	IListEx* CreateRawListEx()
+	{
+		return new CListEx();
+	}
+}
 
 /****************************************************
 * CListEx class implementation.						*
@@ -50,8 +60,7 @@ bool CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 		lcs.rect, lcs.pwndParent, lcs.nID))
 		return false;
 
-	if (lcs.pstColor)
-		m_stColor = *lcs.pstColor;
+	m_stColor = lcs.stColor;
 
 	m_hwndTt = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr,
 		TTS_BALLOON | TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
@@ -171,16 +180,16 @@ UINT CListEx::GetFontSize()
 	return lf.lfHeight;
 }
 
-void CListEx::SetCellTooltip(int iItem, int iSubitem, const std::wstring & wstrTooltip, const std::wstring & wstrCaption)
+void CListEx::SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption)
 {
 	auto it = m_umapCellTt.find(iItem);
 
 	//If there is no tooltip for such item/subitem we just set it.
-	if (it == m_umapCellTt.end() && (!wstrTooltip.empty() || !wstrCaption.empty()))
+	if (it == m_umapCellTt.end() && (pwszTooltip || pwszCaption))
 	{
 		//Initializing inner map.
 		std::unordered_map<int, std::tuple< std::wstring, std::wstring>> umapInner {
-			{ iSubitem, { wstrTooltip, wstrCaption } } };
+			{ iSubitem, { pwszTooltip, pwszCaption } } };
 		m_umapCellTt.insert({ iItem, std::move(umapInner) });
 	}
 	else
@@ -190,11 +199,11 @@ void CListEx::SetCellTooltip(int iItem, int iSubitem, const std::wstring & wstrT
 		//If there is Item's tooltip but no Subitem's tooltip
 		//inserting new Subitem into inner map.
 		if (itInner == it->second.end())
-			it->second.insert({ iSubitem, { wstrTooltip, wstrCaption } });
+			it->second.insert({ iSubitem, { pwszTooltip, pwszCaption } });
 		else //If there is already exist this Item-Subitem's tooltip:
-			 //change or erase it, depending on wstrTooltip emptiness.
-			if (!wstrTooltip.empty())
-				itInner->second = { wstrTooltip, wstrCaption };
+			 //change or erase it, depending on pwszTooltip emptiness.
+			if (pwszTooltip)
+				itInner->second = { pwszTooltip, pwszCaption };
 			else
 				it->second.erase(itInner);
 	}
@@ -284,6 +293,11 @@ void CListEx::SetHeaderColumnColor(DWORD nColumn, COLORREF clr)
 	GetHeaderCtrl().SetColumnColor(nColumn, clr);
 	Update(0);
 	GetHeaderCtrl().RedrawWindow();
+}
+
+void CListEx::Destroy()
+{
+	delete this;
 }
 
 void CListEx::InitHeader()

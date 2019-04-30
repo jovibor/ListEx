@@ -5,7 +5,7 @@ using namespace LISTEX;
 
 class CListExSampleDlg : public CDialogEx
 {
-// Construction
+	// Construction
 public:
 	CListExSampleDlg(CWnd* pParent = nullptr);	// standard constructor
 
@@ -14,19 +14,17 @@ public:
 	enum { IDD = IDD_LISTEXSAMPLE_DIALOG };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
 // Implementation
+	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;
-
-	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	DECLARE_MESSAGE_MAP()
-	CListEx m_myList;
+	IListExPtr m_myList { CreateListEx() };
 	CMenu m_menuCell;
 	CMenu m_menuList;
 	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
