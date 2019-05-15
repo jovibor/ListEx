@@ -22,16 +22,15 @@ When I faced a necessity in **List control** with the ability to display tooltip
 ## [](#)Long Story Short
 `CListEx` is a `CMFCListCtrl` derived class with cells tooltip ability, and even more.<br>
 It works with `LVS_OWNERDRAWFIXED` and `LVS_REPORT` styles.<br>
-The tooltiping is achieved with the public method:
+The tooltiping is achieved with the `public` method:
 
 ```cpp
-void SetCellTooltip(int iItem, int iSubitem, const std::wstring& strTooltip, 
-                    const std::wstring& strCaption = { });
+SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr)
 ```
 With this method you can set a tooltip for any cell (item/subitem) in the list, and it will show up on mouse hovering.<br>
 Tooltips are implemented as Windows balloons.
 
-To remove tooltip from a cell just set it again with empty string `L""`.<br>
+To remove tooltip from a cell just set it again with empty (`nullptr`) string.<br>
 Control was built and tested in **Visual Studio 2019**.
 
 ## [](#)Usage
