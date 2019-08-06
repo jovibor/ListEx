@@ -5,11 +5,9 @@ using namespace LISTEX;
 
 class CListExSampleDlg : public CDialogEx
 {
-	// Construction
 public:
 	CListExSampleDlg(CWnd* pParent = nullptr);	// standard constructor
 
-// Dialog Data
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_LISTEXSAMPLE_DIALOG };
 #endif
@@ -17,7 +15,6 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
-// Implementation
 	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;

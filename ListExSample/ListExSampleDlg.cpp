@@ -17,7 +17,7 @@ CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
 void CListExSampleDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LISTEX, *m_myList);
+//	DDX_Control(pDX, IDC_LISTEX, *m_myList);
 }
 
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
@@ -29,10 +29,10 @@ BOOL CListExSampleDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	SetIcon(m_hIcon, TRUE);	
+	SetIcon(m_hIcon, TRUE);
 	SetIcon(m_hIcon, FALSE);
 
-	m_myList->CreateDialogCtrl();
+	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
 	m_myList->SetHeaderHeight(30);
 
 	LISTEXCOLORSTRUCT lcs;

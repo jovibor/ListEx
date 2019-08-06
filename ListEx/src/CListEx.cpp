@@ -55,9 +55,12 @@ END_MESSAGE_MAP()
 bool CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 {
 	if (lcs.fDialogCtrl)
+	{
+		SubclassDlgItem(lcs.uID, lcs.pwndParent);
 		SetWindowLongPtrW(m_hWnd, GWL_STYLE, GetWindowLongPtrW(m_hWnd, GWL_STYLE) | LVS_OWNERDRAWFIXED | LVS_REPORT);
+	}
 	else if (!CMFCListCtrl::Create(lcs.dwStyle | WS_CHILD | WS_VISIBLE | LVS_OWNERDRAWFIXED | LVS_REPORT,
-		lcs.rect, lcs.pwndParent, lcs.nID))
+		lcs.rect, lcs.pwndParent, lcs.uID))
 		return false;
 
 	m_stColor = lcs.stColor;
@@ -107,10 +110,13 @@ bool CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 	return true;
 }
 
-void CListEx::CreateDialogCtrl()
+void CListEx::CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg)
 {
 	LISTEXCREATESTRUCT lcs;
+	lcs.pwndParent = pwndDlg;
+	lcs.uID = uCtrlID;
 	lcs.fDialogCtrl = true;
+
 	Create(lcs);
 }
 
