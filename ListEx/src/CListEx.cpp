@@ -52,7 +52,7 @@ BEGIN_MESSAGE_MAP(CListEx, CMFCListCtrl)
 	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
-bool CListEx::Create(const LISTEXCREATESTRUCT & lcs)
+bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 {
 	if (lcs.fDialogCtrl)
 	{
@@ -71,6 +71,7 @@ bool CListEx::Create(const LISTEXCREATESTRUCT & lcs)
 		nullptr, nullptr, nullptr, nullptr);
 	if (!m_hwndTt)
 		return false;
+	
 	SetWindowTheme(m_hwndTt, nullptr, L""); //To prevent Windows from changing theme of Balloon window.
 
 	m_stToolInfo.cbSize = TTTOOLINFOW_V1_SIZE;
@@ -438,7 +439,7 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 	}
 }
 
-void CListEx::OnMouseMove(UINT nFlags, CPoint pt)
+void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 {
 	LVHITTESTINFO hi { };
 	hi.pt = pt;
@@ -514,7 +515,7 @@ void CListEx::OnRButtonDown(UINT nFlags, CPoint pt)
 	CMFCListCtrl::OnRButtonDown(nFlags, pt);
 }
 
-void CListEx::OnContextMenu(CWnd * pWnd, CPoint pt)
+void CListEx::OnContextMenu(CWnd* /*pWnd*/, CPoint pt)
 {
 	LVHITTESTINFO hi;
 	ScreenToClient(&pt);
@@ -566,16 +567,16 @@ void CListEx::OnTimer(UINT_PTR nIDEvent)
 	CMFCListCtrl::OnTimer(nIDEvent);
 }
 
-BOOL CListEx::OnSetCursor(CWnd * pWnd, UINT nHitTest, UINT message)
+BOOL CListEx::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 {
 	return CMFCListCtrl::OnSetCursor(pWnd, nHitTest, message);
 }
 
-void CListEx::OnKillFocus(CWnd * pNewWnd)
+void CListEx::OnKillFocus(CWnd* /*pNewWnd*/)
 {
 }
 
-BOOL CListEx::OnEraseBkgnd(CDC * pDC)
+BOOL CListEx::OnEraseBkgnd(CDC* /*pDC*/)
 {
 	return FALSE;
 }
@@ -598,19 +599,19 @@ void CListEx::OnPaint()
 	DefWindowProcW(WM_PAINT, (WPARAM)rDC.m_hDC, (LPARAM)0);
 }
 
-void CListEx::OnHdnDividerdblclick(NMHDR * pNMHDR, LRESULT * pResult)
+void CListEx::OnHdnDividerdblclick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	//LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
 	//*pResult = 0;
 }
 
-void CListEx::OnHdnBegintrack(NMHDR * pNMHDR, LRESULT * pResult)
+void CListEx::OnHdnBegintrack(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	//LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
 	//*pResult = 0;
 }
 
-void CListEx::OnHdnTrack(NMHDR * pNMHDR, LRESULT * pResult)
+void CListEx::OnHdnTrack(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	//LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
 	//*pResult = 0;
