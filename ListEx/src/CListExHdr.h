@@ -23,6 +23,7 @@ namespace LISTEX {
 		void SetFont(const LOGFONTW* pLogFontNew);
 		void SetColor(COLORREF clrText, COLORREF clrBk);
 		void SetColumnColor(DWORD dwColumn, COLORREF clr);
+		void SetSortArrow(int iColumn, bool fAscending);
 	protected:
 		afx_msg void OnDrawItem(CDC* pDC, int iItem, CRect rect, BOOL bIsPressed, BOOL bIsHighlighted) override;
 		afx_msg LRESULT OnLayout(WPARAM wParam, LPARAM lParam);
@@ -32,9 +33,17 @@ namespace LISTEX {
 		COLORREF m_clrBkNWA { GetSysColor(COLOR_WINDOW) }; //Bk of non working area.
 		COLORREF m_clrText { GetSysColor(COLOR_WINDOWTEXT) };
 		COLORREF m_clrBk { GetSysColor(COLOR_WINDOW) };
+		COLORREF m_clrHighlight { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };
+		COLORREF m_clrHighlightPressed { GetSysColor(COLOR_GRADIENTACTIVECAPTION) };
+		CPen m_penGrid;
+		CPen m_penLight;
+		CPen m_penShadow;
 		HDITEMW m_hdItem { }; //For drawing.
 		WCHAR m_wstrHeaderText[MAX_PATH] { };
 		DWORD m_dwHeaderHeight { 19 }; //Standard (default) height.
 		std::unordered_map<DWORD, COLORREF> m_umapClrColumn { }; //Color of individual columns.
+		bool m_fSortable { false }; //Need to draw sortable triangle or not?
+		int m_iSortColumn { };      //Column to draw sorting triangle within.
+		bool m_fSortAscending { };  //Sorting type.
 	};
 }

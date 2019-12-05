@@ -236,20 +236,26 @@ BOOL CMyDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
 ```cpp
-bool IsCreated();
-void SetFont(const LOGFONT* pLogFontNew);
-void SetFontSize(UINT uiSize);
-UINT GetFontSize();
-void SetCellTooltip(int iItem, int iSubitem, const std::wstring& wstrTooltip, 
-                    const std::wstring& wstrCaption = { });
-void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
-void SetListMenu(CMenu* pMenu);
-void SetCellData(int iItem, int iSubitem, DWORD_PTR dwData); //Arbitrary data for cell.
+bool Create(const LISTEXCREATESTRUCT& lcs);
+void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
+void Destroy();
 DWORD_PTR GetCellData(int iItem, int iSubitem);
+UINT GetFontSize();
+int GetSortColumn();
+bool GetSortAscending();
+bool IsCreated();
+void SetCellColor(int iItem, int iSubitem, COLORREF clr);
+void SetCellData(int iItem, int iSubitem, DWORD_PTR dwData);
+void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
+void SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr);
 void SetColor(const LISTEXCOLORSTRUCT& lcs);
+void SetFont(const LOGFONTW* pLogFontNew);
+void SetFontSize(UINT uiSize);
 void SetHeaderHeight(DWORD dwHeight);
 void SetHeaderFont(const LOGFONT* pLogFontNew);
 void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
+void SetListMenu(CMenu* pMenu);
+void SetSortFunc(int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort));
 ```
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.

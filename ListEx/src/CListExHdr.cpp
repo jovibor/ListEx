@@ -25,38 +25,53 @@ CListExHdr::CListExHdr()
 	NONCLIENTMETRICSW ncm { };
 	ncm.cbSize = sizeof(NONCLIENTMETRICSW);
 	SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0);
-	ncm.lfMessageFont.lfHeight = 18; //For some weird reason above func returns this value as MAX_LONG.
+	ncm.lfMessageFont.lfHeight = 16; //For some weird reason above func returns this value as MAX_LONG.
 
 	m_fontHdr.CreateFontIndirectW(&ncm.lfMessageFont);
 
 	m_hdItem.mask = HDI_TEXT;
 	m_hdItem.cchTextMax = MAX_PATH;
 	m_hdItem.pszText = m_wstrHeaderText;
+
+	m_penGrid.CreatePen(PS_SOLID, 2, RGB(220, 220, 220));
+	m_penLight.CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DHILIGHT));
+	m_penShadow.CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DSHADOW));
 }
 
-void CListExHdr::OnDrawItem(CDC* pDC, int iItem, CRect rect, BOOL /*bIsPressed*/, BOOL /*bIsHighlighted*/)
+void CListExHdr::OnDrawItem(CDC* pDC, int iItem, CRect rect, BOOL bIsPressed, BOOL bIsHighlighted)
 {
-	if (iItem < 0) { //Non working area, after last column.
+	if (iItem < 0) //Non working area, after last column.
+	{
 		pDC->FillSolidRect(&rect, m_clrBkNWA);
 		return;
 	}
 
 	CMemDC memDC(*pDC, rect);
 	CDC& rDC = memDC.GetDC();
+	COLORREF clrBk;
 
-	if (m_umapClrColumn.find(iItem) != m_umapClrColumn.end())
-		rDC.FillSolidRect(&rect, m_umapClrColumn[iItem]);
+	if (bIsHighlighted)
+	{
+		if (bIsPressed)
+			clrBk = m_clrHighlightPressed;
+		else
+			clrBk = m_clrHighlight;
+	}
 	else
-		rDC.FillSolidRect(&rect, m_clrBk);
-	rDC.SetTextColor(m_clrText);
-	rDC.DrawEdge(&rect, EDGE_RAISED, BF_RECT);
-	rDC.SelectObject(&m_fontHdr);
+	{
+		if (m_umapClrColumn.find(iItem) != m_umapClrColumn.end())
+			clrBk = m_umapClrColumn[iItem];
+		else
+			clrBk = m_clrBk;
+	}
+	rDC.FillSolidRect(&rect, clrBk);
 
+	rDC.SetTextColor(m_clrText);
+	rDC.SelectObject(m_fontHdr);
 	//Set item's text buffer first char to zero,
 	//then getting item's text and Draw it.
 	m_wstrHeaderText[0] = L'\0';
 	GetItem(iItem, &m_hdItem);
-
 	if (StrStrW(m_wstrHeaderText, L"\n"))
 	{	//If it's multiline text, first — calculate rect for the text,
 		//with CALC_RECT flag (not drawing anything),
@@ -68,6 +83,40 @@ void CListExHdr::OnDrawItem(CDC* pDC, int iItem, CRect rect, BOOL /*bIsPressed*/
 	}
 	else
 		rDC.DrawTextW(m_wstrHeaderText, &rect, DT_VCENTER | DT_CENTER | DT_SINGLELINE);
+
+	//Draw sortable triangle (arrow).
+	if (m_fSortable && iItem == m_iSortColumn)
+	{
+		// set up the pens to use for drawing the arrow.
+		rDC.SelectObject(m_penLight);
+		const int iOffset = (rect.bottom - rect.top) / 4;
+
+		if (m_fSortAscending)
+		{
+			//Draw the UP arrow.
+			rDC.MoveTo(rect.right - 2 * iOffset, iOffset);
+			rDC.LineTo(rect.right - iOffset, rect.bottom - iOffset - 1);
+			rDC.LineTo(rect.right - 3 * iOffset - 2, rect.bottom - iOffset - 1);
+			rDC.SelectObject(&m_penShadow);
+			rDC.MoveTo(rect.right - 3 * iOffset - 1, rect.bottom - iOffset - 1);
+			rDC.LineTo(rect.right - 2 * iOffset, iOffset - 1);
+		}
+		else
+		{
+			//Draw the DOWN arrow.
+			rDC.MoveTo(rect.right - iOffset - 1, iOffset);
+			rDC.LineTo(rect.right - 2 * iOffset - 1, rect.bottom - iOffset);
+			rDC.SelectObject(&m_penShadow);
+			rDC.MoveTo(rect.right - 2 * iOffset - 2, rect.bottom - iOffset);
+			rDC.LineTo(rect.right - 3 * iOffset - 1, iOffset);
+			rDC.LineTo(rect.right - iOffset - 1, iOffset);
+		}
+	}
+
+	//rDC.DrawEdge(&rect, EDGE_RAISED, BF_RECT);
+	rDC.SelectObject(m_penGrid);
+	rDC.MoveTo(rect.left, rect.top);
+	rDC.LineTo(rect.left, rect.bottom);
 }
 
 LRESULT CListExHdr::OnLayout(WPARAM /*wParam*/, LPARAM lParam)
@@ -103,7 +152,14 @@ void CListExHdr::SetColumnColor(DWORD dwColumn, COLORREF clr)
 	RedrawWindow();
 }
 
-void CListExHdr::SetFont(const LOGFONTW * pLogFontNew)
+void CListExHdr::SetSortArrow(int iColumn, bool fAscending)
+{
+	m_iSortColumn = iColumn;
+	m_fSortAscending = fAscending;
+	m_fSortable = true;
+}
+
+void CListExHdr::SetFont(const LOGFONTW* pLogFontNew)
 {
 	if (!pLogFontNew)
 		return;

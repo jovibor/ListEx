@@ -50,6 +50,7 @@ BEGIN_MESSAGE_MAP(CListEx, CMFCListCtrl)
 	ON_NOTIFY(HDN_TRACKW, 0, &CListEx::OnHdnTrack)
 	ON_WM_CONTEXTMENU()
 	ON_WM_DESTROY()
+	ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CListEx::OnLvnColumnclick)
 END_MESSAGE_MAP()
 
 bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
@@ -71,13 +72,13 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 		nullptr, nullptr, nullptr, nullptr);
 	if (!m_hwndTt)
 		return false;
-	
+
 	SetWindowTheme(m_hwndTt, nullptr, L""); //To prevent Windows from changing theme of Balloon window.
 
 	m_stToolInfo.cbSize = TTTOOLINFOW_V1_SIZE;
 	m_stToolInfo.uFlags = TTF_TRACK;
 	m_stToolInfo.uId = 0x1;
-	::SendMessageW(m_hwndTt, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)& m_stToolInfo);
+	::SendMessageW(m_hwndTt, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&m_stToolInfo);
 	::SendMessageW(m_hwndTt, TTM_SETMAXTIPWIDTH, 0, (LPARAM)400); //to allow use of newline \n.
 	::SendMessageW(m_hwndTt, TTM_SETTIPTEXTCOLOR, (WPARAM)m_stColor.clrTooltipText, 0);
 	::SendMessageW(m_hwndTt, TTM_SETTIPBKCOLOR, (WPARAM)m_stColor.clrTooltipBk, 0);
@@ -121,70 +122,113 @@ void CListEx::CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg)
 	Create(lcs);
 }
 
-bool CListEx::IsCreated()
+void CListEx::Destroy()
 {
-	return m_fCreated;
+	delete this;
 }
 
-void CListEx::SetColor(const LISTEXCOLORSTRUCT & lcs)
+DWORD_PTR CListEx::GetCellData(int iItem, int iSubitem)
 {
-	m_stColor = lcs;
-	GetHeaderCtrl().SetColor(m_stColor.clrHeaderText, m_stColor.clrHeaderBk);
-	RedrawWindow();
-}
+	auto it = m_umapCellData.find(iItem);
 
-void CListEx::SetFont(const LOGFONTW * pLogFontNew)
-{
-	if (!pLogFontNew)
-		return;
+	if (it != m_umapCellData.end())
+	{
+		auto itInner = it->second.find(iSubitem);
 
-	m_fontList.DeleteObject();
-	m_fontList.CreateFontIndirectW(pLogFontNew);
+		//If subitem id found and its text is not empty.
+		if (itInner != it->second.end())
+			return itInner->second;
+	}
 
-	//To get WM_MEASUREITEM msg after changing font.
-	CRect rc;
-	GetWindowRect(&rc);
-	WINDOWPOS wp;
-	wp.hwnd = m_hWnd;
-	wp.cx = rc.Width();
-	wp.cy = rc.Height();
-	wp.flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER;
-	SendMessageW(WM_WINDOWPOSCHANGED, 0, (LPARAM)& wp);
-
-	Update(0);
-}
-
-void CListEx::SetFontSize(UINT uiSize)
-{
-	//Prevent size from being too small or too big.
-	if (uiSize < 9 || uiSize > 75)
-		return;
-
-	LOGFONT lf;
-	m_fontList.GetLogFont(&lf);
-	lf.lfHeight = uiSize;
-	m_fontList.DeleteObject();
-	m_fontList.CreateFontIndirectW(&lf);
-
-	//To get WM_MEASUREITEM msg after changing font.
-	CRect rc;
-	GetWindowRect(&rc);
-	WINDOWPOS wp;
-	wp.hwnd = m_hWnd;
-	wp.cx = rc.Width();
-	wp.cy = rc.Height();
-	wp.flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER;
-	SendMessageW(WM_WINDOWPOSCHANGED, 0, (LPARAM)& wp);
-
-	Update(0);
+	return 0;
 }
 
 UINT CListEx::GetFontSize()
 {
-	LOGFONT lf;
+	LOGFONTW lf;
 	m_fontList.GetLogFont(&lf);
 
 	return lf.lfHeight;
+}
+
+int CListEx::GetSortColumn()const
+{
+	return m_iSortColumn;
+}
+
+bool CListEx::GetSortAscending()const
+{
+	return m_fSortAscending;
+}
+
+bool CListEx::IsCreated()const
+{
+	return m_fCreated;
+}
+
+void CListEx::SetCellColor(int iItem, int iSubitem, COLORREF clr)
+{
+	auto it = m_umapCellColor.find(iItem);
+
+	//If there is no data for such item/subitem we just set it.
+	if (it == m_umapCellColor.end())
+	{	//Initializing inner map.
+		std::unordered_map<int, COLORREF> umapInner { { iSubitem, clr } };
+		m_umapCellColor.insert({ iItem, std::move(umapInner) });
+	}
+	else
+	{
+		auto itInner = it->second.find(iSubitem);
+
+		if (itInner == it->second.end())
+			it->second.insert({ iSubitem, clr });
+		else //If there is already exist this cell's color -> changing.
+			itInner->second = clr;
+	}
+}
+
+void CListEx::SetCellData(int iItem, int iSubitem, DWORD_PTR dwData)
+{
+	auto it = m_umapCellData.find(iItem);
+
+	//If there is no data for such item/subitem we just set it.
+	if (it == m_umapCellData.end())
+	{	//Initializing inner map.
+		std::unordered_map<int, DWORD_PTR> umapInner { { iSubitem, dwData } };
+		m_umapCellData.insert({ iItem, std::move(umapInner) });
+	}
+	else
+	{
+		auto itInner = it->second.find(iSubitem);
+
+		if (itInner == it->second.end())
+			it->second.insert({ iSubitem, dwData });
+		else //If there is already exist this cell's data -> changing.
+			itInner->second = dwData;
+	}
+}
+
+void CListEx::SetCellMenu(int iItem, int iSubitem, CMenu * pMenu)
+{
+	auto it = m_umapCellMenu.find(iItem);
+
+	//If there is no tooltip for such item/subitem we just set it.
+	if (it == m_umapCellMenu.end())
+	{	//Initializing inner map.
+		std::unordered_map<int, CMenu*> umapInner { { iSubitem, pMenu } };
+		m_umapCellMenu.insert({ iItem, std::move(umapInner) });
+	}
+	else
+	{
+		auto itInner = it->second.find(iSubitem);
+
+		//If there is Item's tooltip but no Subitem's tooltip
+		//inserting new Subitem into inner map.
+		if (itInner == it->second.end())
+			it->second.insert({ iSubitem, pMenu });
+		else //If there is already exist this cell's menu -> changing.
+			itInner->second = pMenu;
+	}
 }
 
 void CListEx::SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption)
@@ -227,69 +271,57 @@ void CListEx::SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip
 	}
 }
 
-void CListEx::SetCellMenu(int iItem, int iSubitem, CMenu * pMenu)
+void CListEx::SetColor(const LISTEXCOLORSTRUCT & lcs)
 {
-	auto it = m_umapCellMenu.find(iItem);
-
-	//If there is no tooltip for such item/subitem we just set it.
-	if (it == m_umapCellMenu.end())
-	{	//Initializing inner map.
-		std::unordered_map<int, CMenu*> umapInner { { iSubitem, pMenu } };
-		m_umapCellMenu.insert({ iItem, std::move(umapInner) });
-	}
-	else
-	{
-		auto itInner = it->second.find(iSubitem);
-
-		//If there is Item's tooltip but no Subitem's tooltip
-		//inserting new Subitem into inner map.
-		if (itInner == it->second.end())
-			it->second.insert({ iSubitem, pMenu });
-		else //If there is already exist this cell's menu -> changing.
-			itInner->second = pMenu;
-	}
+	m_stColor = lcs;
+	GetHeaderCtrl().SetColor(m_stColor.clrHeaderText, m_stColor.clrHeaderBk);
+	RedrawWindow();
 }
 
-void CListEx::SetListMenu(CMenu * pMenu)
+void CListEx::SetFont(const LOGFONTW * pLogFontNew)
 {
-	m_pListMenu = pMenu;
+	if (!pLogFontNew)
+		return;
+
+	m_fontList.DeleteObject();
+	m_fontList.CreateFontIndirectW(pLogFontNew);
+
+	//To get WM_MEASUREITEM msg after changing font.
+	CRect rc;
+	GetWindowRect(&rc);
+	WINDOWPOS wp;
+	wp.hwnd = m_hWnd;
+	wp.cx = rc.Width();
+	wp.cy = rc.Height();
+	wp.flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER;
+	SendMessageW(WM_WINDOWPOSCHANGED, 0, (LPARAM)&wp);
+
+	Update(0);
 }
 
-void CListEx::SetCellData(int iItem, int iSubitem, DWORD_PTR dwData)
+void CListEx::SetFontSize(UINT uiSize)
 {
-	auto it = m_umapCellData.find(iItem);
+	//Prevent size from being too small or too big.
+	if (uiSize < 9 || uiSize > 75)
+		return;
 
-	//If there is no data for such item/subitem we just set it.
-	if (it == m_umapCellData.end())
-	{	//Initializing inner map.
-		std::unordered_map<int, DWORD_PTR> umapInner { { iSubitem, dwData } };
-		m_umapCellData.insert({ iItem, std::move(umapInner) });
-	}
-	else
-	{
-		auto itInner = it->second.find(iSubitem);
+	LOGFONT lf;
+	m_fontList.GetLogFont(&lf);
+	lf.lfHeight = uiSize;
+	m_fontList.DeleteObject();
+	m_fontList.CreateFontIndirectW(&lf);
 
-		if (itInner == it->second.end())
-			it->second.insert({ iSubitem, dwData });
-		else //If there is already exist this cell's data -> changing.
-			itInner->second = dwData;
-	}
-}
+	//To get WM_MEASUREITEM msg after changing font.
+	CRect rc;
+	GetWindowRect(&rc);
+	WINDOWPOS wp;
+	wp.hwnd = m_hWnd;
+	wp.cx = rc.Width();
+	wp.cy = rc.Height();
+	wp.flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER;
+	SendMessageW(WM_WINDOWPOSCHANGED, 0, (LPARAM)&wp);
 
-DWORD_PTR CListEx::GetCellData(int iItem, int iSubitem)
-{
-	auto it = m_umapCellData.find(iItem);
-
-	if (it != m_umapCellData.end())
-	{
-		auto itInner = it->second.find(iSubitem);
-
-		//If subitem id found and its text is not empty.
-		if (itInner != it->second.end())
-			return itInner->second;
-	}
-
-	return 0;
+	Update(0);
 }
 
 void CListEx::SetHeaderHeight(DWORD dwHeight)
@@ -313,14 +345,101 @@ void CListEx::SetHeaderColumnColor(DWORD nColumn, COLORREF clr)
 	GetHeaderCtrl().RedrawWindow();
 }
 
-void CListEx::Destroy()
+void CListEx::SetListMenu(CMenu * pMenu)
 {
-	delete this;
+	m_pListMenu = pMenu;
 }
 
+void CListEx::SetSortFunc(int(CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort))
+{
+	if (!pfCompareFunc)
+		return;
+
+	m_pfCompareFunc = pfCompareFunc;
+}
+
+
+//////////////////////////////////////////////////////////////
+//Protected methods:
+//////////////////////////////////////////////////////////////
 void CListEx::InitHeader()
 {
 	GetHeaderCtrl().SubclassDlgItem(0, this);
+}
+
+bool CListEx::HasCellColor(int iItem, int iSubitem, COLORREF& clrBk)
+{
+	auto it = m_umapCellColor.find(iItem);
+	if (it != m_umapCellColor.end())
+	{
+		auto itInner = it->second.find(iSubitem);
+
+		//If subitem id found and its text is not empty.
+		if (itInner != it->second.end())
+		{
+			clrBk = itInner->second;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool CListEx::HasTooltip(int iItem, int iSubitem, std::wstring * *ppwstrText, std::wstring * *ppwstrCaption)
+{
+	//Can return true/false indicating if subitem has tooltip,
+	//or can return pointers to tooltip text as well, if poiters are not nullptr.
+	auto it = m_umapCellTt.find(iItem);
+	if (it != m_umapCellTt.end())
+	{
+		auto itInner = it->second.find(iSubitem);
+
+		//If subitem id found and its text is not empty.
+		if (itInner != it->second.end() && !std::get<0>(itInner->second).empty())
+		{
+			//If pointer for text is nullptr we just return true.
+			if (ppwstrText)
+			{
+				*ppwstrText = &std::get<0>(itInner->second);
+				if (ppwstrCaption)
+					*ppwstrCaption = &std::get<1>(itInner->second);
+			}
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool CListEx::HasMenu(int iItem, int iSubitem, CMenu * *ppMenu)
+{
+	if (iItem < 0 || iSubitem < 0)
+		return false;
+
+	auto it = m_umapCellMenu.find(iItem);
+
+	if (it != m_umapCellMenu.end())
+	{
+		auto itInner = it->second.find(iSubitem);
+
+		//If subitem id found and its text is not empty.
+		if (itInner != it->second.end())
+		{
+			if (ppMenu)
+				*ppMenu = itInner->second;
+
+			return true;
+		}
+	}
+
+	//If there is no menu for cell, then checking global menu for the whole list.
+	if (m_pListMenu)
+	{
+		*ppMenu = m_pListMenu;
+		return true;
+	}
+
+	return false;
 }
 
 void CListEx::MeasureItem(LPMEASUREITEMSTRUCT lpMIS)
@@ -339,7 +458,7 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 	if (pDIS->itemID == -1)
 		return;
 
-	CDC * pDC = CDC::FromHandle(pDIS->hDC);
+	CDC* pDC = CDC::FromHandle(pDIS->hDC);
 	pDC->SelectObject(&m_penGrid);
 	pDC->SelectObject(&m_fontList);
 	COLORREF clrBkCurrRow = (pDIS->itemID % 2) ? m_stColor.clrListBkRow2 : m_stColor.clrListBkRow1;
@@ -361,24 +480,31 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 		}
 		else
 		{
-			if (HasTooltip(pDIS->itemID, 0))
+			if (!HasCellColor(pDIS->itemID, 0, clrBk))
 			{
-				clrText = m_stColor.clrListTextCellTt;
-				clrBk = m_stColor.clrListBkCellTt;
+				if (HasTooltip(pDIS->itemID, 0))
+				{
+					clrText = m_stColor.clrListTextCellTt;
+					clrBk = m_stColor.clrListBkCellTt;
+				}
+				else
+				{
+					clrText = m_stColor.clrListText;
+					clrBk = clrBkCurrRow;
+				}
 			}
 			else
-			{
 				clrText = m_stColor.clrListText;
-				clrBk = clrBkCurrRow;
-			}
 		}
 		pDC->SetTextColor(clrText);
 		pDC->FillSolidRect(&pDIS->rcItem, clrBk);
 
-		CString strItem = GetItemText(pDIS->itemID, 0);
+		CStringW strItem = GetItemText(pDIS->itemID, 0);
 		rc.left += 3; //Drawing text +-3 px from rect bounds.
+		rc.top += 1;
 		ExtTextOutW(pDC->m_hDC, rc.left, rc.top, ETO_CLIPPED, rc, strItem, strItem.GetLength(), nullptr);
 		rc.left -= 3;
+		rc.top -= 1;
 
 		//Drawing Item's rect lines. 
 		pDC->MoveTo(rc.left, rc.top);
@@ -403,24 +529,31 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 			}
 			else
 			{
-				if (HasTooltip(pDIS->itemID, i))
+				if (!HasCellColor(pDIS->itemID, i, clrBk))
 				{
-					clrText = m_stColor.clrListTextCellTt;
-					clrBk = m_stColor.clrListBkCellTt;
+					if (HasTooltip(pDIS->itemID, i))
+					{
+						clrText = m_stColor.clrListTextCellTt;
+						clrBk = m_stColor.clrListBkCellTt;
+					}
+					else
+					{
+						clrText = m_stColor.clrListText;
+						clrBk = clrBkCurrRow;
+					}
 				}
 				else
-				{
 					clrText = m_stColor.clrListText;
-					clrBk = clrBkCurrRow;
-				}
 			}
 			pDC->SetTextColor(clrText);
 			pDC->FillSolidRect(&rc, clrBk);
 
 			CString strSubitem = GetItemText(pDIS->itemID, i);
 			rc.left += 3; //Drawing text +-3 px from rect bounds
+			rc.top += 1;
 			ExtTextOutW(pDC->m_hDC, rc.left, rc.top, ETO_CLIPPED, rc, strSubitem, strSubitem.GetLength(), nullptr);
 			rc.left -= 3;
+			rc.top -= 1;
 
 			//Drawing Subitem's rect lines. 
 			pDC->MoveTo(rc.left, rc.top);
@@ -461,8 +594,8 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 		ClientToScreen(&pt);
 		::SendMessage(m_hwndTt, TTM_TRACKPOSITION, 0, (LPARAM)MAKELONG(pt.x, pt.y));
 		::SendMessage(m_hwndTt, TTM_SETTITLE, (WPARAM)TTI_NONE, (LPARAM)pwstrCaption->data());
-		::SendMessage(m_hwndTt, TTM_UPDATETIPTEXT, 0, (LPARAM)(LPTOOLINFO)& m_stToolInfo);
-		::SendMessage(m_hwndTt, TTM_TRACKACTIVATE, (WPARAM)TRUE, (LPARAM)(LPTOOLINFO)& m_stToolInfo);
+		::SendMessage(m_hwndTt, TTM_UPDATETIPTEXT, 0, (LPARAM)(LPTOOLINFO)&m_stToolInfo);
+		::SendMessage(m_hwndTt, TTM_TRACKACTIVATE, (WPARAM)TRUE, (LPARAM)(LPTOOLINFO)&m_stToolInfo);
 
 		//Timer to check whether mouse left subitem rect.
 		SetTimer(ID_TIMER_TOOLTIP, 200, 0);
@@ -476,7 +609,7 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 		if (m_fTtShown)
 		{
 			m_fTtShown = false;
-			::SendMessage(m_hwndTt, TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)& m_stToolInfo);
+			::SendMessage(m_hwndTt, TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stToolInfo);
 		}
 	}
 }
@@ -506,12 +639,6 @@ void CListEx::OnLButtonDown(UINT nFlags, CPoint pt)
 
 void CListEx::OnRButtonDown(UINT nFlags, CPoint pt)
 {
-	LVHITTESTINFO hi { };
-	hi.pt = pt;
-	ListView_SubItemHitTest(m_hWnd, &hi);
-	if (hi.iSubItem == -1 || hi.iItem == -1)
-		return;
-
 	CMFCListCtrl::OnRButtonDown(nFlags, pt);
 }
 
@@ -533,7 +660,7 @@ void CListEx::OnContextMenu(CWnd* /*pWnd*/, CPoint pt)
 BOOL CListEx::OnCommand(WPARAM wParam, LPARAM lParam)
 {
 	m_stNMII.lParam = LOWORD(wParam); //lParam holds uiMenuItemId.
-	GetParent()->SendMessageW(WM_NOTIFY, GetDlgCtrlID(), (LPARAM)& m_stNMII);
+	GetParent()->SendMessageW(WM_NOTIFY, GetDlgCtrlID(), (LPARAM)&m_stNMII);
 
 	return CMFCListCtrl::OnCommand(wParam, lParam);
 }
@@ -557,7 +684,7 @@ void CListEx::OnTimer(UINT_PTR nIDEvent)
 		else
 		{	//If it left.
 			m_fTtShown = false;
-			::SendMessage(m_hwndTt, TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)& m_stToolInfo);
+			::SendMessage(m_hwndTt, TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stToolInfo);
 			KillTimer(ID_TIMER_TOOLTIP);
 			m_stCurrCell.iItem = hitInfo.iItem;
 			m_stCurrCell.iSubItem = hitInfo.iSubItem;
@@ -636,59 +763,17 @@ void CListEx::OnDestroy()
 	::DestroyWindow(m_hwndTt);
 }
 
-bool CListEx::HasTooltip(int iItem, int iSubitem, std::wstring * *ppwstrText, std::wstring * *ppwstrCaption)
+void CListEx::OnLvnColumnclick(NMHDR *pNMHDR, LRESULT *pResult)
 {
-	//Can return true/false indicating if subitem has tooltip,
-	//or can return pointers to tooltip text as well, if poiters are not nullptr.
-	auto it = m_umapCellTt.find(iItem);
-	if (it != m_umapCellTt.end())
-	{
-		auto itInner = it->second.find(iSubitem);
+	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 
-		//If subitem id found and its text is not empty.
-		if (itInner != it->second.end() && !std::get<0>(itInner->second).empty())
-		{
-			//If pointer for text is nullptr we just return true.
-			if (ppwstrText)
-			{
-				*ppwstrText = &std::get<0>(itInner->second);
-				if (ppwstrCaption)
-					*ppwstrCaption = &std::get<1>(itInner->second);
-			}
-			return true;
-		}
+	m_fSortAscending = pNMLV->iSubItem == m_iSortColumn ? !m_fSortAscending : true;
+	m_iSortColumn = pNMLV->iSubItem;
+	if (m_pfCompareFunc)
+	{
+		GetHeaderCtrl().SetSortArrow(m_iSortColumn, m_fSortAscending);
+		SortItemsEx(m_pfCompareFunc, reinterpret_cast<DWORD_PTR>(this));
 	}
 
-	return false;
-}
-
-bool CListEx::HasMenu(int iItem, int iSubitem, CMenu * *ppMenu)
-{
-	if (iItem < 0 || iSubitem < 0)
-		return false;
-
-	auto it = m_umapCellMenu.find(iItem);
-
-	if (it != m_umapCellMenu.end())
-	{
-		auto itInner = it->second.find(iSubitem);
-
-		//If subitem id found and its text is not empty.
-		if (itInner != it->second.end())
-		{
-			if (ppMenu)
-				*ppMenu = itInner->second;
-
-			return true;
-		}
-	}
-
-	//If there is no menu for cell, then checking global menu for the whole list.
-	if (m_pListMenu)
-	{
-		*ppMenu = m_pListMenu;
-		return true;
-	}
-
-	return false;
+	*pResult = 0;
 }

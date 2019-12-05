@@ -37,11 +37,11 @@ namespace LISTEX {
 	********************************************************************************************/
 	struct LISTEXCREATESTRUCT {
 		LISTEXCOLORSTRUCT stColor { };           //All control's colors.
+		CRect             rect;                  //Initial rect.
 		CWnd*             pwndParent { };        //Parent window.
 		const LOGFONTW*   pListLogFont { };      //List font.
 		const LOGFONTW*   pHeaderLogFont { };    //List header font.
 		DWORD             dwStyle { };           //Control's styles. Zero for default.
-		CRect             rect;                  //Initial rect.
 		UINT              uID { };               //Control Id.
 		DWORD             dwListGridWidth { 1 }; //Width of the list grid.
 		DWORD             dwHeaderHeight { 20 }; //List header height.
@@ -54,23 +54,28 @@ namespace LISTEX {
 	class IListEx : public CMFCListCtrl
 	{
 	public:
+		IListEx() = default;
 		virtual ~IListEx() = default;
 		virtual bool Create(const LISTEXCREATESTRUCT& lcs) = 0;
 		virtual void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg) = 0;
-		virtual bool IsCreated() = 0;
+		virtual void Destroy() = 0;
+		virtual DWORD_PTR GetCellData(int iItem, int iSubitem) = 0;
+		virtual UINT GetFontSize() = 0;
+		virtual int GetSortColumn()const = 0;
+		virtual bool GetSortAscending()const = 0;
+		virtual bool IsCreated()const = 0;
+		virtual void SetCellColor(int iItem, int iSubitem, COLORREF clr) = 0;
+		virtual void SetCellData(int iItem, int iSubitem, DWORD_PTR dwData) = 0;
+		virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
+		virtual void SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr) = 0;
 		virtual void SetColor(const LISTEXCOLORSTRUCT& lcs) = 0;
 		virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
 		virtual void SetFontSize(UINT uiSize) = 0;
-		virtual UINT GetFontSize() = 0;
-		virtual void SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr) = 0;
-		virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
-		virtual void SetListMenu(CMenu* pMenu) = 0;
-		virtual void SetCellData(int iItem, int iSubitem, DWORD_PTR dwData) = 0;
-		virtual DWORD_PTR GetCellData(int iItem, int iSubitem) = 0;
 		virtual void SetHeaderHeight(DWORD dwHeight) = 0;
 		virtual void SetHeaderFont(const LOGFONT* pLogFontNew) = 0;
 		virtual void SetHeaderColumnColor(DWORD nColumn, COLORREF clr) = 0;
-		virtual void Destroy() = 0;
+		virtual void SetListMenu(CMenu* pMenu) = 0;
+		virtual void SetSortFunc(int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)) = 0;
 	};
 
 	/********************************************************************************************
