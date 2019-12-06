@@ -7,14 +7,10 @@ class CListExSampleDlg : public CDialogEx
 {
 public:
 	CListExSampleDlg(CWnd* pParent = nullptr);	// standard constructor
-
-#ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_LISTEXSAMPLE_DIALOG };
-#endif
-
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-
+	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;
@@ -24,7 +20,6 @@ protected:
 	IListExPtr m_myList { CreateListEx() };
 	CMenu m_menuCell;
 	CMenu m_menuList;
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
 };
 
 constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;

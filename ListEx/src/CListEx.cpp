@@ -8,7 +8,6 @@
 * different aspects. For more info see official documentation on github.		*
 ********************************************************************************/
 #include "pch.h"
-#include "CListExHdr.h"
 #include "CListEx.h"
 #include "strsafe.h"
 
@@ -100,7 +99,7 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 		lf = ncm.lfMessageFont;
 	}
 
-	GetHeaderCtrl().SetColor(m_stColor.clrHeaderText, m_stColor.clrHeaderBk);
+	GetHeaderCtrl().SetColor(m_stColor);
 	SetHeaderHeight(lcs.dwHeaderHeight);
 	SetHeaderFont(lcs.pHeaderLogFont);
 
@@ -122,6 +121,32 @@ void CListEx::CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg)
 	Create(lcs);
 }
 
+BOOL CListEx::DeleteAllItems()
+{
+	m_umapCellTt.clear();
+	m_umapCellMenu.clear();
+	m_umapCellData.clear();
+	m_umapCellColor.clear();
+
+	return CMFCListCtrl::DeleteAllItems();
+}
+
+BOOL CListEx::DeleteItem(int nItem)
+{
+	UINT ID = MapIndexToID(nItem);
+
+	if (auto iter = m_umapCellTt.find(ID); iter != m_umapCellTt.end())
+		m_umapCellTt.erase(iter);
+	if (auto iter = m_umapCellMenu.find(ID); iter != m_umapCellMenu.end())
+		m_umapCellMenu.erase(iter);
+	if (auto iter = m_umapCellData.find(ID); iter != m_umapCellData.end())
+		m_umapCellData.erase(iter);
+	if (auto iter = m_umapCellColor.find(ID); iter != m_umapCellColor.end())
+		m_umapCellColor.erase(iter);
+
+	return CMFCListCtrl::DeleteItem(nItem);
+}
+
 void CListEx::Destroy()
 {
 	delete this;
@@ -129,7 +154,8 @@ void CListEx::Destroy()
 
 DWORD_PTR CListEx::GetCellData(int iItem, int iSubitem)
 {
-	auto it = m_umapCellData.find(iItem);
+	UINT ID = MapIndexToID(iItem);
+	auto it = m_umapCellData.find(ID);
 
 	if (it != m_umapCellData.end())
 	{
@@ -168,13 +194,14 @@ bool CListEx::IsCreated()const
 
 void CListEx::SetCellColor(int iItem, int iSubitem, COLORREF clr)
 {
-	auto it = m_umapCellColor.find(iItem);
+	UINT ID = MapIndexToID((UINT)iItem);
+	auto it = m_umapCellColor.find(ID);
 
-	//If there is no data for such item/subitem we just set it.
+	//If there is no color for such item/subitem we just set it.
 	if (it == m_umapCellColor.end())
 	{	//Initializing inner map.
 		std::unordered_map<int, COLORREF> umapInner { { iSubitem, clr } };
-		m_umapCellColor.insert({ iItem, std::move(umapInner) });
+		m_umapCellColor.insert({ ID, std::move(umapInner) });
 	}
 	else
 	{
@@ -189,13 +216,14 @@ void CListEx::SetCellColor(int iItem, int iSubitem, COLORREF clr)
 
 void CListEx::SetCellData(int iItem, int iSubitem, DWORD_PTR dwData)
 {
-	auto it = m_umapCellData.find(iItem);
+	UINT ID = MapIndexToID(iItem);
+	auto it = m_umapCellData.find(ID);
 
 	//If there is no data for such item/subitem we just set it.
 	if (it == m_umapCellData.end())
 	{	//Initializing inner map.
 		std::unordered_map<int, DWORD_PTR> umapInner { { iSubitem, dwData } };
-		m_umapCellData.insert({ iItem, std::move(umapInner) });
+		m_umapCellData.insert({ ID, std::move(umapInner) });
 	}
 	else
 	{
@@ -210,19 +238,20 @@ void CListEx::SetCellData(int iItem, int iSubitem, DWORD_PTR dwData)
 
 void CListEx::SetCellMenu(int iItem, int iSubitem, CMenu * pMenu)
 {
-	auto it = m_umapCellMenu.find(iItem);
+	UINT ID = MapIndexToID(iItem);
+	auto it = m_umapCellMenu.find(ID);
 
-	//If there is no tooltip for such item/subitem we just set it.
+	//If there is no menu for such item/subitem we just set it.
 	if (it == m_umapCellMenu.end())
 	{	//Initializing inner map.
 		std::unordered_map<int, CMenu*> umapInner { { iSubitem, pMenu } };
-		m_umapCellMenu.insert({ iItem, std::move(umapInner) });
+		m_umapCellMenu.insert({ ID, std::move(umapInner) });
 	}
 	else
 	{
 		auto itInner = it->second.find(iSubitem);
 
-		//If there is Item's tooltip but no Subitem's tooltip
+		//If there is Item's menu but no Subitem's menu
 		//inserting new Subitem into inner map.
 		if (itInner == it->second.end())
 			it->second.insert({ iSubitem, pMenu });
@@ -237,7 +266,8 @@ void CListEx::SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip
 	const wchar_t* pCaption = pwszCaption ? pwszCaption : L"";
 	const wchar_t* pTooltip = pwszTooltip ? pwszTooltip : L"";
 
-	auto it = m_umapCellTt.find(iItem);
+	UINT ID = MapIndexToID(iItem);
+	auto it = m_umapCellTt.find(ID);
 
 	//If there is no tooltip for such item/subitem we just set it.
 	if (it == m_umapCellTt.end())
@@ -246,7 +276,7 @@ void CListEx::SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip
 		{	//Initializing inner map.
 			std::unordered_map<int, std::tuple< std::wstring, std::wstring>> umapInner {
 				{ iSubitem, { pTooltip, pCaption } } };
-			m_umapCellTt.insert({ iItem, std::move(umapInner) });
+			m_umapCellTt.insert({ ID, std::move(umapInner) });
 		}
 	}
 	else
@@ -271,10 +301,10 @@ void CListEx::SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip
 	}
 }
 
-void CListEx::SetColor(const LISTEXCOLORSTRUCT & lcs)
+void CListEx::SetColor(const LISTEXCOLORSTRUCT& lcs)
 {
 	m_stColor = lcs;
-	GetHeaderCtrl().SetColor(m_stColor.clrHeaderText, m_stColor.clrHeaderBk);
+	GetHeaderCtrl().SetColor(lcs);
 	RedrawWindow();
 }
 
@@ -369,7 +399,9 @@ void CListEx::InitHeader()
 
 bool CListEx::HasCellColor(int iItem, int iSubitem, COLORREF& clrBk)
 {
-	auto it = m_umapCellColor.find(iItem);
+	UINT ID = MapIndexToID((UINT)iItem);
+
+	auto it = m_umapCellColor.find(ID);
 	if (it != m_umapCellColor.end())
 	{
 		auto itInner = it->second.find(iSubitem);
@@ -389,7 +421,9 @@ bool CListEx::HasTooltip(int iItem, int iSubitem, std::wstring * *ppwstrText, st
 {
 	//Can return true/false indicating if subitem has tooltip,
 	//or can return pointers to tooltip text as well, if poiters are not nullptr.
-	auto it = m_umapCellTt.find(iItem);
+	UINT ID = MapIndexToID(iItem);
+	auto it = m_umapCellTt.find(ID);
+
 	if (it != m_umapCellTt.end())
 	{
 		auto itInner = it->second.find(iSubitem);
@@ -416,7 +450,8 @@ bool CListEx::HasMenu(int iItem, int iSubitem, CMenu * *ppMenu)
 	if (iItem < 0 || iSubitem < 0)
 		return false;
 
-	auto it = m_umapCellMenu.find(iItem);
+	UINT ID = MapIndexToID(iItem);
+	auto it = m_umapCellMenu.find(ID);
 
 	if (it != m_umapCellMenu.end())
 	{
