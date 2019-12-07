@@ -7,7 +7,7 @@
 * cells, and also with a lots of other stuff to customize your control in many	*
 * different aspects. For more info see official documentation on github.		*
 ********************************************************************************/
-#include "pch.h"
+#include "stdafx.h"
 #include "../ListEx.h"
 #include "CListExHdr.h"
 
@@ -156,11 +156,16 @@ void CListExHdr::SetColumnColor(DWORD dwColumn, COLORREF clr)
 	RedrawWindow();
 }
 
+void CListExHdr::SetSortable(bool fSortable)
+{
+	m_fSortable = fSortable;
+	RedrawWindow();
+}
+
 void CListExHdr::SetSortArrow(int iColumn, bool fAscending)
 {
 	m_iSortColumn = iColumn;
 	m_fSortAscending = fAscending;
-	m_fSortable = true;
 }
 
 void CListExHdr::SetFont(const LOGFONTW* pLogFontNew)

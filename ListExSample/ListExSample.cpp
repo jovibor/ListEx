@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "stdafx.h"
 #include "framework.h"
 #include "ListExSample.h"
 #include "ListExSampleDlg.h"
@@ -13,8 +13,6 @@ END_MESSAGE_MAP()
 
 CListExSampleApp::CListExSampleApp()
 {
-	// TODO: add construction code here,
-	// Place all significant initialization in InitInstance
 }
 
 CListExSampleApp theApp;
@@ -62,4 +60,3 @@ BOOL CListExSampleApp::InitInstance()
 	//  application, rather than start the application's message pump.
 	return FALSE;
 }
-

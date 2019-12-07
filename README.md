@@ -65,16 +65,18 @@ The `LISTEXCREATESTRUCT` is a helper structure which fields are described below.
 ```cpp
 struct LISTEXCREATESTRUCT {
     LISTEXCOLORSTRUCT stColor { };           //All control's colors.
+    CRect             rect;                  //Initial rect.
     CWnd*             pwndParent { };        //Parent window.
     const LOGFONTW*   pListLogFont { };      //List font.
-    const LOGFONTW*   pHeaderLogFont { };    //List header font.
+    const LOGFONTW*   pHdrLogFont { };       //Header font.
     DWORD             dwStyle { };           //Control's styles. Zero for default.
-    CRect             rect;                  //Initial rect.
     UINT              uID { };               //Control Id.
     DWORD             dwListGridWidth { 1 }; //Width of the list grid.
-    DWORD             dwHeaderHeight { 20 }; //List header height.
+    DWORD             dwHdrHeight { 20 };    //Header height.
+    bool              fSortable { false };   //Is list sortable, by clicking on the header column?
     bool              fDialogCtrl { false }; //If it's a list within dialog.
 };
+
 ```
 `stColor` is a member of the `LISTEXCOLORSTRUCT` structure which fields are described below:
 ```cpp
@@ -255,6 +257,7 @@ void SetHeaderHeight(DWORD dwHeight);
 void SetHeaderFont(const LOGFONT* pLogFontNew);
 void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
 void SetListMenu(CMenu* pMenu);
+void SetSortable(bool fSortable);
 void SetSortFunc(int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort));
 ```
 ## [](#)Example

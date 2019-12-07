@@ -36,9 +36,6 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\ListEx\ListEx.h">
       <Filter>ListEx</Filter>
     </ClInclude>
@@ -48,6 +45,9 @@
     <ClInclude Include="..\ListEx\src\CListExHdr.h">
       <Filter>ListEx\src</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ListExSample.cpp">
@@ -56,14 +56,14 @@
     <ClCompile Include="ListExSampleDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\ListEx\src\CListEx.cpp">
       <Filter>ListEx\src</Filter>
     </ClCompile>
     <ClCompile Include="..\ListEx\src\CListExHdr.cpp">
       <Filter>ListEx\src</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

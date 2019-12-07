@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "stdafx.h"
 #include "framework.h"
 #include "ListExSample.h"
 #include "ListExSampleDlg.h"
@@ -34,13 +34,14 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
 	m_myList->SetHeaderHeight(25);
+	m_myList->SetSortable(true);
 
 	LISTEXCOLORSTRUCT lcs;
-//	lcs.clrHdrText = RGB(250, 250, 250);
+	lcs.clrHdrText = RGB(250, 250, 250);
 	m_myList->SetColor(lcs);
 
 	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
-//	m_myList->SetHeaderColumnColor(0, RGB(50, 50, 50));
+	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
 	m_myList->InsertItem(0, L"Test item - row:0/column:0");
 	m_myList->InsertItem(1, L"Test item - row:1/column:0.");
 	m_myList->InsertItem(2, L"Test item - row:2/column:0..");
