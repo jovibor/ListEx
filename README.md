@@ -1,8 +1,7 @@
 ## **List control for MFC applications**
 ## Table of Contents
 * [Introduction](#introduction)
-* [Long Story Short](#long-story-short)
-* [Usage](#usage)
+* [Installation](#installation)
 * [Create](#create)
     * [Manually](#manually)
     * [In Dialog](#in-dialog)
@@ -14,26 +13,22 @@
 * [Example](#example)
 * [Appearance](#appearance)
 
-## [](#)Introduction
-When I faced a necessity in **List control** with the ability to display tooltips on arbitrary cells, I was discouraged with the fact that such obvious feature simply doesn’t exist in standard **MFC CListCtrl** class. That was the main reason behind the creation of this control.
-
 ![](docs/img/listex_mainwndtooltip.jpg)
 
-## [](#)Long Story Short
-`IListEx` is a `CMFCListCtrl` derived class with cells tooltip ability, and even more.  
-It works with `LVS_OWNERDRAWFIXED` and `LVS_REPORT` styles.<br>
-The tooltiping is achieved with the `public` method:
+## [](#)Introduction
+This `CListEx` class is basically an extension of the standard **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) with many improvements.
 
-```cpp
-SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr)
-```
-With this method you can set a tooltip for any cell (item/subitem) in the list, and it will show up on mouse hovering.<br>
-Tooltips are implemented as Windows balloons.
+### The main features of the CListEx:
+* Set tooltips for individual cells
+* Set popup menu for the individual cells as well as for the whole list control
+* Set background and text color for individual cells
+* Set additional item data for individual cells
+* Many options to set individual colors for lots of list aspects with [`LISTEXCOLORSTRUCT`](#listexcolorstruct)
+* Set header height and font, as well as color for individual header columns
+* Innate ability to sort list columns with no additional efforts
+* Dynamically change list font size with <kbd>Ctrl</kbd>+<kbd>MouseWheel</kbd>
 
-To remove tooltip from a cell just set it again with empty (`nullptr`) string.<br>
-Control was built and tested in **Visual Studio 2019**.
-
-## [](#)Usage
+## [](#)Installation
 The usage of the control is quite simple:
 1. Copy *ListEx* folder into your project's folder.
 2. Add all files from *ListEx* folder into your project.
@@ -60,7 +55,7 @@ using namespace LISTEX;
 ## [](#)Create
 ### [](#)Manually
 `Create` is the main method to create list control. It takes one argument - reference to the `LISTEXCREATESTRUCT` structure.
-The `LISTEXCREATESTRUCT` is a helper structure which fields are described below. This struct is also used in `SetColor` method.
+The `LISTEXCREATESTRUCT` is a helper structure which fields are described below.
 
 ```cpp
 struct LISTEXCREATESTRUCT {
@@ -82,21 +77,25 @@ struct LISTEXCREATESTRUCT {
 ```cpp
 struct LISTEXCOLORSTRUCT
 {
-    COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };				//List text color.
-    COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };				//List Bk color of the odd rows.
-    COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };				//List Bk color of the even rows.
-    COLORREF clrListGrid { RGB(220, 220, 220) };						//List grid color.
-    COLORREF clrListTextSelected { GetSysColor(COLOR_HIGHLIGHTTEXT) };	//Selected item text color.
-    COLORREF clrListBkSelected { GetSysColor(COLOR_HIGHLIGHT) };		//Selected item bk color.
-    COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };			//Tooltip window text color.
-    COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };				//Tooltip window bk color.
-    COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) };		//Text color of a cell that has tooltip.
-    COLORREF clrListBkCellTt { RGB(170, 170, 230) };					//Bk color of a cell that has tooltip.
-    COLORREF clrHeaderText { GetSysColor(COLOR_WINDOWTEXT) };			//List header text color.
-    COLORREF clrHeaderBk { GetSysColor(COLOR_WINDOW) };					//List header bk color.
-    COLORREF clrBkNWA { GetSysColor(COLOR_WINDOW) };					//Bk of non working area.
+    COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };            //List text color.
+    COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };              //List Bk color of the odd rows.
+    COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };              //List Bk color of the even rows.
+    COLORREF clrListGrid { RGB(220, 220, 220) };                       //List grid color.
+    COLORREF clrListTextSelected { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
+    COLORREF clrListBkSelected { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
+    COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };           //Tooltip window text color.
+    COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };               //Tooltip window bk color.
+    COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) };      //Text color of a cell that has tooltip.
+    COLORREF clrListBkCellTt { RGB(170, 170, 230) };                   //Bk color of a cell that has tooltip.
+    COLORREF clrHdrText { GetSysColor(COLOR_WINDOWTEXT) };             //List header text color.
+    COLORREF clrHdrBk { GetSysColor(COLOR_WINDOW) };                   //List header bk color.
+    COLORREF clrHdrHglInactive { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };//Header highlight inactive.
+    COLORREF clrHdrHglActive { GetSysColor(COLOR_GRADIENTACTIVECAPTION) };    //Header highlight active.
+    COLORREF clrBkNWA { GetSysColor(COLOR_WINDOW) };                   //Bk of non working area.
 };
 ```
+This struct is also used in `SetColor` method.
+
 Below is a simple example of the **control**'s creation:
 ```cpp
 IListExPtr myList { CreateListEx() };
@@ -120,6 +119,7 @@ With `LISTEXCREATESTRUCT` structure you can adjust a plethora of list’s aspect
 * Color of the text and bk of a cell that has tooltip
 * Color of list grid, and even its width
 * Color of row when it's selected
+* Make list sortable
 
 ### [](#)In Dialog
 To create the control in a *Dialog* you can manually do it with the [Create](#manually) method.
@@ -241,24 +241,23 @@ BOOL CMyDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 bool Create(const LISTEXCREATESTRUCT& lcs);
 void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
 void Destroy();
-DWORD_PTR GetCellData(int iItem, int iSubitem);
+ULONGLONG GetCellData(int iItem, int iSubitem);
 UINT GetFontSize();
 int GetSortColumn();
 bool GetSortAscending();
 bool IsCreated();
-void SetCellColor(int iItem, int iSubitem, COLORREF clr);
-void SetCellData(int iItem, int iSubitem, DWORD_PTR dwData);
+void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText);
+void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
 void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
 void SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr);
 void SetColor(const LISTEXCOLORSTRUCT& lcs);
 void SetFont(const LOGFONTW* pLogFontNew);
 void SetFontSize(UINT uiSize);
 void SetHeaderHeight(DWORD dwHeight);
-void SetHeaderFont(const LOGFONT* pLogFontNew);
+void SetHeaderFont(const LOGFONTW* pLogFontNew);
 void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
 void SetListMenu(CMenu* pMenu);
-void SetSortable(bool fSortable);
-void SetSortFunc(int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort));
+void SetSortable(bool fSortable, int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort) = nullptr)
 ```
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
@@ -267,7 +266,7 @@ Nothing is simpler, see code below:
 LISTEXCREATESTRUCT lcs;
 lcs.rect = CRect(0, 0, 500, 300)
 lcs.pwndParent = this;
-lcs.dwHeaderHeight = 50;
+lcs.dwHdrHeight = 50;
 lcs.stColor.clrListBkRow1 = RGB(255, 255, 0);
 lcs.stColor.clrListBkRow2 = RGB(255, 255, 0);
 

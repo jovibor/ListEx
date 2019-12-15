@@ -79,7 +79,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
 	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
 
-	m_myList->SetSortFunc(CompareFunc);
+//	m_myList->SetSortable(true, CompareFunc);
 
 	return TRUE;
 }
