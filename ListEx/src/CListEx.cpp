@@ -180,7 +180,7 @@ void CListEx::Destroy()
 	delete this;
 }
 
-DWORD_PTR CListEx::GetCellData(int iItem, int iSubitem)
+ULONGLONG CListEx::GetCellData(int iItem, int iSubitem)
 {
 	UINT ID = MapIndexToID(iItem);
 	auto it = m_umapCellData.find(ID);
@@ -189,7 +189,7 @@ DWORD_PTR CListEx::GetCellData(int iItem, int iSubitem)
 	{
 		auto itInner = it->second.find(iSubitem);
 
-		//If subitem id found and its text is not empty.
+		//If subitem id found.
 		if (itInner != it->second.end())
 			return itInner->second;
 	}
@@ -440,7 +440,7 @@ bool CListEx::HasCellColor(int iItem, int iSubitem, COLORREF& clrBk, COLORREF& c
 	{
 		auto itInner = it->second.find(iSubitem);
 
-		//If subitem id found and its text is not empty.
+		//If subitem id found.
 		if (itInner != it->second.end())
 		{
 			clrBk = itInner->second.clrBk;
@@ -492,7 +492,7 @@ bool CListEx::HasMenu(int iItem, int iSubitem, CMenu** ppMenu)
 	{
 		auto itInner = it->second.find(iSubitem);
 
-		//If subitem id found and its text is not empty.
+		//If subitem id found.
 		if (itInner != it->second.end())
 		{
 			if (ppMenu)
