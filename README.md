@@ -10,6 +10,7 @@
     * [Menu Example](#menu-example)
     * [Handle Menu Clicks](#handle-menu-clicks)
 * [Sorting](#sorting)
+   * [Virtual mode](#virtual-mode)
 * [Public Methods](#public-methods)
    * [SetSortable](#setsortable)
 * [Structures](#structures)
@@ -198,9 +199,14 @@ BOOL CMyDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 `NMITEMACTIVATE::iItem` and `NMITEMACTIVATE::iSubItem` both point to a cell the menu was clicked on.
 
 ## [](#)Sorting
-To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) flag to true. In this case, when you click on the header, list will be sorted according to the column data. By default `IListEx` performs lexicographical sorting.
+To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) flag to true. In this case, when you click on the header, list will be sorted according to the clicked column. By default `IListEx` performs lexicographical sorting.
 
-To set your own sorting routine you can use [`SetSortable`](#setsortable) method. 
+To set your own sorting routine use [`SetSortable`](#setsortable) method. 
+
+### [](#)Virtual mode
+If created with `LVS_OWNERDATA` style `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVM_SORTITEMSEX` when user clicked header column.  
+`LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in virtual mode.  
+Unique ID must be returned in form of `LPNMITEMACTIVATE::lParam`
 
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
@@ -224,20 +230,21 @@ void SetHeaderHeight(DWORD dwHeight);
 void SetHeaderFont(const LOGFONTW* pLogFontNew);
 void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
 void SetListMenu(CMenu* pMenu);
-void SetSortable(bool fSortable, int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort) = nullptr)
+void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr);
 ```
 
 ### [](#)SetSortable
 ```cpp
-void SetSortable(bool fSortable, int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort) = nullptr)
+void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare);
 ```
 **Parameters:**  
 
 `bool fSortable`  
 Enables or disables sorting
 
-`int (CALLBACK *pfCompareFunc)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)`  
-Callback function pointer that is used to set your own comparison function. If it's `nullptr` `IListEx` performs default lexicographical sorting. The comparison function must be either a static member of a class or a stand-alone function that is not a member of any class. For more information see official [MSDN documentation](#https://docs.microsoft.com/en-us/cpp/mfc/reference/clistctrl-class?view=vs-2019#remarks-100).
+`PFNLVCOMPARE pfnCompare`  
+Callback function pointer with type `int (CALLBACK *PFNLVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)` that is used to set your own comparison function. If it's `nullptr` `IListEx` performs default lexicographical sorting.  
+The comparison function must be either a static member of a class or a stand-alone function that is not a member of any class. For more information see official [MSDN documentation](#https://docs.microsoft.com/en-us/cpp/mfc/reference/clistctrl-class?view=vs-2019#remarks-100).
 
 ## [](#)Structures
 

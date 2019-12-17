@@ -1,7 +1,17 @@
 #pragma once
 #include "../ListEx/ListEx.h"
+#include <vector>
+#include <string>
 
 using namespace LISTEX;
+
+struct LISTEXVIRTDATA
+{
+	DWORD ID { };       //Unique ID of the list item. 
+	std::wstring wstr1; //Arbitrary data...
+	std::wstring wstr2;
+	std::wstring wstr3;
+};
 
 class CListExSampleDlg : public CDialogEx
 {
@@ -10,7 +20,8 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
-	static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+	afx_msg void OnListExGetDispInfo(NMHDR *pNMHDR, LRESULT *pResult);
+	void SortVecData();
 	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;
@@ -20,6 +31,7 @@ protected:
 	IListExPtr m_myList { CreateListEx() };
 	CMenu m_menuCell;
 	CMenu m_menuList;
+	std::vector<LISTEXVIRTDATA> m_vecData { };
 };
 
 constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;

@@ -3,11 +3,17 @@
 #include "ListExSample.h"
 #include "ListExSampleDlg.h"
 #include "afxdialogex.h"
-#include <string>
+#include <algorithm>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
+	ON_WM_PAINT()
+	ON_WM_QUERYDRAGICON()
+	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListExGetDispInfo)
+END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_LISTEXSAMPLE_DIALOG, pParent)
@@ -20,11 +26,6 @@ void CListExSampleDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 }
 
-BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
-	ON_WM_PAINT()
-	ON_WM_QUERYDRAGICON()
-END_MESSAGE_MAP()
-
 BOOL CListExSampleDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -32,54 +33,60 @@ BOOL CListExSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);
 	SetIcon(m_hIcon, FALSE);
 
+	//Sample data for Virtual mode (LVS_OWNERDATA).
+	constexpr auto iVirtualDataSize { 10 };
+	for (unsigned i = 0; i < iVirtualDataSize; i++)
+	{
+		m_vecData.emplace_back(LISTEXVIRTDATA { i, L"Virtual item column:0/row:" + std::to_wstring(i),
+			L"Virtual item column:1/row:" + std::to_wstring(i),
+			L"Virtual item column:2/row:" + std::to_wstring(i) });
+	}
+
 	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
 	m_myList->SetHeaderHeight(25);
 	m_myList->SetSortable(true);
-
 	LISTEXCOLORSTRUCT lcs;
 	lcs.clrHdrText = RGB(250, 250, 250);
 	m_myList->SetColor(lcs);
-
+	
+	m_myList->SetItemCountEx(iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
 	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
-	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
-	m_myList->InsertItem(0, L"Test item - row:0/column:0");
-	m_myList->InsertItem(1, L"Test item - row:1/column:0.");
-	m_myList->InsertItem(2, L"Test item - row:2/column:0..");
-	m_myList->InsertItem(3, L"Test item - row:3/column:0...");
-	m_myList->InsertItem(4, L"Test item - row:4/column:0....");
-	m_myList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
-
 	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
-	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
-	m_myList->SetItemText(0, 1, L"Test item - row:0/column:1....");
-	m_myList->SetItemText(1, 1, L"Test item - row:1/column:1...");
-	m_myList->SetItemText(2, 1, L"Test item - row:2/column:1..");
-	m_myList->SetItemText(3, 1, L"Test item - row:3/column:1.");
-	m_myList->SetItemText(4, 1, L"Test item - row:4/column:1");
-
 	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
+	
+	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
+	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
 	m_myList->SetHeaderColumnColor(2, RGB(200, 200, 200));
-	m_myList->SetItemText(0, 2, L"Test item - row:0/column:2...");
-	m_myList->SetItemText(1, 2, L"Test item - row:1/column:2.");
-	m_myList->SetItemText(2, 2, L"Test item - row:2/column:2....");
-	m_myList->SetItemText(3, 2, L"Test item - row:3/column:2..");
-	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
 
 	m_menuCell.CreatePopupMenu();
-	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu...");
-	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_SECOND, L"Cell's second menu...");
-
+	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu");
+	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_SECOND, L"Cell's second menu");
 	m_menuList.CreatePopupMenu();
-	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu...");
-	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu...");
+	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu");
+	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu");
 
 	m_myList->SetListMenu(&m_menuList);
+	m_myList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
 	m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
 	m_myList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
 	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
 	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
 
-//	m_myList->SetSortable(true, CompareFunc);
+	/*	m_myList->InsertItem(0, L"Test item - row:0/column:0");
+	m_myList->InsertItem(1, L"Test item - row:1/column:0.");
+	m_myList->InsertItem(2, L"Test item - row:2/column:0..");
+	m_myList->InsertItem(3, L"Test item - row:3/column:0...");
+	m_myList->InsertItem(4, L"Test item - row:4/column:0....");
+	m_myList->SetItemText(0, 1, L"Test item - row:0/column:1....");
+	m_myList->SetItemText(1, 1, L"Test item - row:1/column:1...");
+	m_myList->SetItemText(2, 1, L"Test item - row:2/column:1..");
+	m_myList->SetItemText(3, 1, L"Test item - row:3/column:1.");
+	m_myList->SetItemText(4, 1, L"Test item - row:4/column:1");
+	m_myList->SetItemText(0, 2, L"Test item - row:0/column:2...");
+	m_myList->SetItemText(1, 2, L"Test item - row:1/column:2.");
+	m_myList->SetItemText(2, 2, L"Test item - row:2/column:2....");
+	m_myList->SetItemText(3, 2, L"Test item - row:3/column:2..");
+	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2.....");*/
 
 	return TRUE;
 }
@@ -120,7 +127,19 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 
 	if (pNMI->hdr.idFrom == IDC_LISTEX)
 	{
-		if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
+		switch (pNMI->hdr.code)
+		{
+		case LVM_MAPINDEXTOID:
+		{
+			if (pNMI->iItem < 0 || pNMI->iItem >= m_vecData.size())
+				break;
+			pNMI->lParam = m_vecData.at(pNMI->iItem).ID;
+		}
+		break;
+		case LVM_SORTITEMSEX:
+			SortVecData();
+			break;
+		case LISTEX_MSG_MENUSELECTED:
 		{
 			CString ss;
 			switch (pNMI->lParam)
@@ -140,45 +159,69 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 			}
 			MessageBoxW(ss);
 		}
+		break;
+		}
 	}
 
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 
-int CListExSampleDlg::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+void CListExSampleDlg::OnListExGetDispInfo(NMHDR * pNMHDR, LRESULT * pResult)
 {
-	IListEx* pListCtrl = (IListEx*)lParamSort;
-	int iSortColumn = pListCtrl->GetSortColumn();
-	std::wstring wstrItem1 = pListCtrl->GetItemText(static_cast<int>(lParam1), iSortColumn).GetBuffer();
-	std::wstring wstrItem2 = pListCtrl->GetItemText(static_cast<int>(lParam2), iSortColumn).GetBuffer();
+	NMLVDISPINFOW *pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
+	LVITEMW* pItem = &pDispInfo->item;
 
-	LONGLONG llData1 { }, llData2 { };
-
-	if (iSortColumn == 0 || iSortColumn == 1 || iSortColumn == 2)
+	if (pItem->mask & LVIF_TEXT)
 	{
-		llData1 = wstrItem1.size();
-		llData2 = wstrItem2.size();
+		switch (pItem->iSubItem)
+		{
+		case 0:
+			pItem->pszText = m_vecData.at(pItem->iItem).wstr1.data();
+			break;
+		case 1:
+			pItem->pszText = m_vecData.at(pItem->iItem).wstr2.data();
+			break;
+		case 2:
+			pItem->pszText = m_vecData.at(pItem->iItem).wstr3.data();
+			break;
+		}
 	}
+	*pResult = 0;
+}
 
-	int result = 0;
-	if (pListCtrl->GetSortAscending())
+void CListExSampleDlg::SortVecData()
+{
+	//Sorts the vector of data according to clicked column.
+	std::sort(m_vecData.begin(), m_vecData.end(), [&](const LISTEXVIRTDATA& st1, const LISTEXVIRTDATA& st2)
 	{
-		if ((llData1 - llData2) < 0)
-			result = -1;
-		else if ((llData1 - llData2) == 0)
-			result = 0;
+		int iCompare { };
+		switch (m_myList->GetSortColumn())
+		{
+		case 0:
+			iCompare = st1.wstr1.compare(st2.wstr1);
+			break;
+		case 1:
+			iCompare = st1.wstr2.compare(st2.wstr2);
+			break;
+		case 2:
+			iCompare = st1.wstr3.compare(st2.wstr3);
+			break;
+		}
+
+		bool result { false };
+		if (m_myList->GetSortAscending())
+		{
+			if (iCompare < 0)
+				result = true;
+		}
 		else
-			result = 1;
-	}
-	else
-	{
-		if ((llData1 - llData2) < 0)
-			result = 1;
-		else if ((llData1 - llData2) == 0)
-			result = 0;
-		else
-			result = -1;
-	}
+		{
+			if (iCompare > 0)
+				result = true;
+		}
 
-	return result;
+		return result;
+	});
+
+	m_myList->RedrawWindow();
 }
