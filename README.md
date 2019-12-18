@@ -204,7 +204,8 @@ To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) 
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
 ### [](#)Virtual mode
-If created with `LVS_OWNERDATA` style `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVM_SORTITEMSEX` when user clicked header column.  
+If created with `LVS_OWNERDATA` style `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVN_COLUMNCLICK` when user clicked header column.
+
 `LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in virtual mode.  
 Unique ID must be returned in form of `LPNMITEMACTIVATE::lParam`
 

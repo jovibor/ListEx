@@ -243,19 +243,6 @@ UINT CListEx::MapIndexToID(UINT nItem)
 	return ID;
 }
 
-BOOL CListEx::SortItemsEx(PFNLVCOMPARE pfnCompare, DWORD_PTR dwData)
-{
-	if (m_fVirtual) //When in virtual mode (LVS_OWNERDATA) client code is responsible for sorting.
-	{
-		UINT uCtrlID = (UINT)GetDlgCtrlID();
-		NMHDR nmh { m_hWnd, uCtrlID, LVM_SORTITEMSEX };
-		GetParent()->SendMessageW(WM_NOTIFY, uCtrlID, (LPARAM)&nmh);
-		return TRUE;
-	}
-	else
-		return CListCtrl::SortItemsEx(pfnCompare, dwData);
-}
-
 void CListEx::SetCellColor(int iItem, int iSubItem, COLORREF clrBk, COLORREF clrText)
 {
 	if (clrText == -1) //-1 for default color.

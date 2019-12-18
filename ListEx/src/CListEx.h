@@ -51,7 +51,6 @@ namespace LISTEX {
 		void SetHeaderColumnColor(DWORD nColumn, COLORREF clr)override;
 		void SetListMenu(CMenu* pMenu)override;
 		void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare)override;
-		BOOL SortItemsEx(PFNLVCOMPARE pfnCompare, DWORD_PTR dwData);
 		DECLARE_MESSAGE_MAP()
 	protected:
 		CListExHdr& GetHeaderCtrl() { return m_stListHeader; }

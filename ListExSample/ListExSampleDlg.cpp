@@ -48,12 +48,12 @@ BOOL CListExSampleDlg::OnInitDialog()
 	LISTEXCOLORSTRUCT lcs;
 	lcs.clrHdrText = RGB(250, 250, 250);
 	m_myList->SetColor(lcs);
-	
+
 	m_myList->SetItemCountEx(iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
 	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
 	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
 	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
-	
+
 	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
 	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
 	m_myList->SetHeaderColumnColor(2, RGB(200, 200, 200));
@@ -131,12 +131,12 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 		{
 		case LVM_MAPINDEXTOID:
 		{
-			if (pNMI->iItem < 0 || pNMI->iItem >= m_vecData.size())
+			if (pNMI->iItem < 0 || pNMI->iItem >= (int)m_vecData.size())
 				break;
 			pNMI->lParam = m_vecData.at(pNMI->iItem).ID;
 		}
 		break;
-		case LVM_SORTITEMSEX:
+		case LVN_COLUMNCLICK:
 			SortVecData();
 			break;
 		case LISTEX_MSG_MENUSELECTED:
