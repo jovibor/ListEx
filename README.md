@@ -166,32 +166,32 @@ When user clicks a menu `IListEx` sends `WM_NOTIFY` message, with `NMITEMACTIVAT
 ```cpp
 BOOL CMyDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
-   	const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+    const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
-	if (pNMI->hdr.idFrom == IDC_LISTEX)
-	{
-		if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
-		{
-			CString ss;
-			switch (pNMI->lParam)
-			{
-			case IDC_LIST_MENU_CELL_FIRST:
-				ss.Format(L"Cell's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			case IDC_LIST_MENU_CELL_SECOND:
-				ss.Format(L"Cell's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			case IDC_LIST_MENU_GLOBAL_FIRST:
-				ss.Format(L"List's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			case IDC_LIST_MENU_GLOBAL_SECOND:
-				ss.Format(L"List's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			}
-			MessageBoxW(ss);
-		}
-	}
-	return CDialogEx::OnNotify(wParam, lParam, pResult);
+    if (pNMI->hdr.idFrom == IDC_LISTEX)
+    {
+    	if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
+    	{
+            CString ss;
+            switch (pNMI->lParam)
+            {
+            case IDC_LIST_MENU_CELL_FIRST:
+            ss.Format(L"Cell's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+            break;
+            case IDC_LIST_MENU_CELL_SECOND:
+                ss.Format(L"Cell's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+            break;
+            case IDC_LIST_MENU_GLOBAL_FIRST:
+                ss.Format(L"List's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+            break;
+            case IDC_LIST_MENU_GLOBAL_SECOND:
+                ss.Format(L"List's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
+            break;
+            }
+            MessageBoxW(ss);
+        }
+    }
+    return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 ```
 `IListEx` fills `NMITEMACTIVATE` struct with `NMITEMACTIVATE::hdr.code` equals `LISTEX_MSG_MENUSELECTED`. And `menuId` is stored as `NMITEMACTIVATE::lParam`.
@@ -204,10 +204,27 @@ To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) 
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
 ### [](#)Virtual mode
-If created with `LVS_OWNERDATA` style `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVN_COLUMNCLICK` when user clicked header column.
+In virtual list mode, if created with `LVS_OWNERDATA` style, `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVN_COLUMNCLICK` when user clicked header column.
 
-`LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in virtual mode.  
+`LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called internally. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in virtual mode.  
 Unique ID must be returned in form of `LPNMITEMACTIVATE::lParam`
+```cpp
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
+{
+    const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+
+    if (pNMI->hdr.idFrom == IDC_LISTEX)
+    {
+    	switch (pNMI->hdr.code)
+    	{
+    	case LVM_MAPINDEXTOID:
+    		pNMI->lParam = //Unique ID of the pNMI->iItem.
+    	break;
+    	//...
+    	}
+    }
+}
+```
 
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
@@ -245,7 +262,7 @@ Enables or disables sorting
 
 `PFNLVCOMPARE pfnCompare`  
 Callback function pointer with type `int (CALLBACK *PFNLVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)` that is used to set your own comparison function. If it's `nullptr` `IListEx` performs default lexicographical sorting.  
-The comparison function must be either a static member of a class or a stand-alone function that is not a member of any class. For more information see official [MSDN documentation](#https://docs.microsoft.com/en-us/cpp/mfc/reference/clistctrl-class?view=vs-2019#remarks-100).
+The comparison function must be either a static member of a class or a stand-alone function that is not a member of any class. For more information see official [MSDN documentation](https://docs.microsoft.com/en-us/cpp/mfc/reference/clistctrl-class?view=vs-2019#remarks-100).
 
 ## [](#)Structures
 

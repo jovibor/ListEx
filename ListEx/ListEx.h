@@ -8,7 +8,6 @@
 #pragma once
 #include <afxcontrolbars.h>
 #include <memory>
-#include <any>
 
 namespace LISTEX {
 	/********************************************************************************************
@@ -76,7 +75,7 @@ namespace LISTEX {
 		virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
 		virtual void SetFontSize(UINT uiSize) = 0;
 		virtual void SetHeaderHeight(DWORD dwHeight) = 0;
-		virtual void SetHeaderFont(const LOGFONT* pLogFontNew) = 0;
+		virtual void SetHeaderFont(const LOGFONTW* pLogFontNew) = 0;
 		virtual void SetHeaderColumnColor(DWORD nColumn, COLORREF clr) = 0;
 		virtual void SetListMenu(CMenu* pMenu) = 0;
 		virtual void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr) = 0;
