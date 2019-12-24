@@ -133,7 +133,7 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 		{
 			if (pNMI->iItem < 0 || pNMI->iItem >= (int)m_vecData.size())
 				break;
-			pNMI->lParam = m_vecData.at(pNMI->iItem).ID;
+			pNMI->lParam = (LPARAM)m_vecData.at((size_t)pNMI->iItem).ID;
 		}
 		break;
 		case LVN_COLUMNCLICK:
@@ -176,13 +176,13 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR * pNMHDR, LRESULT * pResult)
 		switch (pItem->iSubItem)
 		{
 		case 0:
-			pItem->pszText = m_vecData.at(pItem->iItem).wstr1.data();
+			pItem->pszText = m_vecData.at((size_t)pItem->iItem).wstr1.data();
 			break;
 		case 1:
-			pItem->pszText = m_vecData.at(pItem->iItem).wstr2.data();
+			pItem->pszText = m_vecData.at((size_t)pItem->iItem).wstr2.data();
 			break;
 		case 2:
-			pItem->pszText = m_vecData.at(pItem->iItem).wstr3.data();
+			pItem->pszText = m_vecData.at((size_t)pItem->iItem).wstr3.data();
 			break;
 		}
 	}
