@@ -232,23 +232,27 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 bool Create(const LISTEXCREATESTRUCT& lcs);
 void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
 void Destroy();
-ULONGLONG GetCellData(int iItem, int iSubitem);
+ULONGLONG GetCellData(int iItem, int iSubItem);
+EnListExSortMode GetColumnSortMode(int iColumn);
 UINT GetFontSize();
-int GetSortColumn();
-bool GetSortAscending();
-bool IsCreated();
-void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText);
-void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
-void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
-void SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr);
+int GetSortColumn()const ;
+bool GetSortAscending()const ;
+bool IsCreated()const ;
+void SetCellColor(int iItem, int iSubItem, COLORREF clrBk, COLORREF clrText);
+void SetCellData(int iItem, int iSubItem, ULONGLONG ullData);
+void SetCellMenu(int iItem, int iSubItem, CMenu* pMenu);
+void SetCellTooltip(int iItem, int iSubItem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr);
 void SetColor(const LISTEXCOLORSTRUCT& lcs);
+void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText);
+void SetColumnSortMode(int iColumn, EnListExSortMode enSortMode);
 void SetFont(const LOGFONTW* pLogFontNew);
 void SetFontSize(UINT uiSize);
 void SetHeaderHeight(DWORD dwHeight);
 void SetHeaderFont(const LOGFONTW* pLogFontNew);
-void SetHeaderColumnColor(DWORD nColumn, COLORREF clr);
+void SetHeaderColumnColor(int iColumn, COLORREF clr);
 void SetListMenu(CMenu* pMenu);
-void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr);
+void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText);
+void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare, EnListExSortMode enSortMode);
 ```
 
 ### [](#)SetSortable

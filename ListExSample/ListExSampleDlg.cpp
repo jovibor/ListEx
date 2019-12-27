@@ -33,6 +33,22 @@ BOOL CListExSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);
 	SetIcon(m_hIcon, FALSE);
 
+	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
+	m_myList->SetHeaderHeight(25);
+	m_myList->SetSortable(true);
+	m_myList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
+	LISTEXCOLORSTRUCT lcs;
+	lcs.clrHdrText = RGB(250, 250, 250);
+	m_myList->SetColor(lcs);
+
+	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
+	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
+	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
+	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
+	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
+	m_myList->SetHeaderColumnColor(2, RGB(200, 200, 200));
+
+	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
 	constexpr auto iVirtualDataSize { 10 };
 	for (unsigned i = 0; i < iVirtualDataSize; i++)
@@ -41,38 +57,10 @@ BOOL CListExSampleDlg::OnInitDialog()
 			L"Virtual item column:1/row:" + std::to_wstring(i),
 			L"Virtual item column:2/row:" + std::to_wstring(i) });
 	}
-
-	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
-	m_myList->SetHeaderHeight(25);
-	m_myList->SetSortable(true);
-	LISTEXCOLORSTRUCT lcs;
-	lcs.clrHdrText = RGB(250, 250, 250);
-	m_myList->SetColor(lcs);
-
 	m_myList->SetItemCountEx(iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
-	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
-	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
-	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
 
-	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
-	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
-	m_myList->SetHeaderColumnColor(2, RGB(200, 200, 200));
-
-	m_menuCell.CreatePopupMenu();
-	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu");
-	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_SECOND, L"Cell's second menu");
-	m_menuList.CreatePopupMenu();
-	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu");
-	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu");
-
-	m_myList->SetListMenu(&m_menuList);
-	m_myList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
-	m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
-	m_myList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
-	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
-	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
-
-	/*	m_myList->InsertItem(0, L"Test item - row:0/column:0");
+	//For classical list.
+/*	m_myList->InsertItem(0, L"Test item - row:0/column:0");
 	m_myList->InsertItem(1, L"Test item - row:1/column:0.");
 	m_myList->InsertItem(2, L"Test item - row:2/column:0..");
 	m_myList->InsertItem(3, L"Test item - row:3/column:0...");
@@ -86,7 +74,25 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetItemText(1, 2, L"Test item - row:1/column:2.");
 	m_myList->SetItemText(2, 2, L"Test item - row:2/column:2....");
 	m_myList->SetItemText(3, 2, L"Test item - row:3/column:2..");
-	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2.....");*/
+	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
+	*/
+
+	//Set list's cells colors, menu, tool-tips.
+	m_menuCell.CreatePopupMenu();
+	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu");
+	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_SECOND, L"Cell's second menu");
+	m_menuList.CreatePopupMenu();
+	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu");
+	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu");
+
+	m_myList->SetListMenu(&m_menuList);
+	m_myList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
+	m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
+	m_myList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
+	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
+	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
+	m_myList->SetRowColor(7, RGB(0, 220, 0));
+	m_myList->SetColumnColor(1, RGB(0, 220, 220));
 
 	return TRUE;
 }
