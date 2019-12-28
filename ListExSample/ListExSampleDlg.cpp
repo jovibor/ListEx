@@ -53,7 +53,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	constexpr auto iVirtualDataSize { 10 };
 	for (unsigned i = 0; i < iVirtualDataSize; i++)
 	{
-		m_vecData.emplace_back(LISTEXVIRTDATA { i, L"Virtual item column:0/row:" + std::to_wstring(i),
+		m_vecData.emplace_back(VIRTLISTDATA { i, L"Virtual item column:0/row:" + std::to_wstring(i),
 			L"Virtual item column:1/row:" + std::to_wstring(i),
 			L"Virtual item column:2/row:" + std::to_wstring(i) });
 	}
@@ -147,7 +147,7 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 			break;
 		case LISTEX_MSG_MENUSELECTED:
 		{
-			CString ss;
+			CStringW ss;
 			switch (pNMI->lParam)
 			{
 			case IDC_LIST_MENU_CELL_FIRST:
@@ -198,7 +198,7 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR * pNMHDR, LRESULT * pResult)
 void CListExSampleDlg::SortVecData()
 {
 	//Sorts the vector of data according to clicked column.
-	std::sort(m_vecData.begin(), m_vecData.end(), [&](const LISTEXVIRTDATA& st1, const LISTEXVIRTDATA& st2)
+	std::sort(m_vecData.begin(), m_vecData.end(), [&](const VIRTLISTDATA& st1, const VIRTLISTDATA& st2)
 	{
 		int iCompare { };
 		switch (m_myList->GetSortColumn())

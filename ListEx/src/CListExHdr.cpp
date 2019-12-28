@@ -10,6 +10,7 @@
 #include "CListExHdr.h"
 
 using namespace LISTEX;
+using namespace LISTEX::INTERNAL;
 
 /****************************************************
 * CListExHdr class implementation.					*

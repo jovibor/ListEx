@@ -5,7 +5,7 @@
 
 using namespace LISTEX;
 
-struct LISTEXVIRTDATA
+struct VIRTLISTDATA
 {
 	DWORD ID { };       //Unique ID of the list item. 
 	std::wstring wstr1; //Arbitrary data...
@@ -31,7 +31,7 @@ protected:
 	IListExPtr m_myList { CreateListEx() };
 	CMenu m_menuCell;
 	CMenu m_menuList;
-	std::vector<LISTEXVIRTDATA> m_vecData { };
+	std::vector<VIRTLISTDATA> m_vecData { };
 };
 
 constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;
