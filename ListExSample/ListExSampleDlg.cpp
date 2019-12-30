@@ -34,7 +34,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);
 
 	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
-	m_myList->SetHeaderHeight(25);
+	m_myList->SetHdrHeight(25);
 	m_myList->SetSortable(true);
 	m_myList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
 	LISTEXCOLORSTRUCT lcs;
@@ -44,9 +44,9 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
 	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
 	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
-	m_myList->SetHeaderColumnColor(0, RGB(70, 70, 70));
-	m_myList->SetHeaderColumnColor(1, RGB(125, 125, 125));
-	m_myList->SetHeaderColumnColor(2, RGB(200, 200, 200));
+	m_myList->SetHdrColumnColor(0, RGB(70, 70, 70));
+	m_myList->SetHdrColumnColor(1, RGB(125, 125, 125));
+	m_myList->SetHdrColumnColor(2, RGB(200, 200, 200));
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
