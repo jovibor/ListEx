@@ -408,15 +408,11 @@ void CListEx::SetCellMenu(int iItem, int iSubItem, CMenu* pMenu)
 	}
 }
 
-void CListEx::SetCellTooltip(int iItem, int iSubItem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption)
+void CListEx::SetCellTooltip(int iItem, int iSubItem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption)
 {
 	assert(IsCreated());
 	if (!IsCreated())
 		return;
-
-	//Checking for nullptr, and assign empty string in such case.
-	const wchar_t* pCaption = pwszCaption ? pwszCaption : L"";
-	const wchar_t* pTooltip = pwszTooltip ? pwszTooltip : L"";
 
 	UINT ID = MapIndexToID(iItem);
 	auto it = m_umapCellTt.find(ID);
@@ -424,10 +420,11 @@ void CListEx::SetCellTooltip(int iItem, int iSubItem, const wchar_t* pwszTooltip
 	//If there is no tooltip for such item/subitem we just set it.
 	if (it == m_umapCellTt.end())
 	{
-		if (pwszTooltip || pwszCaption)
+		if (!wstrTooltip.empty() || !wstrCaption.empty())
 		{	//Initializing inner map.
 			std::unordered_map<int, CELLTOOLTIP> umapInner {
-				{ iSubItem, { CELLTOOLTIP { pTooltip, pCaption } } } };
+				{ iSubItem, { CELLTOOLTIP { std::move(std::wstring { wstrTooltip }),
+				std::move(std::wstring { wstrCaption }) } } } };
 			m_umapCellTt.insert({ ID, std::move(umapInner) });
 		}
 	}
@@ -439,14 +436,16 @@ void CListEx::SetCellTooltip(int iItem, int iSubItem, const wchar_t* pwszTooltip
 		//inserting new Subitem into inner map.
 		if (itInner == it->second.end())
 		{
-			if (pwszTooltip || pwszCaption)
-				it->second.insert({ iSubItem, { pTooltip, pCaption } });
+			if (!wstrTooltip.empty() || !wstrCaption.empty())
+				it->second.insert({ iSubItem, { std::move(std::wstring { wstrTooltip }),
+					std::move(std::wstring { wstrCaption }) } });
 		}
 		else
 		{	//If there is already exist this Item-Subitem's tooltip:
 			//change or erase it, depending on pwszTooltip emptiness.
-			if (pwszTooltip)
-				itInner->second = { pwszTooltip, pCaption };
+			if (!wstrTooltip.empty())
+				itInner->second = { std::move(std::wstring { wstrTooltip }),
+				std::move(std::wstring { wstrCaption }) };
 			else
 				it->second.erase(itInner);
 		}

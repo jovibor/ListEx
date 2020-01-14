@@ -10,21 +10,24 @@
 
 namespace LISTEX { struct LISTEXCOLORSTRUCT; } //Forward declaration.
 
-namespace LISTEX::INTERNAL {
-
+namespace LISTEX::INTERNAL
+{
+	/********************************************
+	* HDRCOLOR - header column colors.          *
+	********************************************/
 	struct HDRCOLOR
 	{
-		COLORREF clrBk { };
-		COLORREF clrText { };
+		COLORREF clrBk { };   //Background color.
+		COLORREF clrText { }; //Text color.
 	};
 
 	/********************************************
-	* CListExHdr class declaration.				*
+	* CListExHdr class declaration.             *
 	********************************************/
-	class CListExHdr : public CMFCHeaderCtrl
+	class CListExHdr final : public CMFCHeaderCtrl
 	{
 	public:
-		CListExHdr();
+		explicit CListExHdr();
 		virtual ~CListExHdr() = default;
 		void SetHeight(DWORD dwHeight);
 		void SetFont(const LOGFONTW* pLogFontNew);

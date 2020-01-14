@@ -8,9 +8,10 @@
 #pragma once
 #include <afxcontrolbars.h>
 #include <memory>
+#include <string>
 
-namespace LISTEX {
-
+namespace LISTEX
+{
 	/********************************************************************************************
 	* EnListExSortMode - Sorting mode.                                                          *
 	********************************************************************************************/
@@ -81,7 +82,7 @@ namespace LISTEX {
 		virtual void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
 		virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
-		virtual void SetCellTooltip(int iItem, int iSubitem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr) = 0;
+		virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
 		virtual void SetColor(const LISTEXCOLORSTRUCT& lcs) = 0;
 		virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetColumnSortMode(int iColumn, EnListExSortMode enSortMode) = 0;

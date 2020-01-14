@@ -11,8 +11,8 @@
 #include <unordered_map>
 #include <chrono>
 
-namespace LISTEX::INTERNAL {
-
+namespace LISTEX::INTERNAL
+{
 	/********************************************
 	* CELLTOOLTIP - tool-tips for the cell.     *
 	********************************************/
@@ -55,10 +55,10 @@ namespace LISTEX::INTERNAL {
 	/********************************************
 	* CListEx class declaration.                *
 	********************************************/
-	class CListEx : public IListEx
+	class CListEx final : public IListEx
 	{
 	public:
-		CListEx() = default;
+		explicit CListEx() = default;
 		~CListEx() = default;
 		bool Create(const LISTEXCREATESTRUCT& lcs)override;
 		void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg)override;
@@ -77,7 +77,7 @@ namespace LISTEX::INTERNAL {
 		void SetCellColor(int iItem, int iSubItem, COLORREF clrBk, COLORREF clrText)override;
 		void SetCellData(int iItem, int iSubItem, ULONGLONG ullData)override;
 		void SetCellMenu(int iItem, int iSubItem, CMenu* pMenu)override;
-		void SetCellTooltip(int iItem, int iSubItem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr)override;
+		void SetCellTooltip(int iItem, int iSubItem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption)override;
 		void SetColor(const LISTEXCOLORSTRUCT& lcs)override;
 		void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)override;
 		void SetColumnSortMode(int iColumn, EnListExSortMode enSortMode)override;
@@ -123,7 +123,7 @@ namespace LISTEX::INTERNAL {
 		CFont m_fontList;
 		CPen m_penGrid;
 		CWnd m_wndTt;                   //Tool-tip window.
-		TTTOOLINFOW m_stToolInfo { };      //Tool-tip info struct.
+		TTTOOLINFOW m_stToolInfo { };   //Tool-tip info struct.
 		LVHITTESTINFO m_stCurrCell { };
 		DWORD m_dwGridWidth { 1 };		//Grid width.
 		CMenu* m_pListMenu { };			//List global menu, if set.
