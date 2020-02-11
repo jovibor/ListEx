@@ -129,7 +129,7 @@ HCURSOR CListExSampleDlg::OnQueryDragIcon()
 
 BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 {
-	const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+	const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
 	if (pNMI->hdr.idFrom == IDC_LISTEX)
 	{
@@ -137,9 +137,9 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 		{
 		case LVM_MAPINDEXTOID:
 		{
-			if (pNMI->iItem < 0 || pNMI->iItem >= (int)m_vecData.size())
+			if (pNMI->iItem < 0 || pNMI->iItem >= static_cast<int>(m_vecData.size()))
 				break;
-			pNMI->lParam = (LPARAM)m_vecData.at((size_t)pNMI->iItem).ID;
+			pNMI->lParam = static_cast<LPARAM>(m_vecData.at(static_cast<size_t>(pNMI->iItem)).ID);
 		}
 		break;
 		case LVN_COLUMNCLICK:
@@ -174,7 +174,7 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 
 void CListExSampleDlg::OnListExGetDispInfo(NMHDR * pNMHDR, LRESULT * pResult)
 {
-	NMLVDISPINFOW *pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
+	auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	LVITEMW* pItem = &pDispInfo->item;
 
 	if (pItem->mask & LVIF_TEXT)
@@ -182,13 +182,13 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR * pNMHDR, LRESULT * pResult)
 		switch (pItem->iSubItem)
 		{
 		case 0:
-			pItem->pszText = m_vecData.at((size_t)pItem->iItem).wstr1.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(pItem->iItem)).wstr1.data();
 			break;
 		case 1:
-			pItem->pszText = m_vecData.at((size_t)pItem->iItem).wstr2.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(pItem->iItem)).wstr2.data();
 			break;
 		case 2:
-			pItem->pszText = m_vecData.at((size_t)pItem->iItem).wstr3.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(pItem->iItem)).wstr3.data();
 			break;
 		}
 	}

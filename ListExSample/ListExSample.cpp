@@ -11,10 +11,6 @@ BEGIN_MESSAGE_MAP(CListExSampleApp, CWinApp)
 	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
 
-CListExSampleApp::CListExSampleApp()
-{
-}
-
 CListExSampleApp theApp;
 
 BOOL CListExSampleApp::InitInstance()

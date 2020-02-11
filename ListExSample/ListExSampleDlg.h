@@ -18,14 +18,14 @@ class CListExSampleDlg : public CDialogEx
 public:
 	CListExSampleDlg(CWnd* pParent = nullptr);	// standard constructor
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
 	afx_msg void OnListExGetDispInfo(NMHDR *pNMHDR, LRESULT *pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;
-	virtual BOOL OnInitDialog();
+	BOOL OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	IListExPtr m_myList { CreateListEx() };
