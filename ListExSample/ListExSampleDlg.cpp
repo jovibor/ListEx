@@ -53,8 +53,9 @@ BOOL CListExSampleDlg::OnInitDialog()
 	constexpr auto iVirtualDataSize { 10 };
 	for (unsigned i = 0; i < iVirtualDataSize; i++)
 	{
-		m_vecData.emplace_back(VIRTLISTDATA { i, L"Virtual item column:0/row:" + std::to_wstring(i),
-			L"Virtual item column:1/row:" + std::to_wstring(i),
+		m_vecData.emplace_back(VIRTLISTDATA { i,
+			L"Virtual item column:0/row:" + std::to_wstring(i),
+			L"Virtual item column:1/row:" + std::to_wstring(i % 2 ? i * i : i),
 			L"Virtual item column:2/row:" + std::to_wstring(i) });
 	}
 	m_myList->SetItemCountEx(iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.

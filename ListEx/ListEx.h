@@ -65,8 +65,6 @@ namespace LISTEX
 	class IListEx : public CMFCListCtrl
 	{
 	public:
-		IListEx() = default;
-		~IListEx() = default;
 		virtual bool Create(const LISTEXCREATESTRUCT& lcs) = 0;
 		virtual void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg) = 0;
 		virtual BOOL DeleteAllItems() = 0;

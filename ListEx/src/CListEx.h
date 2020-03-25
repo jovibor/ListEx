@@ -8,8 +8,8 @@
 #pragma once
 #include "../ListEx.h"
 #include "CListExHdr.h"
-#include <unordered_map>
 #include <chrono>
+#include <unordered_map>
 
 namespace LISTEX::INTERNAL
 {
@@ -58,8 +58,6 @@ namespace LISTEX::INTERNAL
 	class CListEx final : public IListEx
 	{
 	public:
-		explicit CListEx() = default;
-		~CListEx() = default;
 		bool Create(const LISTEXCREATESTRUCT& lcs)override;
 		void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg)override;
 		static int CALLBACK DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
@@ -92,8 +90,8 @@ namespace LISTEX::INTERNAL
 		DECLARE_DYNAMIC(CListEx)
 		DECLARE_MESSAGE_MAP()
 	protected:
-		CListExHdr& GetHeaderCtrl() { return m_stListHeader; }
-		void InitHeader();
+		CListExHdr& GetHeaderCtrl()override { return m_stListHeader; }
+		void InitHeader()override;
 		bool HasCellColor(int iItem, int iSubItem, COLORREF& clrBk, COLORREF& clrText);
 		bool HasTooltip(int iItem, int iSubItem, std::wstring** ppwstrText = nullptr, std::wstring** ppwstrCaption = nullptr);
 		bool HasMenu(int iItem, int iSubItem, CMenu** ppMenu = nullptr);
@@ -105,7 +103,7 @@ namespace LISTEX::INTERNAL
 		afx_msg void OnLButtonDown(UINT nFlags, CPoint pt);
 		afx_msg void OnRButtonDown(UINT nFlags, CPoint pt);
 		afx_msg void OnContextMenu(CWnd* pWnd, CPoint pt);
-		BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+		BOOL OnCommand(WPARAM wParam, LPARAM lParam)override;
 		afx_msg void OnMouseMove(UINT nFlags, CPoint pt);
 		afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 		afx_msg void OnTimer(UINT_PTR nIDEvent);
@@ -115,8 +113,9 @@ namespace LISTEX::INTERNAL
 		afx_msg void OnHdnDividerdblclick(NMHDR *pNMHDR, LRESULT *pResult);
 		afx_msg void OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult);
 		afx_msg void OnHdnTrack(NMHDR *pNMHDR, LRESULT *pResult);
+		BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
+		afx_msg void OnLvnColumnClick(NMHDR *pNMHDR, LRESULT *pResult);
 		afx_msg void OnDestroy();
-		afx_msg void OnLvnColumnclick(NMHDR *pNMHDR, LRESULT *pResult);
 	private:
 		CListExHdr m_stListHeader;
 		LISTEXCOLORSTRUCT m_stColor { };

@@ -53,7 +53,7 @@ BEGIN_MESSAGE_MAP(CListEx, CMFCListCtrl)
 	ON_NOTIFY(HDN_TRACKW, 0, &CListEx::OnHdnTrack)
 	ON_WM_CONTEXTMENU()
 	ON_WM_DESTROY()
-	ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CListEx::OnLvnColumnclick)
+	ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CListEx::OnLvnColumnClick)
 END_MESSAGE_MAP()
 
 bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
@@ -996,19 +996,36 @@ void CListEx::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	CMFCListCtrl::OnHScroll(nSBCode, nPos, pScrollBar);
 }
 
-void CListEx::OnLvnColumnclick(NMHDR* pNMHDR, LRESULT* pResult)
+BOOL CListEx::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
-	if (m_fSortable)
+	if (!m_fCreated)
+		return FALSE;
+
+	//HDN_ITEMCLICK messages should be handled here first, to set m_fSortAscending 
+	//and m_iSortColumn. And only then this message goes further, to parent window,
+	//in form of HDN_ITEMCLICK and LVN_COLUMNCLICK.
+	//If we execute this code in LVN_COLUMNCLICK handler, it will be handled
+	//only AFTER the parent window handles LVN_COLUMNCLICK.
+	//So briefly, ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CListEx::OnLvnColumnClick) fires up
+	//only AFTER LVN_COLUMNCLICK sent to the parent.
+	auto pNMLV = reinterpret_cast<LPNMHEADERW>(lParam);
+	if (m_fSortable && (pNMLV->hdr.code == HDN_ITEMCLICKW || pNMLV->hdr.code == HDN_ITEMCLICKA))
 	{
-		auto pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-		m_fSortAscending = pNMLV->iSubItem == m_iSortColumn ? !m_fSortAscending : true;
-		m_iSortColumn = pNMLV->iSubItem;
+		m_fSortAscending = pNMLV->iItem == m_iSortColumn ? !m_fSortAscending : true;
+		m_iSortColumn = pNMLV->iItem;
 
 		GetHeaderCtrl().SetSortArrow(m_iSortColumn, m_fSortAscending);
 		if (!m_fVirtual)
 			SortItemsEx(m_pfnCompare ? m_pfnCompare : DefCompareFunc, reinterpret_cast<DWORD_PTR>(this));
 	}
 
+	return CMFCListCtrl::OnNotify(wParam, lParam, pResult);
+}
+
+void CListEx::OnLvnColumnClick(NMHDR* /*pNMHDR*/, LRESULT *pResult)
+{
+	//Just an empty handler. Without it all works fine, but assert 
+	//triggers in Debug mode when clicking on header.
 	*pResult = 0;
 }
 
