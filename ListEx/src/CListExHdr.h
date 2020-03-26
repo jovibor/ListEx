@@ -8,7 +8,7 @@
 #pragma once
 #include <unordered_map>
 
-namespace LISTEX { struct LISTEXCOLORSTRUCT; } //Forward declaration.
+namespace LISTEX { struct LISTEXCOLORS; } //Forward declaration.
 
 namespace LISTEX::INTERNAL
 {
@@ -30,7 +30,7 @@ namespace LISTEX::INTERNAL
 		explicit CListExHdr();
 		void SetHeight(DWORD dwHeight);
 		void SetFont(const LOGFONTW* pLogFontNew);
-		void SetColor(const LISTEXCOLORSTRUCT& lcs);
+		void SetColor(const LISTEXCOLORS& lcs);
 		void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText);
 		void SetSortable(bool fSortable);
 		void SetSortArrow(int iColumn, bool fAscending);

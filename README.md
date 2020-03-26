@@ -15,7 +15,8 @@
    * [SetSortable](#setsortable)
 * [Structures](#structures)
    * [LISTEXCREATESTRUCT](#listexcreatestruct)
-   * [LISTEXCOLORSTRUCT](#listexcolorstruct)
+   * [LISTEXCOLORS](#listexcolors)
+   * [LISTEXCELLCOLOR](#listexcellcolor)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -29,7 +30,7 @@
 * Set popup menu for the individual cells as well as for the whole list control
 * Set background and text color for individual cells
 * Set additional item data for individual cells
-* Many options to set individual colors for lots of list aspects with [`LISTEXCOLORSTRUCT`](#listexcolorstruct)
+* Many options to set individual colors for lots of list aspects with [`LISTEXCOLORSTRUCT`](#listexcolors)
 * Set header height and font, as well as color for individual header columns
 * Innate ability to sort list columns with no additional efforts
 * Dynamically change list font size with <kbd>Ctrl</kbd>+<kbd>MouseWheel</kbd>
@@ -273,7 +274,7 @@ The comparison function must be either a static member of a class or a stand-alo
 ### [](#)LISTEXCREATESTRUCT
 ```cpp
 struct LISTEXCREATESTRUCT {
-    LISTEXCOLORSTRUCT stColor { };           //All control's colors.
+    LISTEXCOLORS      stColor { };           //All control's colors.
     CRect             rect;                  //Initial rect.
     CWnd*             pwndParent { };        //Parent window.
     const LOGFONTW*   pListLogFont { };      //List font.
@@ -287,7 +288,7 @@ struct LISTEXCREATESTRUCT {
 };
 ```
 
-### [](#)LISTEXCOLORSTRUCT
+### [](#)LISTEXCOLORS
 ```cpp
 struct LISTEXCOLORSTRUCT
 {
@@ -327,6 +328,17 @@ myList->InsertColumn(...);
 myList->InsertItem(...);
 ```
 Here, we set both - even and odd rows (`clrListBkRow1` and `clrListBkRow2`) to the same yellow color.
+
+### [](#)LISTEXCELLCOLOR
+```cpp
+struct LISTEXCELLCOLOR
+{
+	COLORREF clrBk { };
+	COLORREF clrText { };
+};
+using PLISTEXCELLCOLOR = LISTEXCELLCOLOR*;
+```
+Used as an answer to `LISTEX_MSG_CELLCOLOR` message.
 
 ## [](#)Appearance
 With the **Ctrl+MouseWheel** combination you can dynamically change list's font size.

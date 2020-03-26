@@ -37,7 +37,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetHdrHeight(25);
 	m_myList->SetSortable(true);
 	m_myList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-	LISTEXCOLORSTRUCT lcs;
+	LISTEXCOLORS lcs;
 	lcs.clrHdrText = RGB(250, 250, 250);
 	m_myList->SetColor(lcs);
 
