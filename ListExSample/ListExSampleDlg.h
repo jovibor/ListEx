@@ -1,7 +1,7 @@
 #pragma once
 #include "../ListEx/ListEx.h"
-#include <vector>
 #include <string>
+#include <vector>
 
 using namespace LISTEX;
 
@@ -16,16 +16,16 @@ struct VIRTLISTDATA
 class CListExSampleDlg : public CDialogEx
 {
 public:
-	CListExSampleDlg(CWnd* pParent = nullptr);	// standard constructor
+	CListExSampleDlg(CWnd* pParent = nullptr);
 protected:
-	void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	void DoDataExchange(CDataExchange* pDX)override;	// DDX/DDV support
+	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	afx_msg void OnListExGetDispInfo(NMHDR *pNMHDR, LRESULT *pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;
-	BOOL OnInitDialog();
+	BOOL OnInitDialog()override;
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	IListExPtr m_myList { CreateListEx() };

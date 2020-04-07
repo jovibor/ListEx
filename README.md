@@ -17,6 +17,10 @@
    * [LISTEXCREATESTRUCT](#listexcreatestruct)
    * [LISTEXCOLORS](#listexcolors)
    * [LISTEXCELLCOLOR](#listexcellcolor)
+   * [EListExSortMode](#elistexsortmode)
+* [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
+   * [LISTEX_MSG_MENUSELECTED](#listex_msg_menuselected)
+   * [LISTEX_MSG_CELLCOLOR](#listex_msg_cellcolor)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -230,35 +234,39 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
 ```cpp
-bool Create(const LISTEXCREATESTRUCT& lcs);
-void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
-void Destroy();
-ULONGLONG GetCellData(int iItem, int iSubItem);
-EnListExSortMode GetColumnSortMode(int iColumn);
-UINT GetFontSize();
-int GetSortColumn()const ;
-bool GetSortAscending()const ;
-bool IsCreated()const ;
-void SetCellColor(int iItem, int iSubItem, COLORREF clrBk, COLORREF clrText);
-void SetCellData(int iItem, int iSubItem, ULONGLONG ullData);
-void SetCellMenu(int iItem, int iSubItem, CMenu* pMenu);
-void SetCellTooltip(int iItem, int iSubItem, const wchar_t* pwszTooltip, const wchar_t* pwszCaption = nullptr);
-void SetColor(const LISTEXCOLORSTRUCT& lcs);
-void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText);
-void SetColumnSortMode(int iColumn, EnListExSortMode enSortMode);
-void SetFont(const LOGFONTW* pLogFontNew);
-void SetFontSize(UINT uiSize);
-void SetHdrHeight(DWORD dwHeight) = 0;
-void SetHdrFont(const LOGFONTW* pLogFontNew) = 0;
-void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
-void SetListMenu(CMenu* pMenu);
-void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText);
-void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare, EnListExSortMode enSortMode);
+virtual bool Create(const LISTEXCREATESTRUCT& lcs) = 0;
+virtual void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg) = 0;
+virtual BOOL DeleteAllItems() = 0;
+virtual BOOL DeleteColumn(int nCol) = 0;
+virtual BOOL DeleteItem(int nItem) = 0;
+virtual void Destroy() = 0;
+[[nodiscard]] virtual ULONGLONG GetCellData(int iItem, int iSubitem)const = 0;
+[[nodiscard]] virtual EListExSortMode GetColumnSortMode(int iColumn)const = 0;
+[[nodiscard]] virtual UINT GetFontSize()const = 0;
+[[nodiscard]] virtual int GetSortColumn()const = 0;
+[[nodiscard]] virtual bool GetSortAscending()const = 0;
+[[nodiscard]] virtual bool IsCreated()const = 0;
+virtual void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1) = 0;
+virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
+virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
+virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
+virtual void SetColor(const LISTEXCOLORS& lcs) = 0;
+virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
+virtual void SetColumnSortMode(int iColumn, EListExSortMode enSortMode) = 0;
+virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
+virtual void SetFontSize(UINT uiSize) = 0;
+virtual void SetHdrHeight(DWORD dwHeight) = 0;
+virtual void SetHdrFont(const LOGFONTW* pLogFontNew) = 0;
+virtual void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
+virtual void SetListMenu(CMenu* pMenu) = 0;
+virtual void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1) = 0;
+virtual void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr,
+			EListExSortMode enSortMode = EListExSortMode::SORT_LEX) = 0;
 ```
 
 ### [](#)SetSortable
 ```cpp
-void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare);
+void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX)
 ```
 **Parameters:**  
 
@@ -266,8 +274,11 @@ void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare);
 Enables or disables sorting
 
 `PFNLVCOMPARE pfnCompare`  
-Callback function pointer with type `int (CALLBACK *PFNLVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)` that is used to set your own comparison function. If it's `nullptr` `IListEx` performs default lexicographical sorting.  
+Callback function pointer with type `int (CALLBACK *PFNLVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)` that is used to set your own comparison function. If it's `nullptr` `IListEx` performs default sorting.  
 The comparison function must be either a static member of a class or a stand-alone function that is not a member of any class. For more information see official [MSDN documentation](https://docs.microsoft.com/en-us/cpp/mfc/reference/clistctrl-class?view=vs-2019#remarks-100).
+
+`EListExSortMode enSortMode`  
+Default sorting mode for the list.
 
 ## [](#)Structures
 
@@ -311,6 +322,36 @@ struct LISTEXCOLORSTRUCT
 ```
 This struct is also used in `SetColor` method.
 
+### [](#)LISTEXCELLCOLOR
+```cpp
+struct LISTEXCELLCOLOR
+{
+	COLORREF clrBk { };
+	COLORREF clrText { };
+};
+using PLISTEXCELLCOLOR = LISTEXCELLCOLOR*;
+```
+Used as a response to `LISTEX_MSG_CELLCOLOR` message.
+
+### [](#)EListExSortMode
+Enum showing sorting type for list columns.
+```cpp
+enum class EListExSortMode : short
+{
+    SORT_LEX, SORT_NUMERIC
+};
+```
+
+## [](#)Notification Messages
+These messages are sent to the parent window in form of `WM_NOTIFY` windows message.  
+The `lParam` will contain pointer to `NMHDR` standard windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
+### [](#)LISTEX_MSG_MENUSELECTED
+User defined menu selected. See [menu](#menu) section.
+
+### [](#)LISTEX_MSG_CELLCOLOR
+Sent to the parent to retrieve current cell color. You can set cells' colors whether handling this message or using [`SetCellColor`](#setcolor) member function.  
+This message has higher priority over `SetCellColor` method.
+   
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
 Nothing is simpler, see code below:
@@ -328,17 +369,6 @@ myList->InsertColumn(...);
 myList->InsertItem(...);
 ```
 Here, we set both - even and odd rows (`clrListBkRow1` and `clrListBkRow2`) to the same yellow color.
-
-### [](#)LISTEXCELLCOLOR
-```cpp
-struct LISTEXCELLCOLOR
-{
-	COLORREF clrBk { };
-	COLORREF clrText { };
-};
-using PLISTEXCELLCOLOR = LISTEXCELLCOLOR*;
-```
-Used as an answer to `LISTEX_MSG_CELLCOLOR` message.
 
 ## [](#)Appearance
 With the **Ctrl+MouseWheel** combination you can dynamically change list's font size.

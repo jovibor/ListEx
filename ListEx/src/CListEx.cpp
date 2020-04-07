@@ -134,19 +134,19 @@ void CListEx::CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg)
 int CALLBACK CListEx::DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	auto pListCtrl = reinterpret_cast<IListEx*>(lParamSort);
-	int iSortColumn = pListCtrl->GetSortColumn();
-	EnListExSortMode enSortMode = pListCtrl->GetColumnSortMode(iSortColumn);
+	auto iSortColumn = pListCtrl->GetSortColumn();
+	auto enSortMode = pListCtrl->GetColumnSortMode(iSortColumn);
 
-	std::wstring wstrItem1 = pListCtrl->GetItemText(static_cast<int>(lParam1), iSortColumn).GetString();
-	std::wstring wstrItem2 = pListCtrl->GetItemText(static_cast<int>(lParam2), iSortColumn).GetString();
+	std::wstring_view wstrItem1 = pListCtrl->GetItemText(static_cast<int>(lParam1), iSortColumn).GetString();
+	std::wstring_view wstrItem2 = pListCtrl->GetItemText(static_cast<int>(lParam2), iSortColumn).GetString();
 
 	int iCompare { };
 	switch (enSortMode)
 	{
-	case EnListExSortMode::SORT_LEX:
+	case EListExSortMode::SORT_LEX:
 		iCompare = wstrItem1.compare(wstrItem2);
 		break;
-	case EnListExSortMode::SORT_NUMERIC:
+	case EListExSortMode::SORT_NUMERIC:
 	{
 		LONGLONG llData1 { }, llData2 { };
 		StrToInt64ExW(wstrItem1.data(), STIF_SUPPORT_HEX, &llData1);
@@ -256,11 +256,11 @@ ULONGLONG CListEx::GetCellData(int iItem, int iSubItem)const
 	return 0;
 }
 
-EnListExSortMode CListEx::GetColumnSortMode(int iColumn)const
+EListExSortMode CListEx::GetColumnSortMode(int iColumn)const
 {
 	assert(IsCreated());
 
-	EnListExSortMode enMode;
+	EListExSortMode enMode;
 	auto iter = m_umapColumnSortMode.find(iColumn);
 	if (iter != m_umapColumnSortMode.end())
 		enMode = iter->second;
@@ -471,7 +471,7 @@ void CListEx::SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)
 	m_umapColumnColor[iColumn] = COLUMNCOLOR { clrBk, clrText, std::chrono::high_resolution_clock::now() };
 }
 
-void CListEx::SetColumnSortMode(int iColumn, EnListExSortMode enSortMode)
+void CListEx::SetColumnSortMode(int iColumn, EListExSortMode enSortMode)
 {
 	m_umapColumnSortMode[iColumn] = enSortMode;
 }
@@ -583,7 +583,7 @@ void CListEx::SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText)
 	m_umapRowColor[dwRow] = ROWCOLOR { clrBk, clrText, std::chrono::high_resolution_clock::now() };
 }
 
-void CListEx::SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare, EnListExSortMode enSortMode)
+void CListEx::SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare, EListExSortMode enSortMode)
 {
 	assert(IsCreated());
 	if (!IsCreated())

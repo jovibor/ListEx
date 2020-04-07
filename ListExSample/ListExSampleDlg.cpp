@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "framework.h"
 #include "ListExSample.h"
 #include "ListExSampleDlg.h"
 #include "afxdialogex.h"
+#include "framework.h"
 #include <algorithm>
 
 #ifdef _DEBUG

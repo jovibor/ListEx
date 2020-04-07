@@ -16,7 +16,7 @@ public:
 	CListExSampleApp() = default;
 
 public:
-	BOOL InitInstance();
+	BOOL InitInstance()override;
 	DECLARE_MESSAGE_MAP()
 };
 
