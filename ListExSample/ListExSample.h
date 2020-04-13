@@ -4,11 +4,7 @@
 #error "include 'pch.h' before including this file for PCH"
 #endif
 
-#include "resource.h"		// main symbols
-
-// CListExSampleApp:
-// See ListExSample.cpp for the implementation of this class
-//
+#include "Resource.h"
 
 class CListExSampleApp : public CWinApp
 {
@@ -19,5 +15,3 @@ public:
 	BOOL InitInstance()override;
 	DECLARE_MESSAGE_MAP()
 };
-
-extern CListExSampleApp theApp;

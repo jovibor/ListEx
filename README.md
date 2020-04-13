@@ -1,4 +1,6 @@
 ## **List control for MFC applications**
+![](docs/img/listex_mainwndtooltip.jpg)
+
 ## Table of Contents
 * [Introduction](#introduction)
 * [Installation](#installation)
@@ -23,8 +25,6 @@
    * [LISTEX_MSG_CELLCOLOR](#listex_msg_cellcolor)
 * [Example](#example)
 * [Appearance](#appearance)
-
-![](docs/img/listex_mainwndtooltip.jpg)
 
 ## [](#)Introduction
 `IListEx` class is basically an extension of the standard **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class with many improvements.
