@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "ListExSample.h"
 #include "ListExSampleDlg.h"
 #include "afxdialogex.h"
@@ -33,13 +33,16 @@ BOOL CListExSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);
 	SetIcon(m_hIcon, FALSE);
 
-	m_myList->CreateDialogCtrl(IDC_LISTEX, this);
-	m_myList->SetHdrHeight(25);
-	m_myList->SetSortable(true);
+	LISTEXCREATESTRUCT lcs;
+	lcs.uID = IDC_LISTEX;
+	lcs.pwndParent = this;
+	lcs.fDialogCtrl = true;
+	lcs.dwHdrHeight = 25;
+	lcs.fSortable = true;
+	lcs.stColor.clrHdrText = RGB(250, 250, 250);
+
+	m_myList->Create(lcs);
 	m_myList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-	LISTEXCOLORS lcs;
-	lcs.clrHdrText = RGB(250, 250, 250);
-	m_myList->SetColor(lcs);
 
 	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
 	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
@@ -54,7 +57,11 @@ BOOL CListExSampleDlg::OnInitDialog()
 	for (unsigned i = 0; i < iVirtualDataSize; i++)
 	{
 		m_vecData.emplace_back(VIRTLISTDATA { i,
-			L"Virtual item column:0/row:" + std::to_wstring(i),
+			L"Virtual item "
+			L"<link=0>column:0</link>"
+			L"/"
+			L"<link=" + std::to_wstring(i) + L">row:" + std::to_wstring(i) + L"</link>"
+			L"123",
 			L"Virtual item column:1/row:" + std::to_wstring(i % 2 ? i * i : i),
 			L"Virtual item column:2/row:" + std::to_wstring(i) });
 	}
@@ -128,7 +135,7 @@ HCURSOR CListExSampleDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
+BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
 	const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
@@ -167,13 +174,19 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 			MessageBoxW(ss);
 		}
 		break;
+		case LISTEX_MSG_LINKCLICK:
+		{
+			auto wstrTextLink = std::wstring_view { reinterpret_cast<LPWSTR>(pNMI->lParam) };
+			MessageBoxW(wstrTextLink.data());
+		}
+		break;
 		}
 	}
 
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 
-void CListExSampleDlg::OnListExGetDispInfo(NMHDR * pNMHDR, LRESULT * pResult)
+void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	LVITEMW* pItem = &pDispInfo->item;
@@ -200,35 +213,35 @@ void CListExSampleDlg::SortVecData()
 {
 	//Sorts the vector of data according to clicked column.
 	std::sort(m_vecData.begin(), m_vecData.end(), [&](const VIRTLISTDATA& st1, const VIRTLISTDATA& st2)
-	{
-		int iCompare { };
-		switch (m_myList->GetSortColumn())
 		{
-		case 0:
-			iCompare = st1.wstr1.compare(st2.wstr1);
-			break;
-		case 1:
-			iCompare = st1.wstr2.compare(st2.wstr2);
-			break;
-		case 2:
-			iCompare = st1.wstr3.compare(st2.wstr3);
-			break;
-		}
+			int iCompare { };
+			switch (m_myList->GetSortColumn())
+			{
+			case 0:
+				iCompare = st1.wstr1.compare(st2.wstr1);
+				break;
+			case 1:
+				iCompare = st1.wstr2.compare(st2.wstr2);
+				break;
+			case 2:
+				iCompare = st1.wstr3.compare(st2.wstr3);
+				break;
+			}
 
-		bool result { false };
-		if (m_myList->GetSortAscending())
-		{
-			if (iCompare < 0)
-				result = true;
-		}
-		else
-		{
-			if (iCompare > 0)
-				result = true;
-		}
+			bool result { false };
+			if (m_myList->GetSortAscending())
+			{
+				if (iCompare < 0)
+					result = true;
+			}
+			else
+			{
+				if (iCompare > 0)
+					result = true;
+			}
 
-		return result;
-	});
+			return result;
+		});
 
 	m_myList->RedrawWindow();
 }

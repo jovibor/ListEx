@@ -12,7 +12,7 @@
     * [Menu Example](#menu-example)
     * [Handle Menu Clicks](#handle-menu-clicks)
 * [Sorting](#sorting)
-   * [Virtual mode](#virtual-mode)
+   * [mode](#virtual-mode)
 * [Public Methods](#public-methods)
    * [SetSortable](#setsortable)
 * [Structures](#structures)
@@ -23,6 +23,7 @@
 * [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
    * [LISTEX_MSG_MENUSELECTED](#listex_msg_menuselected)
    * [LISTEX_MSG_CELLCOLOR](#listex_msg_cellcolor)
+   * [LISTEX_MSG_LINKCLICK](#listex_msg_linkclick)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -130,10 +131,10 @@ With the code below, we are going to set two separate menus:
 
 using namespace LISTEX;
 
-constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;
-constexpr auto IDC_LIST_MENU_CELL_SECOND = 0x2;
-constexpr auto IDC_LIST_MENU_GLOBAL_FIRST = 0x3;
-constexpr auto IDC_LIST_MENU_GLOBAL_SECOND = 0x4;
+constexpr auto IDC_LIST_MENU_CELL_FIRSTx1;
+constexpr auto IDC_LIST_MENU_CELL_SECONDx2;
+constexpr auto IDC_LIST_MENU_GLOBAL_FIRSTx3;
+constexpr auto IDC_LIST_MENU_GLOBAL_SECONDx4;
 
 class CMyDlg : public CDialogEx
 {
@@ -208,10 +209,10 @@ To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) 
 
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
-### [](#)Virtual mode
-In virtual list mode, if created with `LVS_OWNERDATA` style, `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVN_COLUMNCLICK` when user clicked header column.
+### [](#)mode
+In list mode, if created with `LVS_OWNERDATA` style, `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVN_COLUMNCLICK` when user clicked header column.
 
-`LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called internally. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in virtual mode.  
+`LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called internally. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in mode.  
 Unique ID must be returned in form of `LPNMITEMACTIVATE::lParam`
 ```cpp
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
@@ -234,34 +235,34 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
 ```cpp
-virtual bool Create(const LISTEXCREATESTRUCT& lcs) = 0;
-virtual void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg) = 0;
-virtual BOOL DeleteAllItems() = 0;
-virtual BOOL DeleteColumn(int nCol) = 0;
-virtual BOOL DeleteItem(int nItem) = 0;
-virtual void Destroy() = 0;
-[[nodiscard]] virtual ULONGLONG GetCellData(int iItem, int iSubitem)const = 0;
-[[nodiscard]] virtual EListExSortMode GetColumnSortMode(int iColumn)const = 0;
-[[nodiscard]] virtual UINT GetFontSize()const = 0;
-[[nodiscard]] virtual int GetSortColumn()const = 0;
-[[nodiscard]] virtual bool GetSortAscending()const = 0;
-[[nodiscard]] virtual bool IsCreated()const = 0;
-virtual void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1) = 0;
-virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
-virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
-virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
-virtual void SetColor(const LISTEXCOLORS& lcs) = 0;
-virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
-virtual void SetColumnSortMode(int iColumn, EListExSortMode enSortMode) = 0;
-virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
-virtual void SetFontSize(UINT uiSize) = 0;
-virtual void SetHdrHeight(DWORD dwHeight) = 0;
-virtual void SetHdrFont(const LOGFONTW* pLogFontNew) = 0;
-virtual void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
-virtual void SetListMenu(CMenu* pMenu) = 0;
-virtual void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1) = 0;
-virtual void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr,
-			EListExSortMode enSortMode = EListExSortMode::SORT_LEX) = 0;
+bool Create(const LISTEXCREATESTRUCT& lcs);
+void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
+BOOL DeleteAllItems();
+BOOL DeleteColumn(int nCol);
+BOOL DeleteItem(int nItem);
+void Destroy();
+[[nodiscard]] ULONGLONG GetCellData(int iItem, int iSubitem)const;
+[[nodiscard]] LISTEXCOLORS GetColors()const;
+[[nodiscard]] EListExSortMode GetColumnSortMode(int iColumn)const;
+[[nodiscard]] UINT GetFontSize()const;
+[[nodiscard]] int GetSortColumn()const;
+[[nodiscard]] bool GetSortAscending()const;
+[[nodiscard]] bool IsCreated()const;
+void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1);
+void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
+void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
+void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"");
+void SetColors(const LISTEXCOLORS& lcs);
+void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
+void SetColumnSortMode(int iColumn, EListExSortMode enSortMode);
+void SetFont(const LOGFONTW* pLogFontNew);
+void SetFontSize(UINT uiSize);
+void SetHdrHeight(DWORD dwHeight);
+void SetHdrFont(const LOGFONTW* pLogFontNew);
+void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
+void SetListMenu(CMenu* pMenu);
+void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1);
+void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX);
 ```
 
 ### [](#)SetSortable
@@ -285,39 +286,43 @@ Default sorting mode for the list.
 ### [](#)LISTEXCREATESTRUCT
 ```cpp
 struct LISTEXCREATESTRUCT {
-    LISTEXCOLORS      stColor { };           //All control's colors.
-    CRect             rect;                  //Initial rect.
-    CWnd*             pwndParent { };        //Parent window.
-    const LOGFONTW*   pListLogFont { };      //List font.
-    const LOGFONTW*   pHdrLogFont { };       //Header font.
-    DWORD             dwStyle { };           //Control's styles. Zero for default.
-    UINT              uID { };               //Control Id.
-    DWORD             dwListGridWidth { 1 }; //Width of the list grid.
-    DWORD             dwHdrHeight { 20 };    //Header height.
-    bool              fSortable { false };   //Is list sortable, by clicking on the header column?
-    bool              fDialogCtrl { false }; //If it's a list within dialog.
+    LISTEXCOLORS stColor { };              //All control's colors.
+    CRect        rect;                     //Initial rect.
+    CWnd*        pwndParent { };           //Parent window.
+    LOGFONTW*    pListLogFont { };         //List font.
+    LOGFONTW*    pHdrLogFont { };          //Header font.
+    DWORD        dwStyle { };              //Control's styles. Zero for default.
+    UINT         uID { };                  //Control Id.
+    DWORD        dwListGridWidth { 1 };    //Width of the list grid.
+    DWORD        dwHdrHeight { 20 };       //Header height.
+    bool         fSortable { false };      //Is list sortable, by clicking on the header column?
+    bool         fLinksUnderline { true }; //Links are displayed underlined or not.
+    bool         fDialogCtrl { false };    //If it's a list within dialog.
+    bool         fLinkTooltip { true };    //Show links toolips.
 };
 ```
 
 ### [](#)LISTEXCOLORS
 ```cpp
-struct LISTEXCOLORSTRUCT
+struct LISTEXCOLORS
 {
-    COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };            //List text color.
-    COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };              //List Bk color of the odd rows.
-    COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };              //List Bk color of the even rows.
-    COLORREF clrListGrid { RGB(220, 220, 220) };                       //List grid color.
-    COLORREF clrListTextSelected { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
-    COLORREF clrListBkSelected { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
-    COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };           //Tooltip window text color.
-    COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };               //Tooltip window bk color.
-    COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) };      //Text color of a cell that has tooltip.
-    COLORREF clrListBkCellTt { RGB(170, 170, 230) };                   //Bk color of a cell that has tooltip.
-    COLORREF clrHdrText { GetSysColor(COLOR_WINDOWTEXT) };             //List header text color.
-    COLORREF clrHdrBk { GetSysColor(COLOR_WINDOW) };                   //List header bk color.
-    COLORREF clrHdrHglInactive { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };//Header highlight inactive.
-    COLORREF clrHdrHglActive { GetSysColor(COLOR_GRADIENTACTIVECAPTION) };    //Header highlight active.
-    COLORREF clrBkNWA { GetSysColor(COLOR_WINDOW) };                   //Bk of non working area.
+    COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };       //List text color.
+    COLORREF clrListTextLink { RGB(0, 0, 200) };                  //List hyperlink text color.
+    COLORREF clrListTextSel { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
+    COLORREF clrListTextLinkSel { RGB(250, 250, 250) };           //List hyperlink text color in selected cell.
+    COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) }; //Text color of a cell that has tooltip.
+    COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };         //List Bk color of the odd rows.
+    COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };         //List Bk color of the even rows.
+    COLORREF clrListBkSel { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
+    COLORREF clrListBkCellTt { RGB(170, 170, 230) };              //Bk color of a cell that has tooltip.
+    COLORREF clrListGrid { RGB(220, 220, 220) };                  //List grid color.
+    COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };      //Tooltip window text color.
+    COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };          //Tooltip window bk color.
+    COLORREF clrHdrText { GetSysColor(COLOR_WINDOWTEXT) };        //List header text color.
+    COLORREF clrHdrBk { GetSysColor(COLOR_WINDOW) };              //List header bk color.
+    COLORREF clrHdrHglInact { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };//Header highlight inactive.
+    COLORREF clrHdrHglAct { GetSysColor(COLOR_GRADIENTACTIVECAPTION) };    //Header highlight active.
+    COLORREF clrNWABk { GetSysColor(COLOR_WINDOW) };              //Bk of Non Working Area.
 };
 ```
 This struct is also used in `SetColor` method.
@@ -345,13 +350,20 @@ enum class EListExSortMode : short
 ## [](#)Notification Messages
 These messages are sent to the parent window in form of `WM_NOTIFY` windows message.  
 The `lParam` will contain pointer to `NMHDR` standard windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
+
 ### [](#)LISTEX_MSG_MENUSELECTED
 User defined menu selected. See [menu](#menu) section.
 
 ### [](#)LISTEX_MSG_CELLCOLOR
 Sent to the parent to retrieve current cell color. You can set cells' colors whether handling this message or using [`SetCellColor`](#setcolor) member function.  
 This message has higher priority over `SetCellColor` method.
-   
+
+### [](#)LISTEX_MSG_LINKCLICK
+List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the `NMITEMACTIVATE` struct.  
+`NMITEMACTIVATE::lParam` will contain `wchar_t*` pointer to the `link` text of the clicked hyperlink. The `iItem` and `iSubItem` members will contain indexes of the list item/subitem the link was clicked at. 
+
+Link syntax is: `L"Text with the <link=any_link_text_here>embedded link</link>"`
+
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
 Nothing is simpler, see code below:

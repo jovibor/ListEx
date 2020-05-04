@@ -42,6 +42,18 @@ namespace LISTEX::INTERNAL
 		std::chrono::high_resolution_clock::time_point time { }; //Time when added.
 	};
 
+	/********************************************
+	* ITEMTEXT - text and links in the cell.    *
+	********************************************/
+	struct ITEMTEXT
+	{
+		ITEMTEXT(std::wstring_view wstrText, std::wstring_view wstrLink, CRect rc, bool fIsLink) :
+			wstrText(wstrText), wstrLink(wstrLink), rect(rc), fLink(fIsLink) {}
+		std::wstring wstrText { }; //Visible text.
+		std::wstring wstrLink { }; //Text within <link=...> tag.
+		CRect rect { };            //Rect text belongs to.
+		bool fLink { false };      //Is it just a text (wstrLink is empty) or text with link?
+	};
 
 	/********************************************
 	* CListEx class declaration.                *
@@ -57,6 +69,7 @@ namespace LISTEX::INTERNAL
 		BOOL DeleteItem(int iItem)override;
 		void Destroy()override;
 		[[nodiscard]] ULONGLONG GetCellData(int iItem, int iSubItem)const override;
+		[[nodiscard]] LISTEXCOLORS GetColors()const override;
 		[[nodiscard]] EListExSortMode GetColumnSortMode(int iColumn)const override;
 		[[nodiscard]] UINT GetFontSize()const override;
 		[[nodiscard]] int GetSortColumn()const override;
@@ -67,7 +80,7 @@ namespace LISTEX::INTERNAL
 		void SetCellData(int iItem, int iSubItem, ULONGLONG ullData)override;
 		void SetCellMenu(int iItem, int iSubItem, CMenu* pMenu)override;
 		void SetCellTooltip(int iItem, int iSubItem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption)override;
-		void SetColor(const LISTEXCOLORS& lcs)override;
+		void SetColors(const LISTEXCOLORS& lcs)override;
 		void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)override;
 		void SetColumnSortMode(int iColumn, EListExSortMode enSortMode)override;
 		void SetFont(const LOGFONTW* pLogFontNew)override;
@@ -86,6 +99,7 @@ namespace LISTEX::INTERNAL
 		bool HasCellColor(int iItem, int iSubItem, COLORREF& clrBk, COLORREF& clrText);
 		bool HasTooltip(int iItem, int iSubItem, std::wstring** ppwstrText = nullptr, std::wstring** ppwstrCaption = nullptr);
 		bool HasMenu(int iItem, int iSubItem, CMenu** ppMenu = nullptr);
+		std::vector<ITEMTEXT> ParseItemText(int iItem, int iSubitem);
 		void DrawItem(LPDRAWITEMSTRUCT pDIS)override;
 		afx_msg void OnPaint();
 		afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -109,14 +123,25 @@ namespace LISTEX::INTERNAL
 		afx_msg void OnDestroy();
 	private:
 		CListExHdr m_stListHeader;
-		LISTEXCOLORS m_stColor { };
+		LISTEXCOLORS m_stColors { };
 		CFont m_fontList;
+		CFont m_fontListUnderline;
 		CPen m_penGrid;
-		CWnd m_wndTt;                   //Tool-tip window.
-		TTTOOLINFOW m_stToolInfo { };   //Tool-tip info struct.
+		CWnd m_stWndTtCell;              //Cells' tool-tip window.
+		TTTOOLINFOW m_stTInfoCell { };   //Cells' tool-tip info struct.
+		CWnd m_stWndTtLink;              //Link tool-tip window.
+		TTTOOLINFOW m_stTInfoLink { };   //Cells' tool-tip info struct.
+		HCURSOR m_cursorHand { };
+		HCURSOR m_cursorDefault { };
 		LVHITTESTINFO m_stCurrCell { };
+		LVHITTESTINFO m_stCurrLink { };
 		DWORD m_dwGridWidth { 1 };		//Grid width.
 		CMenu* m_pListMenu { };			//List global menu, if set.
+		NMITEMACTIVATE m_stNMII { };
+		int m_iSortColumn { };
+		long m_lSizeFont { };       //Font size.
+		PFNLVCOMPARE m_pfnCompare { nullptr };  //Pointer to user provided compare func.
+		EListExSortMode m_enDefSortMode { EListExSortMode::SORT_LEX }; //Default sorting mode.
 		std::unordered_map<int, std::unordered_map<int, CELLTOOLTIP>> m_umapCellTt { };  //Cell's tooltips.
 		std::unordered_map<int, std::unordered_map<int, CMenu*>> m_umapCellMenu { };	 //Cell's menus.
 		std::unordered_map<int, std::unordered_map<int, ULONGLONG>> m_umapCellData { };  //Cell's custom data.
@@ -124,17 +149,19 @@ namespace LISTEX::INTERNAL
 		std::unordered_map<DWORD, ROWCOLOR> m_umapRowColor { };     //Row colors.
 		std::unordered_map<int, COLUMNCOLOR> m_umapColumnColor { }; //Column colors.
 		std::unordered_map<int, EListExSortMode> m_umapColumnSortMode { };              //Column sorting mode.
-		NMITEMACTIVATE m_stNMII { };
-		int m_iSortColumn { };
-		long m_lSizeFont { };       //Font size.
-		PFNLVCOMPARE m_pfnCompare { nullptr };  //Pointer to user provided compare func.
-		EListExSortMode m_enDefSortMode { EListExSortMode::SORT_LEX }; //Default sorting mode.
 		bool m_fCreated { false };  //Is created.
 		bool m_fSortable { false }; //Is list sortable.
 		bool m_fSortAscending { };  //Sorting type (ascending, descending).
+		bool m_fLinksUnderline { }; //Links are displayed underlined or not.
+		bool m_fLinkTooltip { };    //Show links toolips.
 		bool m_fVirtual { false };  //Whether list is virtual (LVS_OWNERDATA) or not.
-		bool m_fTtShown { false };  //Is tool-tip shown atm.
-	};
+		bool m_fTtCellShown { false };  //Is cell's tool-tip shown atm.
+		bool m_fTtLinkShown { false };  //Is link's tool-tip shown atm.
+		bool m_fLDownAtLink { false };  //Left mouse down on link.
+		CRect m_rcLinkCurr { };         //Current link's rect;
+	public:
+		afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+};
 
 	/*******************Setting a manifest for ComCtl32.dll version 6.***********************/
 #ifdef _UNICODE

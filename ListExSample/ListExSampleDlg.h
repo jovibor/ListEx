@@ -18,7 +18,7 @@ class CListExSampleDlg : public CDialogEx
 public:
 	CListExSampleDlg(CWnd* pParent = nullptr);
 protected:
-	void DoDataExchange(CDataExchange* pDX)override;	// DDX/DDV support
+	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	afx_msg void OnListExGetDispInfo(NMHDR *pNMHDR, LRESULT *pResult);
 	void SortVecData();

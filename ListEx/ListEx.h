@@ -35,38 +35,42 @@ namespace LISTEX
 	********************************************************************************************/
 	struct LISTEXCOLORS
 	{
-		COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };            //List text color.
-		COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };              //List Bk color of the odd rows.
-		COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };              //List Bk color of the even rows.
-		COLORREF clrListGrid { RGB(220, 220, 220) };                       //List grid color.
-		COLORREF clrListTextSelected { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
-		COLORREF clrListBkSelected { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
-		COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };           //Tooltip window text color.
-		COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };               //Tooltip window bk color.
-		COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) };      //Text color of a cell that has tooltip.
-		COLORREF clrListBkCellTt { RGB(170, 170, 230) };                   //Bk color of a cell that has tooltip.
-		COLORREF clrHdrText { GetSysColor(COLOR_WINDOWTEXT) };             //List header text color.
-		COLORREF clrHdrBk { GetSysColor(COLOR_WINDOW) };                   //List header bk color.
-		COLORREF clrHdrHglInactive { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };//Header highlight inactive.
-		COLORREF clrHdrHglActive { GetSysColor(COLOR_GRADIENTACTIVECAPTION) };    //Header highlight active.
-		COLORREF clrBkNWA { GetSysColor(COLOR_WINDOW) };                   //Bk of non working area.
+		COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };       //List text color.
+		COLORREF clrListTextLink { RGB(0, 0, 200) };                  //List hyperlink text color.
+		COLORREF clrListTextSel { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
+		COLORREF clrListTextLinkSel { RGB(250, 250, 250) };           //List hyperlink text color in selected cell.
+		COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) }; //Text color of a cell that has tooltip.
+		COLORREF clrListBkRow1 { GetSysColor(COLOR_WINDOW) };         //List Bk color of the odd rows.
+		COLORREF clrListBkRow2 { GetSysColor(COLOR_WINDOW) };         //List Bk color of the even rows.
+		COLORREF clrListBkSel { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
+		COLORREF clrListBkCellTt { RGB(170, 170, 230) };              //Bk color of a cell that has tooltip.
+		COLORREF clrListGrid { RGB(220, 220, 220) };                  //List grid color.
+		COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };      //Tooltip window text color.
+		COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };          //Tooltip window bk color.
+		COLORREF clrHdrText { GetSysColor(COLOR_WINDOWTEXT) };        //List header text color.
+		COLORREF clrHdrBk { GetSysColor(COLOR_WINDOW) };              //List header bk color.
+		COLORREF clrHdrHglInact { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };//Header highlight inactive.
+		COLORREF clrHdrHglAct { GetSysColor(COLOR_GRADIENTACTIVECAPTION) };    //Header highlight active.
+		COLORREF clrNWABk { GetSysColor(COLOR_WINDOW) };              //Bk of Non Working Area.
 	};
 
 	/********************************************************************************************
 	* LISTEXCREATESTRUCT - Main initialization helper struct for CListEx::Create method.		*
 	********************************************************************************************/
 	struct LISTEXCREATESTRUCT {
-		LISTEXCOLORS stColor { };                //All control's colors.
-		CRect             rect;                  //Initial rect.
-		CWnd*             pwndParent { };        //Parent window.
-		const LOGFONTW*   pListLogFont { };      //List font.
-		const LOGFONTW*   pHdrLogFont { };       //Header font.
-		DWORD             dwStyle { };           //Control's styles. Zero for default.
-		UINT              uID { };               //Control Id.
-		DWORD             dwListGridWidth { 1 }; //Width of the list grid.
-		DWORD             dwHdrHeight { 20 };    //Header height.
-		bool              fSortable { false };   //Is list sortable, by clicking on the header column?
-		bool              fDialogCtrl { false }; //If it's a list within dialog.
+		LISTEXCOLORS stColor { };              //All control's colors.
+		CRect        rect;                     //Initial rect.
+		CWnd*        pwndParent { };           //Parent window.
+		LOGFONTW*    pListLogFont { };         //List font.
+		LOGFONTW*    pHdrLogFont { };          //Header font.
+		DWORD        dwStyle { };              //Control's styles. Zero for default.
+		UINT         uID { };                  //Control Id.
+		DWORD        dwListGridWidth { 1 };    //Width of the list grid.
+		DWORD        dwHdrHeight { 20 };       //Header height.
+		bool         fSortable { false };      //Is list sortable, by clicking on the header column?
+		bool         fLinksUnderline { true }; //Links are displayed underlined or not.
+		bool         fDialogCtrl { false };    //If it's a list within dialog.
+		bool         fLinkTooltip { true };    //Show links toolips.
 	};
 
 	/********************************************
@@ -82,6 +86,7 @@ namespace LISTEX
 		virtual BOOL DeleteItem(int nItem) = 0;
 		virtual void Destroy() = 0;
 		[[nodiscard]] virtual ULONGLONG GetCellData(int iItem, int iSubitem)const = 0;
+		[[nodiscard]] virtual LISTEXCOLORS GetColors()const = 0;
 		[[nodiscard]] virtual EListExSortMode GetColumnSortMode(int iColumn)const = 0;
 		[[nodiscard]] virtual UINT GetFontSize()const = 0;
 		[[nodiscard]] virtual int GetSortColumn()const = 0;
@@ -91,7 +96,7 @@ namespace LISTEX
 		virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
 		virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
 		virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
-		virtual void SetColor(const LISTEXCOLORS& lcs) = 0;
+		virtual void SetColors(const LISTEXCOLORS& lcs) = 0;
 		virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetColumnSortMode(int iColumn, EListExSortMode enSortMode) = 0;
 		virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
@@ -132,4 +137,5 @@ namespace LISTEX
 
 	constexpr auto LISTEX_MSG_MENUSELECTED = 0x1000U; //User defined menu item selected.
 	constexpr auto LISTEX_MSG_CELLCOLOR = 0x1001U;    //Get cell color.
+	constexpr auto LISTEX_MSG_LINKCLICK = 0x1002U;    //Hyperlink has been clicked.
 }
