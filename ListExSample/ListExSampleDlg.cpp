@@ -58,10 +58,9 @@ BOOL CListExSampleDlg::OnInitDialog()
 	{
 		m_vecData.emplace_back(VIRTLISTDATA { i,
 			L"Virtual item "
-			L"<link=0>column:0</link>"
+			L"<link=\"0\" title=\"Custom title\">column:0</link>"
 			L"/"
-			L"<link=" + std::to_wstring(i) + L">row:" + std::to_wstring(i) + L"</link>"
-			L"123",
+			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
 			L"Virtual item column:1/row:" + std::to_wstring(i % 2 ? i * i : i),
 			L"Virtual item column:2/row:" + std::to_wstring(i) });
 	}

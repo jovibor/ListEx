@@ -362,7 +362,9 @@ This message has higher priority over `SetCellColor` method.
 List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the `NMITEMACTIVATE` struct.  
 `NMITEMACTIVATE::lParam` will contain `wchar_t*` pointer to the `link` text of the clicked hyperlink. The `iItem` and `iSubItem` members will contain indexes of the list item/subitem the link was clicked at. 
 
-Link syntax is: `L"Text with the <link=any_link_text_here>embedded link</link>"`
+Hyperlink syntax is: `L"Text with the <link="any_text_here" title="Optional tool-tip text">embedded link</link>"`  
+If no optional `title` tag is provided then the `link` text itself will be used as hyperlink's tool-tip.  
+Link and title text must be quoted `""`.
 
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
