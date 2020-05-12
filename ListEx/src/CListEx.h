@@ -103,6 +103,8 @@ namespace LISTEX::INTERNAL
 		bool HasTooltip(int iItem, int iSubItem, std::wstring** ppwstrText = nullptr, std::wstring** ppwstrCaption = nullptr);
 		bool HasMenu(int iItem, int iSubItem, CMenu** ppMenu = nullptr);
 		std::vector<ITEMTEXT> ParseItemText(int iItem, int iSubitem);
+		void TtLinkHide();
+		void TtCellHide();
 		void DrawItem(LPDRAWITEMSTRUCT pDIS)override;
 		afx_msg void OnPaint();
 		afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -134,7 +136,8 @@ namespace LISTEX::INTERNAL
 		CWnd m_stWndTtCell;              //Cells' tool-tip window.
 		TTTOOLINFOW m_stTInfoCell { };   //Cells' tool-tip info struct.
 		CWnd m_stWndTtLink;              //Link tool-tip window.
-		TTTOOLINFOW m_stTInfoLink { };   //Cells' tool-tip info struct.
+		TTTOOLINFOW m_stTInfoLink { };   //Link's tool-tip info struct.
+		std::wstring m_wstrTtText { };   //Link's tool-tip current text.
 		HCURSOR m_cursorHand { };
 		HCURSOR m_cursorDefault { };
 		LVHITTESTINFO m_stCurrCell { };

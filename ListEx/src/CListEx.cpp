@@ -23,8 +23,9 @@ namespace LISTEX {
 	}
 
 	namespace INTERNAL {
-		constexpr ULONG_PTR ID_TIMER_TOOLTIP_CELL { 0x01 }; //Cell tool-tip timer ID.
-		constexpr ULONG_PTR ID_TIMER_TOOLTIP_LINK { 0x02 }; //Link tool-tip timer ID.
+		constexpr ULONG_PTR ID_TIMER_TT_CELL_CHECK { 0x01 }; //Cell tool-tip timer ID.
+		constexpr ULONG_PTR ID_TIMER_TT_LINK_CHECK { 0x02 }; //Link tool-tip timer ID.
+		constexpr ULONG_PTR ID_TIMER_TT_LINK_ACTIVATE { 0x03 }; //Link tool-tip activate timer ID.
 	}
 }
 
@@ -887,6 +888,27 @@ std::vector<ITEMTEXT> CListEx::ParseItemText(int iItem, int iSubitem)
 	return vecData;
 }
 
+void CListEx::TtLinkHide()
+{
+	m_fTtLinkShown = false;
+	m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoLink);
+	KillTimer(ID_TIMER_TT_LINK_CHECK);
+
+	m_stCurrLink.iItem = -1;
+	m_stCurrLink.iSubItem = -1;
+	m_rcLinkCurr.SetRectEmpty();
+}
+
+void CListEx::TtCellHide()
+{
+	m_fTtCellShown = false;
+	m_stCurrCell.iItem = -1;
+	m_stCurrCell.iSubItem = -1;
+
+	m_stWndTtCell.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoCell);
+	KillTimer(ID_TIMER_TT_CELL_CHECK);
+}
+
 void CListEx::MeasureItem(LPMEASUREITEMSTRUCT lpMIS)
 {
 	//Set row height according to current font's height.
@@ -1003,54 +1025,36 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 	hi.pt = pt;
 	ListView_SubItemHitTest(m_hWnd, &hi);
 
-	bool fCursorHand { false };
-	bool fTtLink { false };
+	bool fLink { false }; //Cursor at link's rect area.
 	for (auto& iter : ParseItemText(hi.iItem, hi.iSubItem))
 	{
 		if (iter.fLink && iter.rect.PtInRect(pt))
 		{
-			fCursorHand = true;
-			fTtLink = true;
+			fLink = true;
 
-			if (!m_fLDownAtLink && m_rcLinkCurr != iter.rect)
+			if (m_fLinkTooltip && !m_fLDownAtLink && m_rcLinkCurr != iter.rect)
 			{
+				TtLinkHide();
 				m_rcLinkCurr = iter.rect;
+				m_stCurrLink.iItem = hi.iItem;
+				m_stCurrLink.iSubItem = hi.iSubItem;
+				m_wstrTtText = iter.fTitle ? iter.wstrTitle : iter.wstrLink;
+				m_stTInfoLink.lpszText = m_wstrTtText.data();
 
-				if (m_fLinkTooltip) //Links tooltips flag.
-				{
-					m_fTtLinkShown = true;
-					m_stCurrLink.iItem = hi.iItem;
-					m_stCurrLink.iSubItem = hi.iSubItem;
-					m_stTInfoLink.lpszText = iter.fTitle ? iter.wstrTitle.data() : iter.wstrLink.data();
-
-					ClientToScreen(&pt);
-					m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoLink);
-					m_stWndTtLink.SendMessageW(TTM_TRACKPOSITION, 0, (LPARAM)MAKELONG(pt.x + 3, pt.y - 20));
-					m_stWndTtLink.SendMessageW(TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(&m_stTInfoLink));
-					m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, static_cast<WPARAM>(TRUE), reinterpret_cast<LPARAM>(&m_stTInfoLink));
-
-					//Timer to check whether mouse left link subitems's rect.
-					SetTimer(ID_TIMER_TOOLTIP_LINK, 200, nullptr);
-				}
+				SetTimer(ID_TIMER_TT_LINK_ACTIVATE, 400, nullptr); //Activate (show) tooltip after delay.
 			}
 			break;
 		}
 	}
-	SetCursor(fCursorHand ? m_cursorHand : m_cursorDefault);
+	SetCursor(fLink ? m_cursorHand : m_cursorDefault);
 
 	//Link's tooltip area is under cursor.
-	if (fTtLink)
+	if (fLink)
 	{
 		//If there is cell's tooltip atm hide it.
 		if (m_fTtCellShown)
-		{
-			m_fTtCellShown = false;
-			m_stCurrCell.iItem = -1;
-			m_stCurrCell.iSubItem = -1;
+			TtCellHide();
 
-			m_stWndTtCell.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoCell);
-			KillTimer(ID_TIMER_TOOLTIP_CELL);
-		}
 		return; //Do not process further, cursor is on the link's rect.
 	}
 
@@ -1058,13 +1062,7 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 
 	//If there was link's tool-tip shown, hide it.
 	if (m_fTtLinkShown)
-	{
-		m_rcLinkCurr.SetRectEmpty();
-		m_fTtLinkShown = false;
-		m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoLink);
-		KillTimer(ID_TIMER_TOOLTIP_LINK);
-	}
-
+		TtLinkHide();
 
 	std::wstring *pwstrTt { }, *pwstrCaption { };
 	if (HasTooltip(hi.iItem, hi.iSubItem, &pwstrTt, &pwstrCaption))
@@ -1084,19 +1082,17 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 			m_stWndTtCell.SendMessageW(TTM_TRACKACTIVATE, static_cast<WPARAM>(TRUE), reinterpret_cast<LPARAM>(&m_stTInfoCell));
 
 			//Timer to check whether mouse left subitem's rect.
-			SetTimer(ID_TIMER_TOOLTIP_CELL, 200, nullptr);
+			SetTimer(ID_TIMER_TT_CELL_CHECK, 200, nullptr);
 		}
 	}
 	else
 	{
-		m_stCurrCell.iItem = -1;
-		m_stCurrCell.iSubItem = -1;
-
-		//If there is shown tooltip window.
 		if (m_fTtCellShown)
+			TtCellHide();
+		else
 		{
-			m_fTtCellShown = false;
-			m_stWndTtCell.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoCell);
+			m_stCurrCell.iItem = -1;
+			m_stCurrCell.iSubItem = -1;
 		}
 	}
 }
@@ -1200,41 +1196,45 @@ BOOL CListEx::OnCommand(WPARAM wParam, LPARAM lParam)
 
 void CListEx::OnTimer(UINT_PTR nIDEvent)
 {
-	CPoint pt;
-	GetCursorPos(&pt);
-	ScreenToClient(&pt);
+	CPoint ptScreen;
+	GetCursorPos(&ptScreen);
+	CPoint ptClient = ptScreen;
+	ScreenToClient(&ptClient);
 	LVHITTESTINFO hitInfo { };
-	hitInfo.pt = pt;
+	hitInfo.pt = ptClient;
 	ListView_SubItemHitTest(m_hWnd, &hitInfo);
 
 	//Checking if mouse left list's subitem rect,
 	//if so — hiding tooltip and killing timer.
 	switch (nIDEvent)
 	{
-	case ID_TIMER_TOOLTIP_CELL:
+	case ID_TIMER_TT_CELL_CHECK:
 		//If cursor is still hovers subitem then do nothing.
-		if (m_stCurrCell.iItem == hitInfo.iItem && m_stCurrCell.iSubItem == hitInfo.iSubItem)
-			break;
-
-		//If it left.
-		m_fTtCellShown = false;
-		m_stWndTtCell.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoCell);
-		KillTimer(ID_TIMER_TOOLTIP_CELL);
-
-		m_stCurrCell.iItem = -1;
-		m_stCurrCell.iSubItem = -1;
+		if (m_stCurrCell.iItem != hitInfo.iItem || m_stCurrCell.iSubItem != hitInfo.iSubItem)
+			TtCellHide();
 		break;
-	case ID_TIMER_TOOLTIP_LINK:
-		if (m_stCurrLink.iItem == hitInfo.iItem && m_stCurrLink.iSubItem == hitInfo.iSubItem)
-			break;
+	case ID_TIMER_TT_LINK_CHECK:
+		//If cursor has left link subitem's rect.
+		if (m_stCurrLink.iItem != hitInfo.iItem || m_stCurrLink.iSubItem != hitInfo.iSubItem)
+			TtLinkHide();
+		break;
+	case ID_TIMER_TT_LINK_ACTIVATE:
+		if (m_rcLinkCurr.PtInRect(ptClient))
+		{
+			m_fTtLinkShown = true;
 
-		m_fTtLinkShown = false;
-		m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoLink);
-		KillTimer(ID_TIMER_TOOLTIP_LINK);
+			m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, (WPARAM)FALSE, (LPARAM)(LPTOOLINFO)&m_stTInfoLink);
+			m_stWndTtLink.SendMessageW(TTM_TRACKPOSITION, 0, (LPARAM)MAKELONG(ptScreen.x + 3, ptScreen.y - 20));
+			m_stWndTtLink.SendMessageW(TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(&m_stTInfoLink));
+			m_stWndTtLink.SendMessageW(TTM_TRACKACTIVATE, static_cast<WPARAM>(TRUE), reinterpret_cast<LPARAM>(&m_stTInfoLink));
 
-		m_stCurrLink.iItem = -1;
-		m_stCurrLink.iSubItem = -1;
-		m_rcLinkCurr.SetRectEmpty();
+			//Timer to check whether mouse left link subitems's rect.
+			SetTimer(ID_TIMER_TT_LINK_CHECK, 200, nullptr);
+		}
+		else
+			m_rcLinkCurr.SetRectEmpty();
+
+		KillTimer(ID_TIMER_TT_LINK_ACTIVATE);
 		break;
 	}
 }
