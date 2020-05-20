@@ -23,9 +23,9 @@ namespace LISTEX {
 	}
 
 	namespace INTERNAL {
-		constexpr ULONG_PTR ID_TIMER_TT_CELL_CHECK { 0x01 }; //Cell tool-tip timer ID.
-		constexpr ULONG_PTR ID_TIMER_TT_LINK_CHECK { 0x02 }; //Link tool-tip timer ID.
-		constexpr ULONG_PTR ID_TIMER_TT_LINK_ACTIVATE { 0x03 }; //Link tool-tip activate timer ID.
+		constexpr ULONG_PTR ID_TIMER_TT_CELL_CHECK { 0x01 };    //Cell tool-tip check-timer ID.
+		constexpr ULONG_PTR ID_TIMER_TT_LINK_CHECK { 0x02 };    //Link tool-tip check-timer ID.
+		constexpr ULONG_PTR ID_TIMER_TT_LINK_ACTIVATE { 0x03 }; //Link tool-tip activate-timer ID.
 	}
 }
 
@@ -172,32 +172,28 @@ int CALLBACK CListEx::DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPar
 		LONGLONG llData1 { }, llData2 { };
 		StrToInt64ExW(wstrItem1.data(), STIF_SUPPORT_HEX, &llData1);
 		StrToInt64ExW(wstrItem2.data(), STIF_SUPPORT_HEX, &llData2);
-
-		if ((llData1 - llData2) < 0)
-			iCompare = -1;
-		else if ((llData1 - llData2) > 0)
-			iCompare = 1;
+		iCompare = llData1 != llData2 ? (llData1 - llData2 < 0 ? -1 : 1) : 0;
 	}
 	break;
 	}
 
-	int result = 0;
+	int iResult = 0;
 	if (pListCtrl->GetSortAscending())
 	{
 		if (iCompare < 0)
-			result = -1;
+			iResult = -1;
 		else if (iCompare > 0)
-			result = 1;
+			iResult = 1;
 	}
 	else
 	{
 		if (iCompare < 0)
-			result = 1;
+			iResult = 1;
 		else if (iCompare > 0)
-			result = -1;
+			iResult = -1;
 	}
 
-	return result;
+	return iResult;
 }
 
 BOOL CListEx::DeleteAllItems()
@@ -538,6 +534,9 @@ void CListEx::SetFontSize(UINT uiSize)
 	lf.lfHeight = m_lSizeFont = uiSize;
 	m_fontList.DeleteObject();
 	m_fontList.CreateFontIndirectW(&lf);
+	lf.lfUnderline = 1;
+	m_fontListUnderline.DeleteObject();
+	m_fontListUnderline.CreateFontIndirectW(&lf);
 
 	//To get WM_MEASUREITEM msg after changing font.
 	CRect rc;
@@ -935,7 +934,7 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 	case ODA_SELECT:
 	case ODA_DRAWENTIRE:
 	{
-		for (int i = 0; i < GetHeaderCtrl().GetItemCount(); i++)
+		for (auto i = 0; i < GetHeaderCtrl().GetItemCount(); ++i)
 		{
 			COLORREF clrText, clrBk, clrTextLink;
 			//Subitems' draw routine. Colors depending on whether subitem selected or not,
@@ -987,7 +986,8 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 					pDC->SelectObject(m_fontList);
 				}
 
-				ExtTextOutW(pDC->m_hDC, iter.rect.left, iter.rect.top, ETO_CLIPPED, rcText, iter.wstrText.data(), static_cast<UINT>(iter.wstrText.size()), nullptr);
+				ExtTextOutW(pDC->m_hDC, iter.rect.left, iter.rect.top, ETO_CLIPPED,
+					rcText, iter.wstrText.data(), static_cast<UINT>(iter.wstrText.size()), nullptr);
 			}
 
 			//Drawing Subitem's rect lines. 
@@ -1026,7 +1026,7 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 	ListView_SubItemHitTest(m_hWnd, &hi);
 
 	bool fLink { false }; //Cursor at link's rect area.
-	for (auto& iter : ParseItemText(hi.iItem, hi.iSubItem))
+	for (const auto& iter : ParseItemText(hi.iItem, hi.iSubItem))
 	{
 		if (iter.fLink && iter.rect.PtInRect(pt))
 		{
@@ -1289,19 +1289,19 @@ void CListEx::OnHdnTrack(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	//*pResult = 0;
 }
 
-void CListEx::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar * pScrollBar)
+void CListEx::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	CMFCListCtrl::OnVScroll(nSBCode, nPos, pScrollBar);
 }
 
-void CListEx::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar * pScrollBar)
+void CListEx::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	GetHeaderCtrl().RedrawWindow();
 
 	CMFCListCtrl::OnHScroll(nSBCode, nPos, pScrollBar);
 }
 
-BOOL CListEx::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
+BOOL CListEx::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
 	if (!m_fCreated)
 		return FALSE;
@@ -1327,11 +1327,10 @@ BOOL CListEx::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 	return CMFCListCtrl::OnNotify(wParam, lParam, pResult);
 }
 
-void CListEx::OnLvnColumnClick(NMHDR* /*pNMHDR*/, LRESULT * pResult)
+void CListEx::OnLvnColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	//Just an empty handler. Without it all works fine, but assert 
 	//triggers in Debug mode when clicking on header.
-	*pResult = 0;
 }
 
 void CListEx::OnDestroy()

@@ -53,8 +53,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
-	constexpr auto iVirtualDataSize { 10 };
-	for (unsigned i = 0; i < iVirtualDataSize; i++)
+	constexpr auto iVirtualDataSize { 11 };
+	for (unsigned i = 0; i < iVirtualDataSize; ++i)
 	{
 		m_vecData.emplace_back(VIRTLISTDATA { i,
 			L"Virtual item "
