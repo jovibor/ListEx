@@ -288,7 +288,7 @@ Default sorting mode for the list.
 struct LISTEXCREATESTRUCT {
     LISTEXCOLORS stColor { };              //All control's colors.
     CRect        rect;                     //Initial rect.
-    CWnd*        pwndParent { };           //Parent window.
+    CWnd*        pParent { };              //Parent window.
     LOGFONTW*    pListLogFont { };         //List font.
     LOGFONTW*    pHdrLogFont { };          //Header font.
     DWORD        dwStyle { };              //Control's styles. Zero for default.

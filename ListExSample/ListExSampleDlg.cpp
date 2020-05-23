@@ -35,7 +35,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	LISTEXCREATESTRUCT lcs;
 	lcs.uID = IDC_LISTEX;
-	lcs.pwndParent = this;
+	lcs.pParent = this;
 	lcs.fDialogCtrl = true;
 	lcs.dwHdrHeight = 25;
 	lcs.fSortable = true;
@@ -49,7 +49,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
 	m_myList->SetHdrColumnColor(0, RGB(70, 70, 70));
 	m_myList->SetHdrColumnColor(1, RGB(125, 125, 125));
-	m_myList->SetHdrColumnColor(2, RGB(200, 200, 200));
+//	m_myList->SetHdrColumnColor(2, RGB(200, 200, 200));
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
