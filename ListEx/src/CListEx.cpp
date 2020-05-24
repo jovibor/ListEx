@@ -79,7 +79,7 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 	m_fVirtual = dwStyle & LVS_OWNERDATA;
 	m_stColors = lcs.stColor;
 	m_fSortable = lcs.fSortable;
-	m_fLinksUnderline = lcs.fLinksUnderline;
+	m_fLinksUnderline = lcs.fLinkUnderline;
 	m_fLinkTooltip = lcs.fLinkTooltip;
 
 	if (!m_stWndTtCell.CreateEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, TTS_BALLOON | TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
