@@ -45,8 +45,14 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
 
 	m_myList->InsertColumn(0, L"Test column 0", 0, 200);
-	m_myList->InsertColumn(1, L"Test column 1", 0, 200);
-	m_myList->InsertColumn(2, L"Test column 2", 0, 200);
+	//First (0 index) column is always left aligned by default.
+	//To change its alignment SetColumn() must be called explicitly.
+	LVCOLUMNW stCol { };
+	stCol.mask = LVCF_FMT;
+	stCol.fmt = LVCFMT_CENTER;
+	m_myList->SetColumn(0, &stCol);
+	m_myList->InsertColumn(1, L"Test column 1", LVCFMT_CENTER, 200);
+	m_myList->InsertColumn(2, L"Test column 2", LVCFMT_CENTER, 200);
 	m_myList->SetHdrColumnColor(0, RGB(70, 70, 70));
 	m_myList->SetHdrColumnColor(1, RGB(125, 125, 125));
 	m_myList->SetHdrColumnColor(2, RGB(200, 200, 200));
@@ -61,7 +67,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 			L"<link=\"0\" title=\"Custom title\">column:0</link>"
 			L"/"
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
-			L"Virtual item column:1/row:" + std::to_wstring(i % 2 ? i * i : i),
+			L"Virtual item column:1/row:" + std::to_wstring((i % 2) ? i * i : i),
 			L"Virtual item column:2/row:" + std::to_wstring(i) });
 	}
 	m_myList->SetItemCountEx(iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
