@@ -18,9 +18,8 @@ namespace LISTEX::INTERNAL
 	class CListEx final : public IListEx
 	{
 		struct SCELLTOOLTIP;
-		struct SCOLUMNCOLOR;
-		struct SROWCOLOR;
-		struct SITEMTEXT;
+		struct SCOLROWCLR;
+		struct SITEMDATA;
 	public:
 		bool Create(const LISTEXCREATESTRUCT& lcs)override;
 		void CreateDialogCtrl(UINT uCtrlID, CWnd* pParent)override;
@@ -39,6 +38,7 @@ namespace LISTEX::INTERNAL
 		[[nodiscard]] UINT MapIndexToID(UINT nItem)const;
 		void SetCellColor(int iItem, int iSubItem, COLORREF clrBk, COLORREF clrText)override;
 		void SetCellData(int iItem, int iSubItem, ULONGLONG ullData)override;
+		void SetCellIcon(int iItem, int iSubItem, int iIndex)override; //Icon index in list's image list.
 		void SetCellMenu(int iItem, int iSubItem, CMenu* pMenu)override;
 		void SetCellTooltip(int iItem, int iSubItem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption)override;
 		void SetColors(const LISTEXCOLORS& lcs)override;
@@ -60,7 +60,8 @@ namespace LISTEX::INTERNAL
 		bool HasCellColor(int iItem, int iSubItem, COLORREF& clrBk, COLORREF& clrText);
 		bool HasTooltip(int iItem, int iSubItem, std::wstring** ppwstrText = nullptr, std::wstring** ppwstrCaption = nullptr);
 		bool HasMenu(int iItem, int iSubItem, CMenu** ppMenu = nullptr);
-		std::vector<SITEMTEXT> ParseItemText(int iItem, int iSubitem);
+		int HasIcon(int iItem, int iSubItem); //Does cell have an icon associated.
+		auto ParseItemText(int iItem, int iSubitem)->std::vector<SITEMDATA>;
 		void TtLinkHide();
 		void TtCellHide();
 		void DrawItem(LPDRAWITEMSTRUCT pDIS)override;
@@ -108,11 +109,12 @@ namespace LISTEX::INTERNAL
 		PFNLVCOMPARE m_pfnCompare { nullptr };  //Pointer to user provided compare func.
 		EListExSortMode m_enDefSortMode { EListExSortMode::SORT_LEX }; //Default sorting mode.
 		std::unordered_map<int, std::unordered_map<int, SCELLTOOLTIP>> m_umapCellTt { }; //Cell's tooltips.
-		std::unordered_map<int, std::unordered_map<int, CMenu*>> m_umapCellMenu { };    //Cell's menus.
-		std::unordered_map<int, std::unordered_map<int, ULONGLONG>> m_umapCellData { }; //Cell's custom data.
+		std::unordered_map<int, std::unordered_map<int, CMenu*>> m_umapCellMenu { };     //Cell's menus.
+		std::unordered_map<int, std::unordered_map<int, ULONGLONG>> m_umapCellData { };  //Cell's custom data.
 		std::unordered_map<int, std::unordered_map<int, LISTEXCELLCOLOR>> m_umapCellColor { }; //Cell's colors.
-		std::unordered_map<DWORD, SROWCOLOR> m_umapRowColor { };            //Row colors.
-		std::unordered_map<int, SCOLUMNCOLOR> m_umapColumnColor { };        //Column colors.
+		std::unordered_map<int, std::unordered_map<int, int>> m_umapCellIcon { }; //Cell's icon.
+		std::unordered_map<DWORD, SCOLROWCLR> m_umapRowColor { };            //Row colors.
+		std::unordered_map<int, SCOLROWCLR> m_umapColumnColor { };        //Column colors.
 		std::unordered_map<int, EListExSortMode> m_umapColumnSortMode { }; //Column sorting mode.
 		bool m_fCreated { false };     //Is created.
 		bool m_fSortable { false };    //Is list sortable.

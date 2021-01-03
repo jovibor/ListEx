@@ -94,6 +94,7 @@ namespace LISTEX
 		[[nodiscard]] virtual bool IsCreated()const = 0;
 		virtual void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
+		virtual void SetCellIcon(int iItem, int iSubitem, int iIndex) = 0;
 		virtual void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu) = 0;
 		virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
 		virtual void SetColors(const LISTEXCOLORS& lcs) = 0;
@@ -136,6 +137,7 @@ namespace LISTEX
 	****************************************************************************/
 
 	constexpr auto LISTEX_MSG_MENUSELECTED = 0x1000U; //User defined menu item selected.
-	constexpr auto LISTEX_MSG_CELLCOLOR = 0x1001U;    //Get cell color.
-	constexpr auto LISTEX_MSG_LINKCLICK = 0x1002U;    //Hyperlink has been clicked.
+	constexpr auto LISTEX_MSG_GETCOLOR = 0x1001U;     //Get cell color.
+	constexpr auto LISTEX_MSG_GETICON = 0x1002U;      //Get cell icon.
+	constexpr auto LISTEX_MSG_LINKCLICK = 0x1003U;    //Hyperlink has been clicked.
 }

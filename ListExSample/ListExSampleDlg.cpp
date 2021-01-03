@@ -13,6 +13,8 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListExGetDispInfo)
+	ON_NOTIFY(LISTEX_MSG_GETCOLOR, IDC_LISTEX, &CListExSampleDlg::OnListExGetColor)
+	ON_NOTIFY(LISTEX_MSG_GETICON, IDC_LISTEX, &CListExSampleDlg::OnListExGetIcon)
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
@@ -62,13 +64,19 @@ BOOL CListExSampleDlg::OnInitDialog()
 	constexpr auto iVirtualDataSize { 11 };
 	for (unsigned i = 0; i < iVirtualDataSize; ++i)
 	{
-		m_vecData.emplace_back(VIRTLISTDATA { i,
-			L"Virtual item "
-			L"<link=\"0\" title=\"Custom title\">column:0</link>"
+		m_vecData.emplace_back(VIRTLISTDATA
+			{
+				i,
+				L"Virtual item "
+				L"<link=\"0\" title=\"Custom title\">column:0</link>"
 			L"/"
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
 			L"Virtual item column:1/row:" + std::to_wstring((i % 2) ? i * i : i),
-			L"Virtual item column:2/row:" + std::to_wstring(i) });
+			L"Virtual item column:2/row:" + std::to_wstring(i),
+			i == 2 ? true : false,
+			i == 7 ? true : false,
+			i == 7 ? LISTEXCELLCOLOR { RGB(0, 220, 0) } : LISTEXCELLCOLOR { }
+			});
 	}
 	m_myList->SetItemCountEx(iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
 
@@ -88,6 +96,12 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetItemText(2, 2, L"Test item - row:2/column:2....");
 	m_myList->SetItemText(3, 2, L"Test item - row:3/column:2..");
 	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
+
+	m_myList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
+	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
+	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
+	m_myList->SetRowColor(7, RGB(0, 220, 0));
+	m_myList->SetColumnColor(1, RGB(0, 220, 220));
 	*/
 
 	//Set list's cells colors, menu, tool-tips.
@@ -101,11 +115,11 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetListMenu(&m_menuList);
 	m_myList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
 	m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
-	m_myList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
-	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
-	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
-	m_myList->SetRowColor(7, RGB(0, 220, 0));
-	m_myList->SetColumnColor(1, RGB(0, 220, 220));
+
+	m_stImgList.Create(16, 16, ILC_COLOR | ILC_MASK, 0, 1);
+	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
+		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
+	m_myList->SetImageList(&m_stImgList, LVSIL_NORMAL);
 
 	return TRUE;
 }
@@ -181,16 +195,16 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 		break;
 		case LISTEX_MSG_LINKCLICK:
 			MessageBoxW(reinterpret_cast<LPWSTR>(pNMI->lParam));
-		break;
+			break;
 		}
 	}
 
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 
-void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
+void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
-	auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
+	const auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	LVITEMW* pItem = &pDispInfo->item;
 
 	if (pItem->mask & LVIF_TEXT)
@@ -208,7 +222,35 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 			break;
 		}
 	}
-	*pResult = 0;
+}
+
+void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	//Virtual data colors.
+	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
+		return;
+
+	if (pNMI->iSubItem == 1) //Column number 1 colored to RGB(0, 220, 220).
+	{
+		static LISTEXCELLCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
+		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
+	}
+
+	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fColor)
+		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData.at(static_cast<size_t>(pNMI->iItem)).clr);
+}
+
+void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	//Virtual data icons.
+	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+
+	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
+		return;
+
+	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fIcon && pNMI->iSubItem == 1)
+		pNMI->lParam = 0; //Icon index in list's image list.
 }
 
 void CListExSampleDlg::SortVecData()

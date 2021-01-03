@@ -230,6 +230,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ListExSample.ico" />
+    <Image Include="res\test.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

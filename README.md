@@ -22,7 +22,8 @@
    * [EListExSortMode](#elistexsortmode)
 * [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
    * [LISTEX_MSG_MENUSELECTED](#listex_msg_menuselected)
-   * [LISTEX_MSG_CELLCOLOR](#listex_msg_cellcolor)
+   * [LISTEX_MSG_GETCOLOR](#listex_msg_getcolor)
+   * [LISTEX_MSG_GETICON](#listex_msg_geticon)
    * [LISTEX_MSG_LINKCLICK](#listex_msg_linkclick)
 * [Example](#example)
 * [Appearance](#appearance)
@@ -328,7 +329,7 @@ struct LISTEXCOLORS
 ```
 This struct is also used in `SetColor` method.
 
-### [](#)LISTEXCELLCOLOR
+### [](#)LISTEXGETCOLOR
 ```cpp
 struct LISTEXCELLCOLOR
 {
@@ -337,7 +338,20 @@ struct LISTEXCELLCOLOR
 };
 using PLISTEXCELLCOLOR = LISTEXCELLCOLOR*;
 ```
-Used as a response to `LISTEX_MSG_CELLCOLOR` message.
+Used as a response to `LISTEX_MSG_GETCOLOR` message.
+
+### [](#)LISTEXGETICON
+```cpp
+void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+    //Virtual data icons.
+    const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+    ...
+	
+    pNMI->lParam = SomeIndex; //Icon index in list's image list.
+}
+```
+This message is used in Virtual List mode to obtain icon index in list image list.
 
 ### [](#)EListExSortMode
 Enum showing sorting type for list columns.

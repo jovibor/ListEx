@@ -49,8 +49,8 @@ namespace LISTEX::INTERNAL
 		COLORREF m_clrHglActive { };
 		DWORD m_dwHeaderHeight { 19 }; //Standard (default) height.
 		std::unordered_map<int, SHDRCOLOR> m_umapClrColumn { }; //Color of individual columns.
-		bool m_fSortable { false }; //Need to draw sortable triangle or not?
 		int m_iSortColumn { -1 };   //Column to draw sorting triangle at. -1 is to avoid triangle before first clicking.
+		bool m_fSortable { false }; //Need to draw sortable triangle or not?
 		bool m_fSortAscending { };  //Sorting type.
 	};
 }
