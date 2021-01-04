@@ -26,6 +26,7 @@ protected:
 	afx_msg void OnListExGetDispInfo(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnListExGetColor(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnListExGetIcon(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnListHdrIconClick(NMHDR *pNMHDR, LRESULT *pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP()
 protected:

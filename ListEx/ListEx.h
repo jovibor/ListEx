@@ -102,9 +102,11 @@ namespace LISTEX
 		virtual void SetColumnSortMode(int iColumn, EListExSortMode enSortMode) = 0;
 		virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
 		virtual void SetFontSize(UINT uiSize) = 0;
-		virtual void SetHdrHeight(DWORD dwHeight) = 0;
-		virtual void SetHdrFont(const LOGFONTW* pLogFontNew) = 0;
 		virtual void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
+		virtual void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false) = 0; //Icon index in image list for given column.
+		virtual void SetHdrFont(const LOGFONTW* pLogFontNew) = 0;
+		virtual void SetHdrHeight(DWORD dwHeight) = 0;
+		virtual void SetHdrImageList(CImageList* pList) = 0;
 		virtual void SetListMenu(CMenu* pMenu) = 0;
 		virtual void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr,
@@ -140,4 +142,5 @@ namespace LISTEX
 	constexpr auto LISTEX_MSG_GETCOLOR = 0x1001U;     //Get cell color.
 	constexpr auto LISTEX_MSG_GETICON = 0x1002U;      //Get cell icon.
 	constexpr auto LISTEX_MSG_LINKCLICK = 0x1003U;    //Hyperlink has been clicked.
+	constexpr auto LISTEX_MSG_HDRICONCLICK = 0x1004U; //Header icon has been clicked.
 }

@@ -15,6 +15,7 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListExGetDispInfo)
 	ON_NOTIFY(LISTEX_MSG_GETCOLOR, IDC_LISTEX, &CListExSampleDlg::OnListExGetColor)
 	ON_NOTIFY(LISTEX_MSG_GETICON, IDC_LISTEX, &CListExSampleDlg::OnListExGetIcon)
+	ON_NOTIFY(LISTEX_MSG_HDRICONCLICK, IDC_LISTEX, &CListExSampleDlg::OnListHdrIconClick)
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
@@ -120,6 +121,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
 		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
 	m_myList->SetImageList(&m_stImgList, LVSIL_NORMAL);
+	m_myList->SetHdrImageList(&m_stImgList);
+	m_myList->SetHdrColumnIcon(0, 0, true);
 
 	return TRUE;
 }
@@ -251,6 +254,14 @@ void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fIcon && pNMI->iSubItem == 1)
 		pNMI->lParam = 0; //Icon index in list's image list.
+}
+
+void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	const auto pNMI = reinterpret_cast<NMHEADERW*>(pNMHDR);
+	
+	const auto wstr = L"Header icon clicked at column: " + std::to_wstring(pNMI->iItem);
+	MessageBox(wstr.data());
 }
 
 void CListExSampleDlg::SortVecData()

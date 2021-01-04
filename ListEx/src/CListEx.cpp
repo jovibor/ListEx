@@ -605,6 +605,15 @@ void CListEx::SetHdrHeight(DWORD dwHeight)
 	GetHeaderCtrl().RedrawWindow();
 }
 
+void CListEx::SetHdrImageList(CImageList* pList)
+{
+	assert(IsCreated());
+	if (!IsCreated())
+		return;
+
+	GetHeaderCtrl().SetImageList(pList);
+}
+
 void CListEx::SetHdrFont(const LOGFONTW* pLogFontNew)
 {
 	assert(IsCreated());
@@ -625,6 +634,15 @@ void CListEx::SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)
 	GetHeaderCtrl().SetColumnColor(iColumn, clrBk, clrText);
 	Update(0);
 	GetHeaderCtrl().RedrawWindow();
+}
+
+void CListEx::SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick)
+{
+	assert(IsCreated());
+	if (!IsCreated())
+		return;
+
+	GetHeaderCtrl().SetColumnIcon(iColumn, iIconIndex, fClick);
 }
 
 void CListEx::SetListMenu(CMenu* pMenu)
@@ -811,12 +829,12 @@ int CListEx::HasIcon(int iItem, int iSubItem)
 
 	if (m_fVirtual) //In Virtual List mode asking parent for the icon index in image list.
 	{
-		const auto iCtrlID = GetDlgCtrlID();
-		NMITEMACTIVATE nmii { { m_hWnd, static_cast<UINT>(iCtrlID), LISTEX_MSG_GETICON } };
+		const auto uCtrlID = static_cast<UINT>(GetDlgCtrlID());
+		NMITEMACTIVATE nmii { { m_hWnd, uCtrlID, LISTEX_MSG_GETICON } };
 		nmii.iItem = iItem;
 		nmii.iSubItem = iSubItem;
 		nmii.lParam = -1; //Default, no icon.
-		GetParent()->SendMessageW(WM_NOTIFY, static_cast<WPARAM>(iCtrlID), reinterpret_cast<LPARAM>(&nmii));
+		GetParent()->SendMessageW(WM_NOTIFY, static_cast<WPARAM>(uCtrlID), reinterpret_cast<LPARAM>(&nmii));
 		iRet = static_cast<int>(nmii.lParam);
 	}
 	else
@@ -1078,8 +1096,6 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 		}
 	}
 	break;
-	case ODA_FOCUS:
-		break;
 	default:
 		break;
 	}

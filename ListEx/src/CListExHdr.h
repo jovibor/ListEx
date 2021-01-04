@@ -16,25 +16,25 @@ namespace LISTEX::INTERNAL
 	********************************************/
 	class CListExHdr final : public CMFCHeaderCtrl
 	{
-		/********************************************
-		* SHDRCOLOR - header column colors.         *
-		********************************************/
-		struct SHDRCOLOR
-		{
-			COLORREF clrBk { };   //Background color.
-			COLORREF clrText { }; //Text color.
-		};
+		struct SHDRCOLOR;
+		struct SHDRICON;
 	public:
 		explicit CListExHdr();
+		~CListExHdr();
 		void SetHeight(DWORD dwHeight);
 		void SetFont(const LOGFONTW* pLogFontNew);
 		void SetColor(const LISTEXCOLORS& lcs);
 		void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText);
+		void SetColumnIcon(int iColumn, int iIconIndex, bool fClick);
 		void SetSortable(bool fSortable);
 		void SetSortArrow(int iColumn, bool fAscending);
+	private:
+		[[nodiscard]] SHDRICON* HasIcon(int iColumn);
 	protected:
-		afx_msg void OnDrawItem(CDC* pDC, int iItem, CRect rect, BOOL bIsPressed, BOOL bIsHighlighted)override;
+		afx_msg void OnDrawItem(CDC* pDC, int iItem, CRect rcOrig, BOOL bIsPressed, BOOL bIsHighlighted)override;
 		afx_msg LRESULT OnLayout(WPARAM wParam, LPARAM lParam);
+		afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+		afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 		afx_msg void OnDestroy();
 		DECLARE_MESSAGE_MAP()
 	private:
@@ -48,7 +48,8 @@ namespace LISTEX::INTERNAL
 		COLORREF m_clrHglInactive { };
 		COLORREF m_clrHglActive { };
 		DWORD m_dwHeaderHeight { 19 }; //Standard (default) height.
-		std::unordered_map<int, SHDRCOLOR> m_umapClrColumn { }; //Color of individual columns.
+		std::unordered_map<int, SHDRCOLOR> m_umapColors { }; //Colors for columns.
+		std::unordered_map<int, SHDRICON> m_umapIcons { };   //Icons for columns.
 		int m_iSortColumn { -1 };   //Column to draw sorting triangle at. -1 is to avoid triangle before first clicking.
 		bool m_fSortable { false }; //Need to draw sortable triangle or not?
 		bool m_fSortAscending { };  //Sorting type.

@@ -14,6 +14,7 @@
 * [Sorting](#sorting)
    * [mode](#virtual-mode)
 * [Public Methods](#public-methods)
+   * [SetHdrColumnIcon](#sethdrcolumnicon)
    * [SetSortable](#setsortable)
 * [Structures](#structures)
    * [LISTEXCREATESTRUCT](#listexcreatestruct)
@@ -25,6 +26,7 @@
    * [LISTEX_MSG_GETCOLOR](#listex_msg_getcolor)
    * [LISTEX_MSG_GETICON](#listex_msg_geticon)
    * [LISTEX_MSG_LINKCLICK](#listex_msg_linkclick)
+   * [LISTEX_MSG_HDRICONCLICK](#listex_msg_hdriconclick)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -282,6 +284,13 @@ The comparison function must be either a static member of a class or a stand-alo
 `EListExSortMode enSortMode`  
 Default sorting mode for the list.
 
+### [](#)SetHdrColumnIcon
+```cpp
+void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false);
+```
+Sets the icon index in the header's image list for a given `iColumn`. To remove icon from column set the `iIconIndex` to `-1`.  
+Flag `fClick` means that icon is clickable. See [`LISTEX_MSG_HDRICONCLICK`](#listex_msg_hdriconclick) message for more info.
+
 ## [](#)Structures
 
 ### [](#)LISTEXCREATESTRUCT
@@ -380,6 +389,22 @@ List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the
 Hyperlink syntax is: `L"Text with the <link="any_text_here" title="Optional tool-tip text">embedded link</link>"`  
 If no optional `title` tag is provided then the `link` text itself will be used as hyperlink's tool-tip.  
 Link and title text must be quoted `""`.
+
+### [](#)LISTEX_MSG_HDRICONCLICK
+Header icon that previously was set by [`SetHdrColumnIcon`](#sethdrcolumnicon) call has been clicked.  
+Example code for handling this message:
+```cpp
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
+{
+    const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+
+    if (pNMI->hdr.code == LISTEX_MSG_HDRICONCLICK && pNMI->hdr.idFrom == IDC_MYLIST)
+    {
+    	const auto pNMI = reinterpret_cast<NMHEADERW*>(lParam);
+    	//pNMI->iItem holds clicked column index.
+    }
+    ...
+```
 
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.

@@ -46,9 +46,11 @@ namespace LISTEX::INTERNAL
 		void SetColumnSortMode(int iColumn, EListExSortMode enSortMode)override;
 		void SetFont(const LOGFONTW* pLogFontNew)override;
 		void SetFontSize(UINT uiSize)override;
-		void SetHdrHeight(DWORD dwHeight)override;
+		void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1)override;
+		void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false)override; //Icon index in image list for given column.
 		void SetHdrFont(const LOGFONTW* pLogFontNew)override;
-		void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)override;
+		void SetHdrHeight(DWORD dwHeight)override;
+		void SetHdrImageList(CImageList* pList)override;
 		void SetListMenu(CMenu* pMenu)override;
 		void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText)override;
 		void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare, EListExSortMode enSortMode)override;
