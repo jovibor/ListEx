@@ -32,6 +32,15 @@ namespace LISTEX::INTERNAL
 		bool  fClickable { false }; //Clickable or not.
 		bool  fLMPressed { false }; //Left mouse button pressed atm.
 	};
+
+	/********************************************
+	* SHIDDEN - hidden columns.                 *
+	********************************************/
+	struct CListExHdr::SHIDDEN
+	{
+		int iPrevPos { };
+		int iPrevWidth { };
+	};
 };
 
 BEGIN_MESSAGE_MAP(CListExHdr, CMFCHeaderCtrl)
@@ -40,6 +49,8 @@ BEGIN_MESSAGE_MAP(CListExHdr, CMFCHeaderCtrl)
 	ON_WM_DESTROY()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
+	ON_WM_RBUTTONUP()
+	ON_WM_RBUTTONDOWN()
 END_MESSAGE_MAP()
 
 CListExHdr::CListExHdr()
@@ -59,19 +70,76 @@ CListExHdr::~CListExHdr() = default;
 
 void CListExHdr::DeleteColumn(int iIndex)
 {
-	const auto ID = ColumnIndexToID(iIndex);
-	assert(ID > 0);
+	if (const auto ID = ColumnIndexToID(iIndex); ID > 0)
+	{
+		m_umapColors.erase(ID);
+		m_umapIcons.erase(ID);
+		m_umapIsSort.erase(ID);
+		m_umapHidden.erase(ID);
+	}
+}
 
-	m_umapColors.erase(ID);
-	m_umapIcons.erase(ID);
-	m_umapIsSort.erase(ID);
+UINT CListExHdr::GetHiddenCount()const
+{
+	return static_cast<UINT>(m_umapHidden.size());
+}
+
+void CListExHdr::HideColumn(int iIndex, bool fHide)
+{
+	const auto iItemsCount = GetItemCount();
+	if (iIndex >= iItemsCount)
+		return;
+
+	const auto ID = ColumnIndexToID(iIndex);
+	std::vector<int> vecInt(iItemsCount, 0);
+	ListView_GetColumnOrderArray(GetParent()->m_hWnd, iItemsCount, vecInt.data());
+	HDITEMW hdi { HDI_WIDTH };
+	GetItem(iIndex, &hdi);
+
+	if (fHide) //Hide column.
+	{
+		m_umapHidden[ID].iPrevWidth = hdi.cxy;
+		if (const auto iter = std::find(vecInt.begin(), vecInt.end(), iIndex); iter != vecInt.end())
+		{
+			m_umapHidden[ID].iPrevPos = static_cast<int>(iter - vecInt.begin());
+			std::rotate(iter, iter + 1, vecInt.end()); //Moving hiding column to the end of the column array.
+		}
+
+		ListView_SetColumnOrderArray(GetParent()->m_hWnd, iItemsCount, vecInt.data());
+		hdi.cxy = 0;
+		SetItem(iIndex, &hdi);
+	}
+	else //Show column.
+	{
+		const auto opt = IsHidden(ID);
+		if (!opt) //No such column is hidden.
+			return;
+
+		if (const auto iterRight = std::find(vecInt.rbegin(), vecInt.rend(), iIndex); iterRight != vecInt.rend())
+		{
+			const auto iterMid = iterRight + 1;
+			const auto iterEnd = vecInt.rend() - (*opt)->iPrevPos;
+			if (iterMid < iterEnd)
+				std::rotate(iterRight, iterMid, iterEnd); //Moving hidden column id back to its previous place.
+		}
+
+		ListView_SetColumnOrderArray(GetParent()->m_hWnd, iItemsCount, vecInt.data());
+		hdi.cxy = (*opt)->iPrevWidth;
+		SetItem(iIndex, &hdi);
+		m_umapHidden.erase(ID);
+	}
+
+	RedrawWindow();
+}
+
+bool CListExHdr::IsColumnHidden(int iIndex)
+{
+	return IsHidden(ColumnIndexToID(iIndex)).has_value();
 }
 
 bool CListExHdr::IsColumnSortable(int iIndex)const
 {
-	const auto iter = m_umapIsSort.find(iIndex);
-
-	return (iter == m_umapIsSort.end() || iter->second);
+	return IsSortable(ColumnIndexToID(iIndex));
 }
 
 void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed, BOOL bIsHighlighted)
@@ -85,25 +153,13 @@ void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed,
 
 	CMemDC memDC(*pDC, rcOrig);
 	CDC& rDC = memDC.GetDC();
-	COLORREF clrBk, clrText;
 	const auto ID = ColumnIndexToID(iItem);
 
-	if (m_umapColors.find(ID) != m_umapColors.end())
-		clrText = m_umapColors[ID].clrText;
-	else
-		clrText = m_clrText;
+	auto const pClr = HasColor(ID);
+	const COLORREF clrText { pClr != nullptr ? pClr->clrText : m_clrText };
+	const COLORREF clrBk { bIsHighlighted ? (bIsPressed ? m_clrHglActive : m_clrHglInactive) : (pClr != nullptr ? pClr->clrBk : m_clrBk) };
 
-	if (bIsHighlighted)
-		clrBk = bIsPressed ? m_clrHglActive : m_clrHglInactive;
-	else
-	{
-		if (m_umapColors.find(ID) != m_umapColors.end())
-			clrBk = m_umapColors[ID].clrBk;
-		else
-			clrBk = m_clrBk;
-	}
 	rDC.FillSolidRect(&rcOrig, clrBk);
-
 	rDC.SetTextColor(clrText);
 	rDC.SelectObject(m_fontHdr);
 
@@ -133,7 +189,7 @@ void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed,
 
 	//Draw icon for column, if any.
 	long lIndentLeft { 4 }; //Left text indent.
-	if (const auto pData = HasIcon(iItem); pData != nullptr) //If column has icon.
+	if (const auto pData = HasIcon(ID); pData != nullptr) //If column has icon.
 	{
 		IMAGEINFO stIMG;
 		const auto pImgList = GetImageList(LVSIL_NORMAL);
@@ -159,8 +215,7 @@ void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed,
 		rDC.DrawTextW(warrHdrText, &rcText, uFormat | DT_VCENTER | DT_SINGLELINE);
 
 	//Draw sortable triangle (arrow).
-	if (const auto iter = m_umapIsSort.find(ID); //It's sortable unless found explicitly as false.
-		m_fSortable && (iter == m_umapIsSort.end() || iter->second) && ID == m_uSortColumn)
+	if (m_fSortable && IsSortable(ID) && ID == m_uSortColumn)
 	{
 		rDC.SelectObject(m_penLight);
 		const auto iOffset = rcOrig.Height() / 4;
@@ -211,12 +266,19 @@ LRESULT CListExHdr::OnLayout(WPARAM /*wParam*/, LPARAM lParam)
 
 void CListExHdr::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	for (auto& iter : m_umapIcons)
+	HDHITTESTINFO ht { };
+	ht.pt = point;
+	HitTest(&ht);
+	if (ht.iItem >= 0)
 	{
-		if (iter.second.fClickable && iter.second.rc.PtInRect(point))
+		const auto ID = ColumnIndexToID(ht.iItem);
+		if (const auto pData = HasIcon(ID); pData != nullptr && !IsHidden(ID))
 		{
-			iter.second.fLMPressed = true;
-			return;
+			if (pData->fClickable && pData->rc.PtInRect(point))
+			{
+				pData->fLMPressed = true;
+				return;
+			}
 		}
 	}
 
@@ -239,12 +301,41 @@ void CListExHdr::OnLButtonUp(UINT nFlags, CPoint point)
 				hdr.iItem = ColumnIDToIndex(iter.first);
 				pParent->GetParent()->SendMessageW(WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
 			}
-
 			return;
 		}
 	}
 
 	CMFCHeaderCtrl::OnLButtonUp(nFlags, point);
+}
+
+void CListExHdr::OnRButtonDown(UINT /*nFlags*/, CPoint point)
+{
+	const auto pParent = GetParent();
+	if (pParent == nullptr) //List control pointer.
+		return;
+
+	const auto uCtrlId = static_cast<UINT>(pParent->GetDlgCtrlID());
+	NMHEADERW hdr { { pParent->m_hWnd, uCtrlId, LISTEX_MSG_HDRRBTNDOWN } };
+	HDHITTESTINFO ht { };
+	ht.pt = point;
+	HitTest(&ht);
+	hdr.iItem = ht.iItem;
+	pParent->GetParent()->SendMessageW(WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
+}
+
+void CListExHdr::OnRButtonUp(UINT /*nFlags*/, CPoint point)
+{
+	const auto pParent = GetParent();
+	if (pParent == nullptr) //List control pointer.
+		return;
+
+	const auto uCtrlId = static_cast<UINT>(pParent->GetDlgCtrlID());
+	NMHEADERW hdr { { pParent->m_hWnd, uCtrlId, LISTEX_MSG_HDRRBTNUP } };
+	HDHITTESTINFO ht { };
+	ht.pt = point;
+	HitTest(&ht);
+	hdr.iItem = ht.iItem;
+	pParent->GetParent()->SendMessageW(WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
 }
 
 void CListExHdr::OnDestroy()
@@ -254,19 +345,7 @@ void CListExHdr::OnDestroy()
 	m_umapColors.clear();
 	m_umapIcons.clear();
 	m_umapIsSort.clear();
-}
-
-auto CListExHdr::HasIcon(int iColumn)->CListExHdr::SHDRICON*
-{
-	if (GetImageList() == nullptr)
-		return nullptr;
-
-	const auto ID = ColumnIndexToID(iColumn);
-	SHDRICON* pRet { };
-	if (const auto it = m_umapIcons.find(ID); it != m_umapIcons.end())
-		pRet = &it->second;
-
-	return pRet;
+	m_umapHidden.clear();
 }
 
 UINT CListExHdr::ColumnIndexToID(int iIndex)const
@@ -276,10 +355,6 @@ UINT CListExHdr::ColumnIndexToID(int iIndex)const
 	HDITEMW hdi { HDI_LPARAM };
 	if (GetItem(iIndex, &hdi) != FALSE)
 		uRet = static_cast<UINT>(hdi.lParam);
-	else
-	{
-		assert(false); //If there is no such column index.
-	}
 
 	return uRet;
 }
@@ -296,6 +371,41 @@ int CListExHdr::ColumnIDToIndex(UINT uID)const
 	}
 
 	return iRet;
+}
+
+auto CListExHdr::HasColor(UINT ID)->CListExHdr::SHDRCOLOR*
+{
+	SHDRCOLOR* pRet { };
+	if (const auto it = m_umapColors.find(ID); it != m_umapColors.end())
+		pRet = &it->second;
+
+	return pRet;
+}
+
+auto CListExHdr::HasIcon(UINT ID)->CListExHdr::SHDRICON*
+{
+	if (GetImageList() == nullptr)
+		return nullptr;
+
+	SHDRICON* pRet { };
+	if (const auto it = m_umapIcons.find(ID); it != m_umapIcons.end())
+		pRet = &it->second;
+
+	return pRet;
+}
+
+auto CListExHdr::IsHidden(UINT ID)->std::optional<SHIDDEN*>
+{
+	auto iter = m_umapHidden.find(ID);
+
+	return iter != m_umapHidden.end() ? &iter->second : std::optional<SHIDDEN*> { };
+}
+
+bool CListExHdr::IsSortable(UINT ID)const
+{
+	const auto iter = m_umapIsSort.find(ID); //It's sortable unless found explicitly as false.
+
+	return 	iter == m_umapIsSort.end() || iter->second;
 }
 
 void CListExHdr::SetHeight(DWORD dwHeight)

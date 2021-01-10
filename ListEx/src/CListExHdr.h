@@ -5,6 +5,7 @@
 * This class is available under the "MIT License".                                      *
 ****************************************************************************************/
 #pragma once
+#include <optional>
 #include <unordered_map>
 
 namespace LISTEX { struct LISTEXCOLORS; } //Forward declaration.
@@ -18,10 +19,14 @@ namespace LISTEX::INTERNAL
 	{
 		struct SHDRCOLOR;
 		struct SHDRICON;
+		struct SHIDDEN;
 	public:
 		explicit CListExHdr();
 		~CListExHdr();
 		void DeleteColumn(int iIndex);
+		[[nodiscard]] UINT GetHiddenCount()const;
+		void HideColumn(int iIndex, bool fHide);
+		[[nodiscard]] bool IsColumnHidden(int iIndex); //Column index.
 		[[nodiscard]] bool IsColumnSortable(int iIndex)const;
 		void SetHeight(DWORD dwHeight);
 		void SetFont(const LOGFONTW* pLogFontNew);
@@ -32,14 +37,19 @@ namespace LISTEX::INTERNAL
 		void SetSortable(bool fSortable);
 		void SetSortArrow(int iColumn, bool fAscending);
 	private:
-		[[nodiscard]] SHDRICON* HasIcon(int iColumn);
-		[[nodiscard]] UINT ColumnIndexToID(int iIndex)const; //Return unique column ID. Must be > 0.
+		[[nodiscard]] UINT ColumnIndexToID(int iIndex)const; //Returns unique column ID. Must be > 0.
 		[[nodiscard]] int ColumnIDToIndex(UINT uID)const;
+		[[nodiscard]] auto HasColor(UINT ID)->SHDRCOLOR*;
+		[[nodiscard]] auto HasIcon(UINT ID)->SHDRICON*;
+		[[nodiscard]] auto IsHidden(UINT ID)->std::optional<SHIDDEN*>; //Internal ColumnID.
+		[[nodiscard]] bool IsSortable(UINT ID)const;
 	protected:
 		afx_msg void OnDrawItem(CDC* pDC, int iItem, CRect rcOrig, BOOL bIsPressed, BOOL bIsHighlighted)override;
 		afx_msg LRESULT OnLayout(WPARAM wParam, LPARAM lParam);
 		afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 		afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+		afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+		afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 		afx_msg void OnDestroy();
 		DECLARE_MESSAGE_MAP()
 	private:
@@ -56,8 +66,9 @@ namespace LISTEX::INTERNAL
 		std::unordered_map<UINT, SHDRCOLOR> m_umapColors { }; //Colors for columns.
 		std::unordered_map<UINT, SHDRICON> m_umapIcons { };   //Icons for columns.
 		std::unordered_map<UINT, bool> m_umapIsSort { };      //Is column sortable.
+		std::unordered_map<UINT, SHIDDEN> m_umapHidden { };   //Hidden columns.
 		UINT m_uSortColumn { 0 };   //ColumnID to draw sorting triangle at. 0 is to avoid triangle before first clicking.
-		bool m_fSortable { false }; //Need to draw sortable triangle or not?
+		bool m_fSortable { false }; //List-is-sortable global flog. Need to draw sortable triangle or not?
 		bool m_fSortAscending { };  //Sorting type.
 	};
 }

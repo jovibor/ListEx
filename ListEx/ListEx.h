@@ -93,6 +93,7 @@ namespace LISTEX
 		[[nodiscard]] virtual UINT GetFontSize()const = 0;
 		[[nodiscard]] virtual int GetSortColumn()const = 0;
 		[[nodiscard]] virtual bool GetSortAscending()const = 0;
+		virtual void HideColumn(int iIndex, bool fHide) = 0;
 		virtual int InsertColumn(int nCol, const LVCOLUMN* pColumn) = 0;
 		virtual int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT, int nWidth = -1, int nSubItem = -1) = 0;
 		[[nodiscard]] virtual bool IsCreated()const = 0;
@@ -147,5 +148,7 @@ namespace LISTEX
 	constexpr auto LISTEX_MSG_GETCOLOR = 0x1001U;     //Get cell color.
 	constexpr auto LISTEX_MSG_GETICON = 0x1002U;      //Get cell icon.
 	constexpr auto LISTEX_MSG_LINKCLICK = 0x1003U;    //Hyperlink has been clicked.
-	constexpr auto LISTEX_MSG_HDRICONCLICK = 0x1004U; //Header icon has been clicked.
+	constexpr auto LISTEX_MSG_HDRICONCLICK = 0x1004U; //Header's icon has been clicked.
+	constexpr auto LISTEX_MSG_HDRRBTNDOWN = 0x1005U;  //Header's WM_RBUTTONDOWN message.
+	constexpr auto LISTEX_MSG_HDRRBTNUP = 0x1006U;    //Header's WM_RBUTTONUP message.
 }

@@ -77,23 +77,27 @@ namespace LISTEX
 * CListEx class implementation.						*
 ****************************************************/
 IMPLEMENT_DYNAMIC(CListEx, CMFCListCtrl)
+
 BEGIN_MESSAGE_MAP(CListEx, CMFCListCtrl)
 	ON_WM_SETCURSOR()
 	ON_WM_KILLFOCUS()
-	ON_WM_HSCROLL()
-	ON_WM_RBUTTONDOWN()
 	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_RBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
+	ON_WM_MOUSEWHEEL()
 	ON_WM_TIMER()
 	ON_WM_ERASEBKGND()
 	ON_WM_VSCROLL()
-	ON_WM_MOUSEWHEEL()
+	ON_WM_HSCROLL()
 	ON_WM_PAINT()
 	ON_WM_MEASUREITEM_REFLECT()
 	ON_WM_CONTEXTMENU()
-	ON_WM_DESTROY()
+	ON_NOTIFY(HDN_BEGINDRAG, 0, &CListEx::OnHdnBegindrag)
+	ON_NOTIFY(HDN_BEGINTRACKA, 0, &CListEx::OnHdnBegintrack)
+	ON_NOTIFY(HDN_BEGINTRACKW, 0, &CListEx::OnHdnBegintrack)
 	ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CListEx::OnLvnColumnClick)
-	ON_WM_LBUTTONUP()
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 void CListEx::ClearSort()
@@ -362,8 +366,32 @@ bool CListEx::GetSortAscending()const
 	return m_fSortAscending;
 }
 
+void CListEx::HideColumn(int iIndex, bool fHide)
+{
+	assert(IsCreated());
+	if (!IsCreated())
+		return;
+
+	GetHeaderCtrl().HideColumn(iIndex, fHide);
+	RedrawWindow();
+}
+
 int CListEx::InsertColumn(int nCol, const LVCOLUMN* pColumn)
 {
+	assert(IsCreated());
+	if (!IsCreated())
+		return -1;
+
+	auto& refHdr = GetHeaderCtrl();
+	const auto nHiddenCount = refHdr.GetHiddenCount();
+
+	//Checking that the new column ID (nCol) not greater than the count of 
+	//the header items minus count of the already hidden columns.
+	if (refHdr.GetHiddenCount() > 0 && nCol >= static_cast<int>(refHdr.GetItemCount() - nHiddenCount))
+	{
+		nCol = refHdr.GetItemCount() - nHiddenCount;
+	}
+
 	const auto iNewIndex = CMFCListCtrl::InsertColumn(nCol, pColumn);
 
 	//Assigning each column a unique internal random identifier.
@@ -374,13 +402,27 @@ int CListEx::InsertColumn(int nCol, const LVCOLUMN* pColumn)
 	HDITEMW hdi { };
 	hdi.mask = HDI_LPARAM;
 	hdi.lParam = distrib(gen);
-	GetHeaderCtrl().SetItem(iNewIndex, &hdi);
+	refHdr.SetItem(iNewIndex, &hdi);
 
 	return iNewIndex;
 }
 
 int CListEx::InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat, int nWidth, int nSubItem)
 {
+	assert(IsCreated());
+	if (!IsCreated())
+		return -1;
+
+	auto& refHdr = GetHeaderCtrl();
+	const auto nHiddenCount = refHdr.GetHiddenCount();
+
+	//Checking that the new column ID (nCol) not greater than the count of 
+	//the header items minus count of the already hidden columns.
+	if (refHdr.GetHiddenCount() > 0 && nCol >= static_cast<int>(refHdr.GetItemCount() - nHiddenCount))
+	{
+		nCol = refHdr.GetItemCount() - nHiddenCount;
+	}
+
 	const auto iNewIndex = CMFCListCtrl::InsertColumn(nCol, lpszColumnHeading, nFormat, nWidth, nSubItem);
 
 	//Assigning each column a unique internal random identifier.
@@ -391,7 +433,7 @@ int CListEx::InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat, int 
 	HDITEMW hdi { };
 	hdi.mask = HDI_LPARAM;
 	hdi.lParam = distrib(gen);
-	GetHeaderCtrl().SetItem(iNewIndex, &hdi);
+	refHdr.SetItem(iNewIndex, &hdi);
 
 	return iNewIndex;
 }
@@ -1068,6 +1110,9 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 		const auto iColumns = GetHeaderCtrl().GetItemCount();
 		for (auto iColumn = 0; iColumn < iColumns; ++iColumn)
 		{
+			if (GetHeaderCtrl().IsColumnHidden(iColumn))
+				continue;
+
 			COLORREF clrText, clrBk, clrTextLink;
 			//Subitems' draw routine. 
 			//Colors depending on whether subitem selected or not, and has tooltip or not.
@@ -1471,14 +1516,28 @@ BOOL CListEx::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 		if (!m_fVirtual)
 			return SortItemsEx(m_pfnCompare ? m_pfnCompare : DefCompareFunc, reinterpret_cast<DWORD_PTR>(this));
 	}
-
+	
 	return CMFCListCtrl::OnNotify(wParam, lParam, pResult);
 }
 
 void CListEx::OnLvnColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	//Just an empty handler. Without it all works fine, but assert 
-	//triggers in Debug mode when clicking on header.
+	//Just an empty handler. 
+	//Without it all works fine, but assert triggers in Debug when clicking on header.
+}
+
+void CListEx::OnHdnBegindrag(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	const auto phdr = reinterpret_cast<LPNMHEADERW>(pNMHDR);
+	if (GetHeaderCtrl().IsColumnHidden(phdr->iItem))
+		*pResult = TRUE;
+}
+
+void CListEx::OnHdnBegintrack(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	const auto phdr = reinterpret_cast<LPNMHEADERW>(pNMHDR);
+	if (GetHeaderCtrl().IsColumnHidden(phdr->iItem))
+		*pResult = TRUE;
 }
 
 void CListEx::OnDestroy()

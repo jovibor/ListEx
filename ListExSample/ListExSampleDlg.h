@@ -27,6 +27,7 @@ protected:
 	afx_msg void OnListExGetColor(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnListExGetIcon(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnListHdrIconClick(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnListHdrRClick(NMHDR *pNMHDR, LRESULT *pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP()
 protected:
@@ -34,14 +35,17 @@ protected:
 	BOOL OnInitDialog()override;
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	IListExPtr m_myList { CreateListEx() };
+	IListExPtr m_pList { CreateListEx() };
 	CMenu m_menuCell;
 	CMenu m_menuList;
+	CMenu m_menuHdr;
 	std::vector<VIRTLISTDATA> m_vecData { };
 	CImageList m_stImgList;
+	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
 };
 
 constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;
 constexpr auto IDC_LIST_MENU_CELL_SECOND = 0x2;
 constexpr auto IDC_LIST_MENU_GLOBAL_FIRST = 0x3;
 constexpr auto IDC_LIST_MENU_GLOBAL_SECOND = 0x4;
+constexpr auto IDC_LIST_MENU_HDR_BEGIN = 0x5;

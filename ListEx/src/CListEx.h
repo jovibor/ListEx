@@ -35,6 +35,7 @@ namespace LISTEX::INTERNAL
 		[[nodiscard]] UINT GetFontSize()const override;
 		[[nodiscard]] int GetSortColumn()const override;
 		[[nodiscard]] bool GetSortAscending()const override;
+		void HideColumn(int iIndex, bool fHide)override;
 		int InsertColumn(int nCol, const LVCOLUMN* pColumn);
 		int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT, int nWidth = -1, int nSubItem = -1);
 		[[nodiscard]] bool IsCreated()const override;
@@ -87,7 +88,9 @@ namespace LISTEX::INTERNAL
 		afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 		afx_msg void MeasureItem(LPMEASUREITEMSTRUCT lpMIS);
 		BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
-		afx_msg void OnLvnColumnClick(NMHDR *pNMHDR, LRESULT *pResult);
+		afx_msg void OnLvnColumnClick(NMHDR* pNMHDR, LRESULT* pResult);
+		afx_msg void OnHdnBegindrag(NMHDR* pNMHDR, LRESULT* pResult);
+		afx_msg void OnHdnBegintrack(NMHDR* pNMHDR, LRESULT* pResult);
 		afx_msg void OnDestroy();
 	private:
 		CListExHdr m_stListHeader;
@@ -132,7 +135,7 @@ namespace LISTEX::INTERNAL
 		CRect m_rcLinkCurr { };        //Current link's rect;
 	};
 
-		/*******************Setting a manifest for ComCtl32.dll version 6.***********************/
+			/*******************Setting a manifest for ComCtl32.dll version 6.***********************/
 #ifdef _UNICODE
 #if defined _M_IX86
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
