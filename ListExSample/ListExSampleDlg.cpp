@@ -9,6 +9,9 @@
 #define new DEBUG_NEW
 #endif
 
+constexpr auto iVirtualDataSize { 10 };
+constexpr auto iDataSize { 10 };
+
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
@@ -59,11 +62,11 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetHdrColumnColor(0, RGB(70, 70, 70));
 	m_myList->SetHdrColumnColor(1, RGB(125, 125, 125));
 	m_myList->SetHdrColumnColor(2, RGB(200, 200, 200));
+//	m_myList->SetColumnSortMode(0, false);
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
-	constexpr auto iVirtualDataSize { 11 };
-	for (unsigned i = 0; i < iVirtualDataSize; ++i)
+	for (unsigned i = 0; i < iDataSize; ++i)
 	{
 		m_vecData.emplace_back(VIRTLISTDATA
 			{
@@ -209,19 +212,20 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	LVITEMW* pItem = &pDispInfo->item;
+	const auto index = pItem->iItem < iDataSize ? pItem->iItem : 1;
 
 	if (pItem->mask & LVIF_TEXT)
 	{
 		switch (pItem->iSubItem)
 		{
 		case 0:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(pItem->iItem)).wstr1.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr1.data();
 			break;
 		case 1:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(pItem->iItem)).wstr2.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr2.data();
 			break;
 		case 2:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(pItem->iItem)).wstr3.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr3.data();
 			break;
 		}
 	}
@@ -240,8 +244,9 @@ void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
 	}
 
-	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fColor)
-		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData.at(static_cast<size_t>(pNMI->iItem)).clr);
+	const auto index = pNMI->iItem < iDataSize ? pNMI->iItem : 1;
+	if (m_vecData.at(static_cast<size_t>(index)).fColor)
+		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData.at(static_cast<size_t>(index)).clr);
 }
 
 void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -252,25 +257,30 @@ void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
 		return;
 
-	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fIcon && pNMI->iSubItem == 1)
+	const auto index = pNMI->iItem < iDataSize ? pNMI->iItem : 1;
+	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pNMI->iSubItem == 1)
 		pNMI->lParam = 0; //Icon index in list's image list.
 }
 
 void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pNMI = reinterpret_cast<NMHEADERW*>(pNMHDR);
-	
+
 	const auto wstr = L"Header icon clicked at column: " + std::to_wstring(pNMI->iItem);
 	MessageBox(wstr.data());
 }
 
 void CListExSampleDlg::SortVecData()
 {
+	const auto iColumnIndex = m_myList->GetSortColumn();
+	if (iColumnIndex < 0)
+		return;
+
 	//Sorts the vector of data according to clicked column.
 	std::sort(m_vecData.begin(), m_vecData.end(), [&](const VIRTLISTDATA& st1, const VIRTLISTDATA& st2)
 		{
 			int iCompare { };
-			switch (m_myList->GetSortColumn())
+			switch (iColumnIndex)
 			{
 			case 0:
 				iCompare = st1.wstr1.compare(st2.wstr1);

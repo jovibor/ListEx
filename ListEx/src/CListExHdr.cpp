@@ -57,6 +57,23 @@ CListExHdr::CListExHdr()
 
 CListExHdr::~CListExHdr() = default;
 
+void CListExHdr::DeleteColumn(int iIndex)
+{
+	const auto ID = ColumnIndexToID(iIndex);
+	assert(ID > 0);
+
+	m_umapColors.erase(ID);
+	m_umapIcons.erase(ID);
+	m_umapIsSort.erase(ID);
+}
+
+bool CListExHdr::IsColumnSortable(int iIndex)const
+{
+	const auto iter = m_umapIsSort.find(iIndex);
+
+	return (iter == m_umapIsSort.end() || iter->second);
+}
+
 void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed, BOOL bIsHighlighted)
 {
 	//Non working area after last column. Or if column resized to zero.
@@ -69,9 +86,10 @@ void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed,
 	CMemDC memDC(*pDC, rcOrig);
 	CDC& rDC = memDC.GetDC();
 	COLORREF clrBk, clrText;
+	const auto ID = ColumnIndexToID(iItem);
 
-	if (m_umapColors.find(iItem) != m_umapColors.end())
-		clrText = m_umapColors[iItem].clrText;
+	if (m_umapColors.find(ID) != m_umapColors.end())
+		clrText = m_umapColors[ID].clrText;
 	else
 		clrText = m_clrText;
 
@@ -79,8 +97,8 @@ void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed,
 		clrBk = bIsPressed ? m_clrHglActive : m_clrHglInactive;
 	else
 	{
-		if (m_umapColors.find(iItem) != m_umapColors.end())
-			clrBk = m_umapColors[iItem].clrBk;
+		if (m_umapColors.find(ID) != m_umapColors.end())
+			clrBk = m_umapColors[ID].clrBk;
 		else
 			clrBk = m_clrBk;
 	}
@@ -141,7 +159,8 @@ void CListExHdr::OnDrawItem(CDC * pDC, int iItem, CRect rcOrig, BOOL bIsPressed,
 		rDC.DrawTextW(warrHdrText, &rcText, uFormat | DT_VCENTER | DT_SINGLELINE);
 
 	//Draw sortable triangle (arrow).
-	if (m_fSortable && iItem == m_iSortColumn)
+	if (const auto iter = m_umapIsSort.find(ID); //It's sortable unless found explicitly as false.
+		m_fSortable && (iter == m_umapIsSort.end() || iter->second) && ID == m_uSortColumn)
 	{
 		rDC.SelectObject(m_penLight);
 		const auto iOffset = rcOrig.Height() / 4;
@@ -217,7 +236,7 @@ void CListExHdr::OnLButtonUp(UINT nFlags, CPoint point)
 			{
 				const auto uCtrlId = static_cast<UINT>(pParent->GetDlgCtrlID());
 				NMHEADERW hdr { { pParent->m_hWnd, uCtrlId, LISTEX_MSG_HDRICONCLICK } };
-				hdr.iItem = iter.first;
+				hdr.iItem = ColumnIDToIndex(iter.first);
 				pParent->GetParent()->SendMessageW(WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
 			}
 
@@ -234,6 +253,7 @@ void CListExHdr::OnDestroy()
 
 	m_umapColors.clear();
 	m_umapIcons.clear();
+	m_umapIsSort.clear();
 }
 
 auto CListExHdr::HasIcon(int iColumn)->CListExHdr::SHDRICON*
@@ -241,11 +261,41 @@ auto CListExHdr::HasIcon(int iColumn)->CListExHdr::SHDRICON*
 	if (GetImageList() == nullptr)
 		return nullptr;
 
+	const auto ID = ColumnIndexToID(iColumn);
 	SHDRICON* pRet { };
-	if (const auto it = m_umapIcons.find(iColumn); it != m_umapIcons.end())
+	if (const auto it = m_umapIcons.find(ID); it != m_umapIcons.end())
 		pRet = &it->second;
 
 	return pRet;
+}
+
+UINT CListExHdr::ColumnIndexToID(int iIndex)const
+{
+	//Each column has unique internal identifier in HDITEMW::lParam
+	UINT uRet { 0 };
+	HDITEMW hdi { HDI_LPARAM };
+	if (GetItem(iIndex, &hdi) != FALSE)
+		uRet = static_cast<UINT>(hdi.lParam);
+	else
+	{
+		assert(false); //If there is no such column index.
+	}
+
+	return uRet;
+}
+
+int CListExHdr::ColumnIDToIndex(UINT uID)const
+{
+	int iRet { -1 };
+	for (int i = 0; i < GetItemCount(); ++i)
+	{
+		HDITEMW hdi { HDI_LPARAM };
+		GetItem(i, &hdi);
+		if (static_cast<UINT>(hdi.lParam) == uID)
+			iRet = i;
+	}
+
+	return iRet;
 }
 
 void CListExHdr::SetHeight(DWORD dwHeight)
@@ -253,7 +303,7 @@ void CListExHdr::SetHeight(DWORD dwHeight)
 	m_dwHeaderHeight = dwHeight;
 }
 
-void CListExHdr::SetColor(const LISTEXCOLORS& lcs)
+void CListExHdr::SetColor(const LISTEXCOLORS & lcs)
 {
 	m_clrText = lcs.clrHdrText;
 	m_clrBk = lcs.clrHdrBk;
@@ -266,25 +316,39 @@ void CListExHdr::SetColor(const LISTEXCOLORS& lcs)
 
 void CListExHdr::SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)
 {
+	const auto ID = ColumnIndexToID(iColumn);
+	assert(ID > 0);
+
 	if (clrText == -1)
 		clrText = m_clrText;
 
-	m_umapColors[iColumn] = SHDRCOLOR { clrBk, clrText };
+	m_umapColors[ID] = SHDRCOLOR { clrBk, clrText };
 	RedrawWindow();
 }
 
 void CListExHdr::SetColumnIcon(int iColumn, int iIconIndex, bool fClick)
 {
+	const auto ID = ColumnIndexToID(iColumn);
+	assert(ID > 0);
+
 	if (iIconIndex == -1) //If column already has icon.
-		m_umapIcons.erase(iColumn);
+		m_umapIcons.erase(ID);
 	else
 	{
 		SHDRICON stIcon;
 		stIcon.iIndex = iIconIndex;
 		stIcon.fClickable = fClick;
-		m_umapIcons[iColumn] = stIcon;
+		m_umapIcons[ID] = stIcon;
 	}
 	RedrawWindow();
+}
+
+void CListExHdr::SetColumnSortable(int iColumn, bool fSortable)
+{
+	const auto ID = ColumnIndexToID(iColumn);
+	assert(ID > 0);
+
+	m_umapIsSort[ID] = fSortable;
 }
 
 void CListExHdr::SetSortable(bool fSortable)
@@ -295,12 +359,15 @@ void CListExHdr::SetSortable(bool fSortable)
 
 void CListExHdr::SetSortArrow(int iColumn, bool fAscending)
 {
-	m_iSortColumn = iColumn;
+	const auto ID = ColumnIndexToID(iColumn);
+	assert(ID > 0);
+
+	m_uSortColumn = ID;
 	m_fSortAscending = fAscending;
 	RedrawWindow();
 }
 
-void CListExHdr::SetFont(const LOGFONTW* pLogFontNew)
+void CListExHdr::SetFont(const LOGFONTW * pLogFontNew)
 {
 	if (!pLogFontNew)
 		return;

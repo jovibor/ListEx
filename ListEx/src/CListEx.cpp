@@ -9,6 +9,11 @@
 #include "strsafe.h"
 #include <algorithm>
 #include <cassert>
+#include <limits>
+#include <random>
+
+#undef min
+#undef max
 
 using namespace LISTEX;
 using namespace LISTEX::INTERNAL;
@@ -85,18 +90,17 @@ BEGIN_MESSAGE_MAP(CListEx, CMFCListCtrl)
 	ON_WM_MOUSEWHEEL()
 	ON_WM_PAINT()
 	ON_WM_MEASUREITEM_REFLECT()
-	ON_NOTIFY(HDN_DIVIDERDBLCLICKA, 0, &CListEx::OnHdnDividerdblclick)
-	ON_NOTIFY(HDN_DIVIDERDBLCLICKW, 0, &CListEx::OnHdnDividerdblclick)
-	ON_NOTIFY(HDN_BEGINTRACKA, 0, &CListEx::OnHdnBegintrack)
-	ON_NOTIFY(HDN_BEGINTRACKW, 0, &CListEx::OnHdnBegintrack)
-	ON_NOTIFY(HDN_TRACKA, 0, &CListEx::OnHdnTrack)
-	ON_NOTIFY(HDN_TRACKW, 0, &CListEx::OnHdnTrack)
 	ON_WM_CONTEXTMENU()
 	ON_WM_DESTROY()
 	ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CListEx::OnLvnColumnClick)
 	ON_WM_LBUTTONUP()
-
 END_MESSAGE_MAP()
+
+void CListEx::ClearSort()
+{
+	m_iSortColumn = -1;
+	GetHeaderCtrl().SetSortArrow(-1, false);
+}
 
 bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 {
@@ -120,6 +124,7 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 	m_fSortable = lcs.fSortable;
 	m_fLinksUnderline = lcs.fLinkUnderline;
 	m_fLinkTooltip = lcs.fLinkTooltip;
+	m_fHighLatency = lcs.fHighLatency;
 
 	if (!m_stWndTtCell.CreateEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, TTS_BALLOON | TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr))
@@ -250,18 +255,17 @@ BOOL CListEx::DeleteAllItems()
 	return CMFCListCtrl::DeleteAllItems();
 }
 
-BOOL CListEx::DeleteColumn(int nCol)
+BOOL CListEx::DeleteColumn(int iIndex)
 {
 	assert(IsCreated());
 	if (!IsCreated())
 		return FALSE;
 
-	if (const auto iter = m_umapColumnColor.find(nCol); iter != m_umapColumnColor.end())
-		m_umapColumnColor.erase(iter);
-	if (const auto iter = m_umapColumnSortMode.find(nCol); iter != m_umapColumnSortMode.end())
-		m_umapColumnSortMode.erase(iter);
+	m_umapColumnColor.erase(iIndex);
+	m_umapColumnSortMode.erase(iIndex);
+	GetHeaderCtrl().DeleteColumn(iIndex);
 
-	return CMFCListCtrl::DeleteColumn(nCol);
+	return CMFCListCtrl::DeleteColumn(iIndex);
 }
 
 BOOL CListEx::DeleteItem(int iItem)
@@ -358,9 +362,48 @@ bool CListEx::GetSortAscending()const
 	return m_fSortAscending;
 }
 
+int CListEx::InsertColumn(int nCol, const LVCOLUMN* pColumn)
+{
+	const auto iNewIndex = CMFCListCtrl::InsertColumn(nCol, pColumn);
+
+	//Assigning each column a unique internal random identifier.
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<unsigned int> distrib(1, std::numeric_limits<unsigned int>::max());
+
+	HDITEMW hdi { };
+	hdi.mask = HDI_LPARAM;
+	hdi.lParam = distrib(gen);
+	GetHeaderCtrl().SetItem(iNewIndex, &hdi);
+
+	return iNewIndex;
+}
+
+int CListEx::InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat, int nWidth, int nSubItem)
+{
+	const auto iNewIndex = CMFCListCtrl::InsertColumn(nCol, lpszColumnHeading, nFormat, nWidth, nSubItem);
+
+	//Assigning each column a unique internal random identifier.
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<unsigned int> distrib(1, std::numeric_limits<unsigned int>::max());
+
+	HDITEMW hdi { };
+	hdi.mask = HDI_LPARAM;
+	hdi.lParam = distrib(gen);
+	GetHeaderCtrl().SetItem(iNewIndex, &hdi);
+
+	return iNewIndex;
+}
+
 bool CListEx::IsCreated()const
 {
 	return m_fCreated;
+}
+
+bool CListEx::IsColumnSortable(int iColumn)
+{
+	return GetHeaderCtrl().IsColumnSortable(iColumn);
 }
 
 UINT CListEx::MapIndexToID(UINT nItem)const
@@ -534,9 +577,10 @@ void CListEx::SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)
 	m_umapColumnColor[iColumn] = SCOLROWCLR { clrBk, clrText, std::chrono::high_resolution_clock::now() };
 }
 
-void CListEx::SetColumnSortMode(int iColumn, EListExSortMode enSortMode)
+void CListEx::SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode)
 {
 	m_umapColumnSortMode[iColumn] = enSortMode;
+	GetHeaderCtrl().SetColumnSortable(iColumn, fSortable);
 }
 
 void CListEx::SetFont(const LOGFONTW* pLogFontNew)
@@ -1155,7 +1199,7 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 	if (m_fTtLinkShown)
 		TtLinkHide();
 
-	std::wstring *pwstrTt { }, *pwstrCaption { };
+	std::wstring* pwstrTt { }, * pwstrCaption { };
 	if (HasTooltip(hi.iItem, hi.iSubItem, &pwstrTt, &pwstrCaption))
 	{
 		//Check if cursor is still in the same cell's rect. If so - just leave.
@@ -1358,27 +1402,39 @@ void CListEx::OnPaint()
 	DefWindowProcW(WM_PAINT, reinterpret_cast<WPARAM>(rDC.m_hDC), static_cast<LPARAM>(0));
 }
 
-void CListEx::OnHdnDividerdblclick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
-	//LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
-	//*pResult = 0;
-}
-
-void CListEx::OnHdnBegintrack(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
-	//LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
-	//*pResult = 0;
-}
-
-void CListEx::OnHdnTrack(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
-	//LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
-	//*pResult = 0;
-}
-
 void CListEx::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
-	CMFCListCtrl::OnVScroll(nSBCode, nPos, pScrollBar);
+	if (m_fVirtual && m_fHighLatency)
+	{
+		static bool flag { };
+		static UINT uItem;
+		if (nSBCode != SB_THUMBTRACK)
+		{
+			//If there was SB_THUMBTRACK message previously, calculate the scroll amount (up/down)
+			//by multiplying item's row height by difference between current (top) and nPos row.
+			//Scroll may be negative therefore.
+			if (flag)
+			{
+				CRect rc;
+				GetItemRect(uItem, rc, LVIR_LABEL);
+				CSize size(0, (uItem - GetTopIndex()) * rc.Height());
+				Scroll(size);
+				flag = false;
+			}
+			CMFCListCtrl::OnVScroll(nSBCode, nPos, pScrollBar);
+		}
+		else
+		{
+			flag = true;
+			SCROLLINFO si { };
+			si.cbSize = sizeof(SCROLLINFO);
+			si.fMask = SIF_ALL;
+			GetScrollInfo(SB_VERT, &si);
+			uItem = si.nTrackPos; //si.nTrackPos is in fact a row number.
+		}
+	}
+	else
+		CMFCListCtrl::OnVScroll(nSBCode, nPos, pScrollBar);
 }
 
 void CListEx::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
@@ -1403,12 +1459,17 @@ BOOL CListEx::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 	const auto* const pNMLV = reinterpret_cast<LPNMHEADERW>(lParam);
 	if (m_fSortable && (pNMLV->hdr.code == HDN_ITEMCLICKW || pNMLV->hdr.code == HDN_ITEMCLICKA))
 	{
-		m_fSortAscending = pNMLV->iItem == m_iSortColumn ? !m_fSortAscending : true;
-		m_iSortColumn = pNMLV->iItem;
+		if (IsColumnSortable(pNMLV->iItem))
+		{
+			m_iSortColumn = pNMLV->iItem;
+			m_fSortAscending = pNMLV->iItem == m_iSortColumn ? !m_fSortAscending : true;
+			GetHeaderCtrl().SetSortArrow(m_iSortColumn, m_fSortAscending);
+		}
+		else
+			m_iSortColumn = -1;
 
-		GetHeaderCtrl().SetSortArrow(m_iSortColumn, m_fSortAscending);
 		if (!m_fVirtual)
-			SortItemsEx(m_pfnCompare ? m_pfnCompare : DefCompareFunc, reinterpret_cast<DWORD_PTR>(this));
+			return SortItemsEx(m_pfnCompare ? m_pfnCompare : DefCompareFunc, reinterpret_cast<DWORD_PTR>(this));
 	}
 
 	return CMFCListCtrl::OnNotify(wParam, lParam, pResult);

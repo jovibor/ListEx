@@ -21,11 +21,12 @@ namespace LISTEX::INTERNAL
 		struct SCOLROWCLR;
 		struct SITEMDATA;
 	public:
+		void ClearSort()override; //Clear all sortings.
 		bool Create(const LISTEXCREATESTRUCT& lcs)override;
 		void CreateDialogCtrl(UINT uCtrlID, CWnd* pParent)override;
 		static int CALLBACK DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 		BOOL DeleteAllItems()override;
-		BOOL DeleteColumn(int nCol)override;
+		BOOL DeleteColumn(int iIndex)override;
 		BOOL DeleteItem(int iItem)override;
 		void Destroy()override;
 		[[nodiscard]] ULONGLONG GetCellData(int iItem, int iSubItem)const override;
@@ -34,7 +35,10 @@ namespace LISTEX::INTERNAL
 		[[nodiscard]] UINT GetFontSize()const override;
 		[[nodiscard]] int GetSortColumn()const override;
 		[[nodiscard]] bool GetSortAscending()const override;
+		int InsertColumn(int nCol, const LVCOLUMN* pColumn);
+		int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT, int nWidth = -1, int nSubItem = -1);
 		[[nodiscard]] bool IsCreated()const override;
+		[[nodiscard]] bool IsColumnSortable(int iColumn)override;
 		[[nodiscard]] UINT MapIndexToID(UINT nItem)const;
 		void SetCellColor(int iItem, int iSubItem, COLORREF clrBk, COLORREF clrText)override;
 		void SetCellData(int iItem, int iSubItem, ULONGLONG ullData)override;
@@ -43,7 +47,7 @@ namespace LISTEX::INTERNAL
 		void SetCellTooltip(int iItem, int iSubItem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption)override;
 		void SetColors(const LISTEXCOLORS& lcs)override;
 		void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)override;
-		void SetColumnSortMode(int iColumn, EListExSortMode enSortMode)override;
+		void SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode = { })override;
 		void SetFont(const LOGFONTW* pLogFontNew)override;
 		void SetFontSize(UINT uiSize)override;
 		void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1)override;
@@ -82,9 +86,6 @@ namespace LISTEX::INTERNAL
 		afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 		afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 		afx_msg void MeasureItem(LPMEASUREITEMSTRUCT lpMIS);
-		afx_msg void OnHdnDividerdblclick(NMHDR *pNMHDR, LRESULT *pResult);
-		afx_msg void OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult);
-		afx_msg void OnHdnTrack(NMHDR *pNMHDR, LRESULT *pResult);
 		BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 		afx_msg void OnLvnColumnClick(NMHDR *pNMHDR, LRESULT *pResult);
 		afx_msg void OnDestroy();
@@ -115,10 +116,11 @@ namespace LISTEX::INTERNAL
 		std::unordered_map<int, std::unordered_map<int, ULONGLONG>> m_umapCellData { };  //Cell's custom data.
 		std::unordered_map<int, std::unordered_map<int, LISTEXCELLCOLOR>> m_umapCellColor { }; //Cell's colors.
 		std::unordered_map<int, std::unordered_map<int, int>> m_umapCellIcon { }; //Cell's icon.
-		std::unordered_map<DWORD, SCOLROWCLR> m_umapRowColor { };            //Row colors.
+		std::unordered_map<DWORD, SCOLROWCLR> m_umapRowColor { };         //Row colors.
 		std::unordered_map<int, SCOLROWCLR> m_umapColumnColor { };        //Column colors.
 		std::unordered_map<int, EListExSortMode> m_umapColumnSortMode { }; //Column sorting mode.
 		bool m_fCreated { false };     //Is created.
+		bool m_fHighLatency { };       //High latency flag.
 		bool m_fSortable { false };    //Is list sortable.
 		bool m_fSortAscending { };     //Sorting type (ascending, descending).
 		bool m_fLinksUnderline { };    //Links are displayed underlined or not.

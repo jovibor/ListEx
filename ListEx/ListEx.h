@@ -71,6 +71,7 @@ namespace LISTEX
 		bool         fSortable { false };     //Is list sortable, by clicking on the header column?
 		bool         fLinkUnderline { true }; //Links are displayed underlined or not.
 		bool         fLinkTooltip { true };   //Show links' toolips.
+		bool         fHighLatency { false };  //Do not redraw window until scrolling completes.
 	};
 
 	/********************************************
@@ -79,6 +80,7 @@ namespace LISTEX
 	class IListEx : public CMFCListCtrl
 	{
 	public:
+		virtual void ClearSort() = 0; //Clear all sortings.
 		virtual bool Create(const LISTEXCREATESTRUCT& lcs) = 0;
 		virtual void CreateDialogCtrl(UINT uCtrlID, CWnd* pParent) = 0;
 		virtual BOOL DeleteAllItems() = 0;
@@ -91,7 +93,10 @@ namespace LISTEX
 		[[nodiscard]] virtual UINT GetFontSize()const = 0;
 		[[nodiscard]] virtual int GetSortColumn()const = 0;
 		[[nodiscard]] virtual bool GetSortAscending()const = 0;
+		virtual int InsertColumn(int nCol, const LVCOLUMN* pColumn) = 0;
+		virtual int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT, int nWidth = -1, int nSubItem = -1) = 0;
 		[[nodiscard]] virtual bool IsCreated()const = 0;
+		[[nodiscard]] virtual bool IsColumnSortable(int iColumn) = 0;
 		virtual void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
 		virtual void SetCellIcon(int iItem, int iSubitem, int iIndex) = 0;
@@ -99,7 +104,7 @@ namespace LISTEX
 		virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
 		virtual void SetColors(const LISTEXCOLORS& lcs) = 0;
 		virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
-		virtual void SetColumnSortMode(int iColumn, EListExSortMode enSortMode) = 0;
+		virtual void SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode = { }) = 0;
 		virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
 		virtual void SetFontSize(UINT uiSize) = 0;
 		virtual void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
@@ -128,7 +133,7 @@ namespace LISTEX
 
 	inline IListExUnPtr CreateListEx()
 	{
-		return IListExUnPtr(CreateRawListEx(), [](IListEx * p) { p->Destroy(); });
+		return IListExUnPtr(CreateRawListEx(), [](IListEx* p) { p->Destroy(); });
 	};
 
 	using IListExPtr = IListExUnPtr;
