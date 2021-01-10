@@ -7,6 +7,7 @@
 #include "stdafx.h"
 #include "../ListEx.h"
 #include "CListExHdr.h"
+#include <cassert>
 
 using namespace LISTEX;
 using namespace LISTEX::INTERNAL;
@@ -427,7 +428,10 @@ void CListExHdr::SetColor(const LISTEXCOLORS & lcs)
 void CListExHdr::SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)
 {
 	const auto ID = ColumnIndexToID(iColumn);
+
 	assert(ID > 0);
+	if (ID == 0)
+		return;
 
 	if (clrText == -1)
 		clrText = m_clrText;
@@ -440,6 +444,8 @@ void CListExHdr::SetColumnIcon(int iColumn, int iIconIndex, bool fClick)
 {
 	const auto ID = ColumnIndexToID(iColumn);
 	assert(ID > 0);
+	if (ID == 0)
+		return;
 
 	if (iIconIndex == -1) //If column already has icon.
 		m_umapIcons.erase(ID);
@@ -457,6 +463,8 @@ void CListExHdr::SetColumnSortable(int iColumn, bool fSortable)
 {
 	const auto ID = ColumnIndexToID(iColumn);
 	assert(ID > 0);
+	if (ID == 0)
+		return;
 
 	m_umapIsSort[ID] = fSortable;
 }
@@ -471,6 +479,8 @@ void CListExHdr::SetSortArrow(int iColumn, bool fAscending)
 {
 	const auto ID = ColumnIndexToID(iColumn);
 	assert(ID > 0);
+	if (ID == 0)
+		return;
 
 	m_uSortColumn = ID;
 	m_fSortAscending = fAscending;

@@ -27,6 +27,8 @@
    * [LISTEX_MSG_GETICON](#listex_msg_geticon)
    * [LISTEX_MSG_LINKCLICK](#listex_msg_linkclick)
    * [LISTEX_MSG_HDRICONCLICK](#listex_msg_hdriconclick)
+   * [LISTEX_MSG_HDRRBTNDOWN](#)
+   * [LISTEX_MSG_HDRRBTNUP](#)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -238,6 +240,7 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
 ```cpp
+void ClearSort();
 bool Create(const LISTEXCREATESTRUCT& lcs);
 void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
 BOOL DeleteAllItems();
@@ -250,6 +253,7 @@ void Destroy();
 [[nodiscard]] UINT GetFontSize()const;
 [[nodiscard]] int GetSortColumn()const;
 [[nodiscard]] bool GetSortAscending()const;
+void HideColumn(int iIndex, bool fHide);
 [[nodiscard]] bool IsCreated()const;
 void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1);
 void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
@@ -257,12 +261,14 @@ void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
 void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"");
 void SetColors(const LISTEXCOLORS& lcs);
 void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
-void SetColumnSortMode(int iColumn, EListExSortMode enSortMode);
+void SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode = { });
 void SetFont(const LOGFONTW* pLogFontNew);
 void SetFontSize(UINT uiSize);
 void SetHdrHeight(DWORD dwHeight);
 void SetHdrFont(const LOGFONTW* pLogFontNew);
 void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
+void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false);
+void SetHdrImageList(CImageList* pList);
 void SetListMenu(CMenu* pMenu);
 void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1);
 void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX);
