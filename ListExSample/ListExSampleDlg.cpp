@@ -19,6 +19,7 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListExGetDispInfo)
 	ON_NOTIFY(LISTEX_MSG_GETCOLOR, IDC_LISTEX, &CListExSampleDlg::OnListExGetColor)
 	ON_NOTIFY(LISTEX_MSG_GETICON, IDC_LISTEX, &CListExSampleDlg::OnListExGetIcon)
+	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListExGetToolTip)
 	ON_NOTIFY(LISTEX_MSG_HDRICONCLICK, IDC_LISTEX, &CListExSampleDlg::OnListHdrIconClick)
 	ON_NOTIFY(LISTEX_MSG_HDRRBTNUP, IDC_LISTEX, &CListExSampleDlg::OnListHdrRClick)
 END_MESSAGE_MAP()
@@ -85,7 +86,6 @@ BOOL CListExSampleDlg::OnInitDialog()
 	{
 		m_vecData.emplace_back(VIRTLISTDATA
 			{
-				i,
 				L"Virtual item "
 				L"<link=\"0\" title=\"Custom title\">column:0</link>"
 			L"/"
@@ -94,7 +94,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 			L"Virtual item column:2/row:" + std::to_wstring(i),
 			i == 2 ? true : false,
 			i == 7 ? true : false,
-			i == 7 ? LISTEXCELLCOLOR { RGB(0, 220, 0) } : LISTEXCELLCOLOR { }
+			i == 1 ? true : false,
+			i == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
 			});
 	}
 	m_pList->SetItemCountEx(g_iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
@@ -121,6 +122,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
 	m_myList->SetRowColor(7, RGB(0, 220, 0));
 	m_myList->SetColumnColor(1, RGB(0, 220, 220));
+	m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
 	*/
 
 	//Set list's cells colors, menu, tool-tips.
@@ -130,10 +132,6 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_menuList.CreatePopupMenu();
 	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu");
 	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu");
-
-	m_pList->SetListMenu(&m_menuList);
-	m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
-	m_pList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
 
 	m_stImgList.Create(16, 16, ILC_COLOR | ILC_MASK, 0, 1);
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
@@ -205,36 +203,9 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 	{
 		switch (pNMI->hdr.code)
 		{
-		case LVM_MAPINDEXTOID:
-		{
-			if (pNMI->iItem < 0 || pNMI->iItem >= static_cast<int>(m_vecData.size()))
-				break;
-			pNMI->lParam = static_cast<LPARAM>(m_vecData.at(static_cast<size_t>(pNMI->iItem)).ID);
-		}
-		break;
 		case LVN_COLUMNCLICK:
 			SortVecData();
 			return TRUE; //Disable further message processing.
-		case LISTEX_MSG_MENUSELECTED:
-		{
-			CStringW ss;
-			switch (pNMI->lParam)
-			{
-			case IDC_LIST_MENU_CELL_FIRST:
-				ss.Format(L"Cell's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			case IDC_LIST_MENU_CELL_SECOND:
-				ss.Format(L"Cell's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			case IDC_LIST_MENU_GLOBAL_FIRST:
-				ss.Format(L"List's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			case IDC_LIST_MENU_GLOBAL_SECOND:
-				ss.Format(L"List's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-				break;
-			}
-			MessageBoxW(ss);
-		}
 		break;
 		case LISTEX_MSG_LINKCLICK:
 			MessageBoxW(reinterpret_cast<LPWSTR>(pNMI->lParam));
@@ -275,9 +246,9 @@ void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
 		return;
 
-	if (pNMI->iSubItem == 1) //Column number 1 colored to RGB(0, 220, 220).
+	if (pNMI->iSubItem == 1) //Column number 1 (for all rows) colored to RGB(0, 220, 220).
 	{
-		static LISTEXCELLCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
+		static LISTEXCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
 		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
 	}
 
@@ -290,13 +261,27 @@ void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Virtual data icons.
 	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-
 	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
 		return;
 
 	const auto index = pNMI->iItem < g_iDataSize ? pNMI->iItem : 1;
 	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pNMI->iSubItem == 1)
 		pNMI->lParam = 0; //Icon index in list's image list.
+}
+
+void CListExSampleDlg::OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	//Virtual data tooltips.
+	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
+		return;
+
+	const auto index = pNMI->iItem < g_iDataSize ? pNMI->iItem : 1;
+	if (m_vecData.at(static_cast<size_t>(index)).fToolTip && pNMI->iSubItem == 0)
+	{
+		static LISTEXTOOLTIP tt { L"Tooltip text...", L"Caption of the tooltip:" };
+		pNMI->lParam = reinterpret_cast<LPARAM>(&tt); //Tooltip pointer.
+	}
 }
 
 void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)

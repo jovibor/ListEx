@@ -8,27 +8,23 @@
     * [Manually](#manually)
     * [In Dialog](#in-dialog)
 * [Tooltips](#tooltips)
-* [Menu](#menu)
-    * [Menu Example](#menu-example)
-    * [Handle Menu Clicks](#handle-menu-clicks)
 * [Sorting](#sorting)
-   * [mode](#virtual-mode)
 * [Public Methods](#public-methods)
    * [SetHdrColumnIcon](#sethdrcolumnicon)
    * [SetSortable](#setsortable)
 * [Structures](#structures)
    * [LISTEXCREATESTRUCT](#listexcreatestruct)
    * [LISTEXCOLORS](#listexcolors)
-   * [LISTEXCELLCOLOR](#listexcellcolor)
+   * [LISTEXCOLOR](#listexcolor)
    * [EListExSortMode](#elistexsortmode)
 * [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
-   * [LISTEX_MSG_MENUSELECTED](#listex_msg_menuselected)
    * [LISTEX_MSG_GETCOLOR](#listex_msg_getcolor)
    * [LISTEX_MSG_GETICON](#listex_msg_geticon)
    * [LISTEX_MSG_LINKCLICK](#listex_msg_linkclick)
    * [LISTEX_MSG_HDRICONCLICK](#listex_msg_hdriconclick)
    * [LISTEX_MSG_HDRRBTNDOWN](#)
    * [LISTEX_MSG_HDRRBTNUP](#)
+   * [LISTEX_MSG_GETTOOLTIP](#)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -115,132 +111,14 @@ myList->SetCellTooltip(0, 1, L"Tooltip text", L"Tooltip caption:");
 ```
 This will set a tooltip for cell (0, 1) with the text: **_Tooltip text_**, and the caption **_Tooltip caption_**.
 
-## [](#)Menu
-`IListEx` class possesses innate ability to set popup menu for individual cells, as well as for the whole list.
-
-![](docs/img/listex_mainwndmenu.jpg)
-
-This is achieved with the help of two public methods:
-```cpp
-SetListMenu(CMenu* pMenu);
-SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
-```
-### [](#)Menu Example
-With the code below, we are going to set two separate menus:
-
-* For the whole list - `CMenu m_menuList;`<br>
-* For the individual cell - `CMenu m_menuCell;`
-```cpp
-//MyDlg.h
-#include "ListEx/ListEx.h"
-
-using namespace LISTEX;
-
-constexpr auto IDC_LIST_MENU_CELL_FIRSTx1;
-constexpr auto IDC_LIST_MENU_CELL_SECONDx2;
-constexpr auto IDC_LIST_MENU_GLOBAL_FIRSTx3;
-constexpr auto IDC_LIST_MENU_GLOBAL_SECONDx4;
-
-class CMyDlg : public CDialogEx
-{
-private:
-  CMenu m_menuCell;
-  CMenu m_menuList;
-  IListExPtr m_myList { CreateListEx() };
-  //...
-}
-
-//MyDlg.cpp
-CMyDlg::OnInitDialog()
-{
-  m_myList->CreateDialogCtrl();
-  m_myList->InsertColumn(0, L"First column", 0, 100);
-  m_myList->InsertColumn(...);
-  m_myList->InsertItem(...);. 
-  m_myList->SetItemText(...);
-
-  m_menuCell.CreatePopupMenu();
-  m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu...");
-  m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_SECOND, L"Cell's second menu...");
-
-  m_menuList.CreatePopupMenu();
-  m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu...");
-  m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu...");
-
-  m_myList->SetListMenu(&m_menuList);
-  m_myList->SetCellMenu(1, 0, &m_menuCell); //Set menu for row:1 column:0.
-}
-```
-### [](#)Handle Menu Clicks
-When user clicks a menu `IListEx` sends `WM_NOTIFY` message, with `NMITEMACTIVATE` struct pointer as `lParam`, to its parent window. So, in order to properly handle clicks you have to process this message in your list's parent window:
-
-```cpp
-BOOL CMyDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
-{
-    const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
-
-    if (pNMI->hdr.idFrom == IDC_LISTEX)
-    {
-    	if (pNMI->hdr.code == LISTEX_MSG_MENUSELECTED)
-    	{
-            CString ss;
-            switch (pNMI->lParam)
-            {
-            case IDC_LIST_MENU_CELL_FIRST:
-            ss.Format(L"Cell's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-            break;
-            case IDC_LIST_MENU_CELL_SECOND:
-                ss.Format(L"Cell's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-            break;
-            case IDC_LIST_MENU_GLOBAL_FIRST:
-                ss.Format(L"List's first menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-            break;
-            case IDC_LIST_MENU_GLOBAL_SECOND:
-                ss.Format(L"List's second menu clicked. Row: %i, Column: %i", pNMI->iItem, pNMI->iSubItem);
-            break;
-            }
-            MessageBoxW(ss);
-        }
-    }
-    return CDialogEx::OnNotify(wParam, lParam, pResult);
-}
-```
-`IListEx` fills `NMITEMACTIVATE` struct with `NMITEMACTIVATE::hdr.code` equals `LISTEX_MSG_MENUSELECTED`. And `menuId` is stored as `NMITEMACTIVATE::lParam`.
-
-`NMITEMACTIVATE::iItem` and `NMITEMACTIVATE::iSubItem` both point to a cell the menu was clicked on.
-
 ## [](#)Sorting
 To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) flag to true. In this case, when you click on the header, list will be sorted according to the clicked column. By default `IListEx` performs lexicographical sorting.
 
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
-### [](#)mode
-In list mode, if created with `LVS_OWNERDATA` style, `IListEx` will notify, in form of `WM_NOTIFY` message, parent window with `NMHDR::code` equal to `LVN_COLUMNCLICK` when user clicked header column.
-
-`LVM_MAPINDEXTOID` message code will be sent to notify parent window that `IListEx::MapIndexToID` method was called internally. Parent window in this case is responsible to provide unique IDs for list items. This is very important for cells individual colors, tool-tips, menu and custom data to work properly in mode.  
-Unique ID must be returned in form of `LPNMITEMACTIVATE::lParam`
-```cpp
-BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
-{
-    const LPNMITEMACTIVATE pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
-
-    if (pNMI->hdr.idFrom == IDC_LISTEX)
-    {
-    	switch (pNMI->hdr.code)
-    	{
-    	case LVM_MAPINDEXTOID:
-    		pNMI->lParam = //Unique ID of the pNMI->iItem.
-    	break;
-    	//...
-    	}
-    }
-}
-```
-
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
 ```cpp
-void ClearSort();
 bool Create(const LISTEXCREATESTRUCT& lcs);
 void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
 BOOL DeleteAllItems();
@@ -255,9 +133,9 @@ void Destroy();
 [[nodiscard]] bool GetSortAscending()const;
 void HideColumn(int iIndex, bool fHide);
 [[nodiscard]] bool IsCreated()const;
+void ResetSort();
 void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1);
 void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
-void SetCellMenu(int iItem, int iSubitem, CMenu* pMenu);
 void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"");
 void SetColors(const LISTEXCOLORS& lcs);
 void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
@@ -269,7 +147,6 @@ void SetHdrFont(const LOGFONTW* pLogFontNew);
 void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
 void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false);
 void SetHdrImageList(CImageList* pList);
-void SetListMenu(CMenu* pMenu);
 void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1);
 void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX);
 ```
@@ -344,18 +221,20 @@ struct LISTEXCOLORS
 ```
 This struct is also used in `SetColor` method.
 
-### [](#)LISTEXGETCOLOR
+### [](#)LISTEXCOLOR
 ```cpp
-struct LISTEXCELLCOLOR
+struct LISTEXCOLOR
 {
-	COLORREF clrBk { };
-	COLORREF clrText { };
+    COLORREF clrBk { };
+    COLORREF clrText { };
 };
-using PLISTEXCELLCOLOR = LISTEXCELLCOLOR*;
+using PLISTEXCOLOR = LISTEXCOLOR*;
 ```
+
+### [](#)LISTEX_MSG_GETCOLOR
 Used as a response to `LISTEX_MSG_GETCOLOR` message.
 
-### [](#)LISTEXGETICON
+### [](#)LISTEX_MSG_GETICON
 ```cpp
 void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {

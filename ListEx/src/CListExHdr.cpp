@@ -477,11 +477,14 @@ void CListExHdr::SetSortable(bool fSortable)
 
 void CListExHdr::SetSortArrow(int iColumn, bool fAscending)
 {
-	const auto ID = ColumnIndexToID(iColumn);
-	assert(ID > 0);
-	if (ID == 0)
-		return;
-
+	UINT ID { 0 };
+	if (iColumn >= 0)
+	{
+		ID = ColumnIndexToID(iColumn);
+		assert(ID > 0);
+		if (ID == 0)
+			return;
+	}
 	m_uSortColumn = ID;
 	m_fSortAscending = fAscending;
 	RedrawWindow();
