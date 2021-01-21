@@ -22,6 +22,7 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListExGetToolTip)
 	ON_NOTIFY(LISTEX_MSG_HDRICONCLICK, IDC_LISTEX, &CListExSampleDlg::OnListHdrIconClick)
 	ON_NOTIFY(LISTEX_MSG_HDRRBTNUP, IDC_LISTEX, &CListExSampleDlg::OnListHdrRClick)
+	ON_NOTIFY(LVN_KEYDOWN, IDC_LISTEX, &CListExSampleDlg::OnListKeyDown)
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
@@ -138,7 +139,12 @@ BOOL CListExSampleDlg::OnInitDialog()
 		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
 	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
 	m_pList->SetHdrImageList(&m_stImgList);
-	m_pList->SetHdrColumnIcon(0, 0, true);
+
+	LISTEXHDRICON stHdrIcon;
+	stHdrIcon.iIndex = 0;
+	stHdrIcon.pt.x = 4;
+	stHdrIcon.pt.y = 4;
+	m_pList->SetHdrColumnIcon(0, stHdrIcon);
 
 	return TRUE;
 }
@@ -296,6 +302,11 @@ void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	CPoint pt;
 	GetCursorPos(&pt);
 	m_menuHdr.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, pt.x, pt.y, this);
+}
+
+void CListExSampleDlg::OnListKeyDown(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+{
+	//const auto pKey = reinterpret_cast<NMLVKEYDOWN*>(pNMHDR);
 }
 
 void CListExSampleDlg::SortVecData()

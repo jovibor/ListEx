@@ -16,6 +16,7 @@
    * [LISTEXCREATESTRUCT](#listexcreatestruct)
    * [LISTEXCOLORS](#listexcolors)
    * [LISTEXCOLOR](#listexcolor)
+   * [LISTEXHDRICON](#listexhdricon)
    * [EListExSortMode](#elistexsortmode)
 * [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
    * [LISTEX_MSG_GETCOLOR](#listex_msg_getcolor)
@@ -145,7 +146,7 @@ void SetFontSize(UINT uiSize);
 void SetHdrHeight(DWORD dwHeight);
 void SetHdrFont(const LOGFONTW* pLogFontNew);
 void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
-void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false);
+void SetHdrColumnIcon(int iColumn, const LISTEXHDRICON& stIcon);
 void SetHdrImageList(CImageList* pList);
 void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1);
 void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX);
@@ -229,6 +230,16 @@ struct LISTEXCOLOR
     COLORREF clrText { };
 };
 using PLISTEXCOLOR = LISTEXCOLOR*;
+```
+
+### [](#)LISTEXHDRICON
+```cpp
+struct LISTEXHDRICON
+{
+    POINT pt { };              //Point of the top-left corner.
+    int   iIconIndex { };      //Icon index in the header's image list.
+    bool  fClickable { true }; //Is icon sending LISTEX_MSG_HDRICONCLICK message when clicked.
+};
 ```
 
 ### [](#)LISTEX_MSG_GETCOLOR

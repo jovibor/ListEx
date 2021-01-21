@@ -23,26 +23,27 @@ public:
 protected:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
-	afx_msg void OnListExGetDispInfo(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnListExGetColor(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnListExGetIcon(NMHDR *pNMHDR, LRESULT *pResult);
+	BOOL OnInitDialog()override;
+	afx_msg void OnPaint();
+	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	afx_msg HCURSOR OnQueryDragIcon();
+	afx_msg void OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListExGetIcon(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnListHdrRClick(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnListHdrRClick(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListKeyDown(NMHDR* pNMHDR, LRESULT* pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP()
 protected:
 	HICON m_hIcon;
-	BOOL OnInitDialog()override;
-	afx_msg void OnPaint();
-	afx_msg HCURSOR OnQueryDragIcon();
 	IListExPtr m_pList { CreateListEx() };
 	CMenu m_menuCell;
 	CMenu m_menuList;
 	CMenu m_menuHdr;
 	std::vector<VIRTLISTDATA> m_vecData { };
 	CImageList m_stImgList;
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
 };
 
 constexpr auto IDC_LIST_MENU_CELL_FIRST = 0x1;

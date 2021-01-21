@@ -667,13 +667,13 @@ void CListEx::SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText)
 	GetHeaderCtrl().RedrawWindow();
 }
 
-void CListEx::SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick)
+void CListEx::SetHdrColumnIcon(int iColumn, const LISTEXHDRICON& stIcon)
 {
 	assert(IsCreated());
 	if (!IsCreated())
 		return;
 
-	GetHeaderCtrl().SetColumnIcon(iColumn, iIconIndex, fClick);
+	GetHeaderCtrl().SetColumnIcon(iColumn, stIcon);
 }
 
 void CListEx::SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText)
