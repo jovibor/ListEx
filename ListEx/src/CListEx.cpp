@@ -123,9 +123,7 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 	if (!m_stWndTtCell.CreateEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, TTS_BALLOON | TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr))
 		return false;
-
 	SetWindowTheme(m_stWndTtCell, nullptr, L""); //To prevent Windows from changing theme of Balloon window.
-
 	m_stTInfoCell.cbSize = TTTOOLINFOW_V1_SIZE;
 	m_stTInfoCell.uFlags = TTF_TRACK;
 	m_stTInfoCell.uId = 0x01;
@@ -134,10 +132,9 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 	m_stWndTtCell.SendMessageW(TTM_SETTIPTEXTCOLOR, static_cast<WPARAM>(m_stColors.clrTooltipText), 0);
 	m_stWndTtCell.SendMessageW(TTM_SETTIPBKCOLOR, static_cast<WPARAM>(m_stColors.clrTooltipBk), 0);
 
-	if (!m_stWndTtLink.CreateEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
+	if (!m_stWndTtLink.CreateEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, TTS_NOPREFIX | TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr))
 		return false;
-
 	m_stTInfoLink.cbSize = TTTOOLINFOW_V1_SIZE;
 	m_stTInfoLink.uFlags = TTF_TRACK;
 	m_stTInfoLink.uId = 0x02;
@@ -147,14 +144,12 @@ bool CListEx::Create(const LISTEXCREATESTRUCT& lcs)
 	if (m_fHighLatency) //Tooltip for HighLatency mode.
 	{
 		if (!m_wndTtRow.CreateEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, TTS_NOANIMATE | TTS_NOFADE | TTS_NOPREFIX | TTS_ALWAYSTIP,
-			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,	m_hWnd, nullptr))
+			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, m_hWnd, nullptr))
 			return false;
-
 		m_stToolInfoRow.cbSize = TTTOOLINFOW_V1_SIZE;
 		m_stToolInfoRow.uFlags = TTF_TRACK;
 		m_stToolInfoRow.uId = 0x03;
 		m_wndTtRow.SendMessageW(TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&m_stToolInfoRow));
-		m_wndTtRow.SendMessageW(TTM_SETMAXTIPWIDTH, 0, static_cast<LPARAM>(400)); //to allow use of newline \n.
 	}
 
 	m_dwGridWidth = lcs.dwListGridWidth;
