@@ -21,11 +21,11 @@
 * [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
    * [LISTEX_MSG_GETCOLOR](#listex_msg_getcolor)
    * [LISTEX_MSG_GETICON](#listex_msg_geticon)
+   * [LISTEX_MSG_GETTOOLTIP](#)
    * [LISTEX_MSG_LINKCLICK](#listex_msg_linkclick)
    * [LISTEX_MSG_HDRICONCLICK](#listex_msg_hdriconclick)
    * [LISTEX_MSG_HDRRBTNDOWN](#)
    * [LISTEX_MSG_HDRRBTNUP](#)
-   * [LISTEX_MSG_GETTOOLTIP](#)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -242,22 +242,6 @@ struct LISTEXHDRICON
 };
 ```
 
-### [](#)LISTEX_MSG_GETCOLOR
-Used as a response to `LISTEX_MSG_GETCOLOR` message.
-
-### [](#)LISTEX_MSG_GETICON
-```cpp
-void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
-    //Virtual data icons.
-    const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-    ...
-	
-    pNMI->lParam = SomeIndex; //Icon index in list's image list.
-}
-```
-This message is used in Virtual List mode to obtain icon index in list image list.
-
 ### [](#)EListExSortMode
 Enum showing sorting type for list columns.
 ```cpp
@@ -271,12 +255,34 @@ enum class EListExSortMode : short
 These messages are sent to the parent window in form of `WM_NOTIFY` windows message.  
 The `lParam` will contain pointer to `NMHDR` standard windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
 
-### [](#)LISTEX_MSG_MENUSELECTED
-User defined menu selected. See [menu](#menu) section.
+### [](#)LISTEX_MSG_GETCOLOR
+When in virtual mode, sent to the parent window to retrieve cell's color. Expects pointer to the `LISTEXCOLOR` struct in response, or nothing to use defaults.
+```cpp
+void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+    const auto pNMI = reintepret_cast<NMITEMACTIVATE*>(pNMHDR);
 
-### [](#)LISTEX_MSG_CELLCOLOR
-Sent to the parent to retrieve current cell color. You can set cells' colors whether handling this message or using [`SetCellColor`](#setcolor) member function.  
-This message has higher priority over `SetCellColor` method.
+    //For column number 1 (all rows) set color to RGB(0, 220, 220).
+    if (pNMI->iSubItem == 1)
+    {
+        static LISTEXCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
+        pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
+    }
+}
+```
+
+### [](#)LISTEX_MSG_GETICON
+```cpp
+void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+    //Virtual data icons.
+    const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+    ...
+	
+    pNMI->lParam = SomeIndex; //Icon index in list's image list.
+}
+```
+This message is used in Virtual List mode to obtain icon index in list image list.
 
 ### [](#)LISTEX_MSG_LINKCLICK
 List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the `NMITEMACTIVATE` struct.  
