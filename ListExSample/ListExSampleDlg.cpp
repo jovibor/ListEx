@@ -103,27 +103,27 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_pList->SetItemCountEx(g_iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
 
 	//For classical list.
-/*	m_myList->InsertItem(0, L"Test item - row:0/column:0");
-	m_myList->InsertItem(1, L"Test item - row:1/column:0.");
-	m_myList->InsertItem(2, L"Test item - row:2/column:0..");
-	m_myList->InsertItem(3, L"Test item - row:3/column:0...");
-	m_myList->InsertItem(4, L"Test item - row:4/column:0....");
-	m_myList->SetItemText(0, 1, L"Test item - row:0/column:1....");
-	m_myList->SetItemText(1, 1, L"Test item - row:1/column:1...");
-	m_myList->SetItemText(2, 1, L"Test item - row:2/column:1..");
-	m_myList->SetItemText(3, 1, L"Test item - row:3/column:1.");
-	m_myList->SetItemText(4, 1, L"Test item - row:4/column:1");
-	m_myList->SetItemText(0, 2, L"Test item - row:0/column:2...");
-	m_myList->SetItemText(1, 2, L"Test item - row:1/column:2.");
-	m_myList->SetItemText(2, 2, L"Test item - row:2/column:2....");
-	m_myList->SetItemText(3, 2, L"Test item - row:3/column:2..");
-	m_myList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
+/*	m_pList->InsertItem(0, L"Test item - row:0/column:0");
+	m_pList->InsertItem(1, L"Test item - row:1/column:0.");
+	m_pList->InsertItem(2, L"Test item - row:2/column:0..");
+	m_pList->InsertItem(3, L"Test item - row:3/column:0...");
+	m_pList->InsertItem(4, L"Test item - row:4/column:0....");
+	m_pList->SetItemText(0, 1, L"Test item - row:0/column:1....");
+	m_pList->SetItemText(1, 1, L"Test item - row:1/column:1...");
+	m_pList->SetItemText(2, 1, L"Test item - row:2/column:1..");
+	m_pList->SetItemText(3, 1, L"Test item - row:3/column:1.");
+	m_pList->SetItemText(4, 1, L"Test item - row:4/column:1");
+	m_pList->SetItemText(0, 2, L"Test item - row:0/column:2...");
+	m_pList->SetItemText(1, 2, L"Test item - row:1/column:2.");
+	m_pList->SetItemText(2, 2, L"Test item - row:2/column:2....");
+	m_pList->SetItemText(3, 2, L"Test item - row:3/column:2..");
+	m_pList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
 
-	m_myList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
-	m_myList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
-	m_myList->SetCellColor(4, 2, RGB(255, 255, 0));
-	m_myList->SetRowColor(7, RGB(0, 220, 0));
-	m_myList->SetColumnColor(1, RGB(0, 220, 220));
+	m_pList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
+	m_pList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
+	m_pList->SetCellColor(4, 2, RGB(255, 255, 0));
+	m_pList->SetRowColor(7, RGB(0, 220, 0));
+	m_pList->SetColumnColor(1, RGB(0, 220, 220));
 	m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
 	*/
 
