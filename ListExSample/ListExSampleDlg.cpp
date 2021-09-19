@@ -50,7 +50,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.dwHdrHeight = 25;
 	lcs.fSortable = true;
 	lcs.stColor.clrHdrText = RGB(250, 250, 250);
-//	lcs.fHighLatency = true;
+	//	lcs.fHighLatency = true;
 
 	m_pList->Create(lcs);
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
@@ -78,9 +78,9 @@ BOOL CListExSampleDlg::OnInitDialog()
 	}
 
 	m_pList->SetHdrColumnColor(0, RGB(70, 70, 70));
-//	m_pList->SetHdrColumnColor(1, RGB(125, 125, 125));
-//	m_pList->SetHdrColumnColor(2, RGB(200, 200, 200));
-//	m_myList->SetColumnSortMode(0, false);
+	//	m_pList->SetHdrColumnColor(1, RGB(125, 125, 125));
+	//	m_pList->SetHdrColumnColor(2, RGB(200, 200, 200));
+	//	m_myList->SetColumnSortMode(0, false);
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
@@ -94,9 +94,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
 			L"Virtual item column:1/row:" + std::to_wstring((i % 2) ? i * i : i),
 			L"Virtual item column:2/row:" + std::to_wstring(i),
-			i == 2 ? true : false,
-			i == 7 ? true : false,
-			i == 1 ? true : false,
+			i == 2, i == 7, i == 1,
 			i == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
 			});
 	}
@@ -213,7 +211,7 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 		case LVN_COLUMNCLICK:
 			SortVecData();
 			return TRUE; //Disable further message processing.
-		break;
+			break;
 		case LISTEX_MSG_LINKCLICK:
 			MessageBoxW(reinterpret_cast<LPWSTR>(pNMI->lParam));
 			break;

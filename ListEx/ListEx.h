@@ -14,7 +14,7 @@ namespace LISTEX
 	/********************************************************************************************
 	* EListExSortMode - Sorting mode.                                                           *
 	********************************************************************************************/
-	enum class EListExSortMode : WORD
+	enum class EListExSortMode : std::uint8_t
 	{
 		SORT_LEX, SORT_NUMERIC
 	};

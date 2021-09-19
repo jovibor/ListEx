@@ -12,9 +12,6 @@
 #include <limits>
 #include <random>
 
-#undef min
-#undef max
-
 using namespace LISTEX;
 using namespace LISTEX::INTERNAL;
 
@@ -388,7 +385,7 @@ int CListEx::InsertColumn(int nCol, const LVCOLUMN* pColumn)
 	//Assigning each column a unique internal random identifier.
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<unsigned int> distrib(1, std::numeric_limits<unsigned int>::max());
+	std::uniform_int_distribution<unsigned int> distrib(1, (std::numeric_limits<unsigned int>::max)());
 
 	HDITEMW hdi { };
 	hdi.mask = HDI_LPARAM;
@@ -419,7 +416,7 @@ int CListEx::InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat, int 
 	//Assigning each column a unique internal random identifier.
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<unsigned int> distrib(1, std::numeric_limits<unsigned int>::max());
+	std::uniform_int_distribution<unsigned int> distrib(1, (std::numeric_limits<unsigned int>::max)());
 
 	HDITEMW hdi { };
 	hdi.mask = HDI_LPARAM;
@@ -1304,7 +1301,7 @@ void CListEx::OnKillFocus(CWnd* /*pNewWnd*/)
 
 BOOL CListEx::OnEraseBkgnd(CDC* /*pDC*/)
 {
-	return FALSE;
+	return TRUE;
 }
 
 void CListEx::OnPaint()
