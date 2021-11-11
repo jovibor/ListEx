@@ -129,7 +129,6 @@ void Destroy();
 [[nodiscard]] ULONGLONG GetCellData(int iItem, int iSubitem)const;
 [[nodiscard]] LISTEXCOLORS GetColors()const;
 [[nodiscard]] EListExSortMode GetColumnSortMode(int iColumn)const;
-[[nodiscard]] UINT GetFontSize()const;
 [[nodiscard]] int GetSortColumn()const;
 [[nodiscard]] bool GetSortAscending()const;
 void HideColumn(int iIndex, bool fHide);
@@ -142,7 +141,6 @@ void SetColors(const LISTEXCOLORS& lcs);
 void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
 void SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode = { });
 void SetFont(const LOGFONTW* pLogFontNew);
-void SetFontSize(UINT uiSize);
 void SetHdrHeight(DWORD dwHeight);
 void SetHdrFont(const LOGFONTW* pLogFontNew);
 void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
@@ -189,7 +187,7 @@ struct LISTEXCREATESTRUCT
     UINT         uID { };                 //List control ID.
     DWORD        dwStyle { };             //Control's styles. Zero for default.
     DWORD        dwListGridWidth { 1 };   //Width of the list grid.
-    DWORD        dwHdrHeight { 20 };      //Header height.
+    DWORD        dwHdrHeight { };      //Header height.
     bool         fDialogCtrl { false };   //If it's a list within dialog.
     bool         fSortable { false };     //Is list sortable, by clicking on the header column?
     bool         fLinkUnderline { true }; //Links are displayed underlined or not.
