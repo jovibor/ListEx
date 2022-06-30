@@ -24,6 +24,7 @@
     <Keyword>MFCProj</Keyword>
     <RootNamespace>ListExSample</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>SampleProject</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -76,23 +77,31 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <CodeAnalysisRuleSet>CppCoreCheckRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <CodeAnalysisRuleSet>CppCoreCheckRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <CodeAnalysisRuleSet>CppCoreCheckRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <CodeAnalysisRuleSet>CppCoreCheckRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -203,8 +212,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\ListEx\ListEx.h" />
-    <ClInclude Include="..\ListEx\src\CListEx.h" />
-    <ClInclude Include="..\ListEx\src\CListExHdr.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="ListExSample.h" />
     <ClInclude Include="ListExSampleDlg.h" />
@@ -213,8 +220,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ListEx\src\CListEx.cpp" />
-    <ClCompile Include="..\ListEx\src\CListExHdr.cpp" />
+    <ClCompile Include="..\ListEx\CListEx.cpp" />
     <ClCompile Include="ListExSample.cpp" />
     <ClCompile Include="ListExSampleDlg.cpp" />
     <ClCompile Include="stdafx.cpp">

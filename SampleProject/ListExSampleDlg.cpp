@@ -43,7 +43,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);
 	SetIcon(m_hIcon, FALSE);
 
-	LISTEXCREATESTRUCT lcs;
+	LISTEXCREATE lcs;
 	lcs.uID = IDC_LISTEX;
 	lcs.pParent = this;
 	lcs.fDialogCtrl = true;

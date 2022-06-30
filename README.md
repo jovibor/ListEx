@@ -13,7 +13,7 @@
    * [SetHdrColumnIcon](#sethdrcolumnicon)
    * [SetSortable](#setsortable)
 * [Structures](#structures)
-   * [LISTEXCREATESTRUCT](#listexcreatestruct)
+   * [LISTEXCREATE](#listexcreate)
    * [LISTEXCOLORS](#listexcolors)
    * [LISTEXCOLOR](#listexcolor)
    * [LISTEXHDRICON](#listexhdricon)
@@ -49,13 +49,9 @@ The usage of the control is quite simple:
 3. Add `#include "ListEx/ListEx.h"` where you suppose to use the control.
 4. Declare `IListExPtr` variable: `IListExPtr myList { CreateListEx() };`
 
-`IListExPtr` is, in fact, a pointer to the `IListEx` pure abstract base class, wrapped either in `std::unique_ptr` or `std::shared_ptr`. You can choose whatever is best for you by comment/uncomment one of this alliases in `ListEx.h`:
-```cpp
-	//using IListExPtr = IListExUnPtr;
-	using IListExPtr = IListExShPtr;
-```
+`IListExPtr` is a pointer to the `IListEx` class wrapped in `std::unique_ptr`.
 This wrapper is used mainly for convenience, so you don't have to bother about object lifetime, it will be destroyed automatically.
-That's why there is a call to the factory function `CreateListEx()`, to properly initialize a pointer.<br>
+That's why there is a call to the factory function `CreateListEx()`, to properly initialize a pointer.
 
 Control uses its own namespace `LISTEX`. So it's up to you, whether to use namespace prefix before declarations: 
 ```cpp
@@ -68,21 +64,21 @@ using namespace LISTEX;
 
 ## [](#)Create
 ### [](#)Manually
-`Create` is the main method to create list control. It takes reference to the [`LISTEXCREATESTRUCT`](#listexcreatestruct) structure.
+`Create` is the main method to create list control. It takes reference to the [`LISTEXCREATE`](#listexcreate) structure.
 
 Below is a simple example of the **control**'s creation:
 ```cpp
 IListExPtr myList { CreateListEx() };
 .
 .
-LISTEXCREATESTRUCT lcs;
-lcs.pwndParent = this;
-lcs.nID = ID_MY_LIST;
+LISTEXCREATE lcs;
+lcs.pParent = this;
+lcs.uID = ID_MY_LIST;
 lcs.rect = CRect(0, 0, 500, 300);
 
 myList->Create(lcs);
 ```
-With `LISTEXCREATESTRUCT` structure you can adjust a plethora of list’s aspects:
+With `LISTEXCREATE` structure you can adjust a plethora of list’s aspects:
 
 * Color of the list text and bk (background). Bk is set separately for odd and even rows
 * Color of the list header
@@ -113,14 +109,14 @@ myList->SetCellTooltip(0, 1, L"Tooltip text", L"Tooltip caption:");
 This will set a tooltip for cell (0, 1) with the text: **_Tooltip text_**, and the caption **_Tooltip caption_**.
 
 ## [](#)Sorting
-To enable sorting set the [`LISTEXCREATESTRUCT::fSortable`](#listexcretestruct) flag to true. In this case, when you click on the header, list will be sorted according to the clicked column. By default `IListEx` performs lexicographical sorting.
+To enable sorting set the [`LISTEXCREATE::fSortable`](#listexcreate) flag to true. In this case, when you click on the header, list will be sorted according to the clicked column. By default `IListEx` performs lexicographical sorting.
 
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
 ```cpp
-bool Create(const LISTEXCREATESTRUCT& lcs);
+bool Create(const LISTEXCREATE& lcs);
 void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
 BOOL DeleteAllItems();
 BOOL DeleteColumn(int nCol);
@@ -175,9 +171,9 @@ Flag `fClick` means that icon is clickable. See [`LISTEX_MSG_HDRICONCLICK`](#lis
 
 ## [](#)Structures
 
-### [](#)LISTEXCREATESTRUCT
+### [](#)LISTEXCREATE
 ```cpp
-struct LISTEXCREATESTRUCT
+struct LISTEXCREATE
 {
     LISTEXCOLORS stColor { };             //All control's colors.
     CRect        rect;                    //Initial rect.
@@ -192,6 +188,7 @@ struct LISTEXCREATESTRUCT
     bool         fSortable { false };     //Is list sortable, by clicking on the header column?
     bool         fLinkUnderline { true }; //Links are displayed underlined or not.
     bool         fLinkTooltip { true };   //Show links' toolips.
+    bool         fHighLatency { false };  //Do not redraw window until scrolling completes.
 };
 ```
 
@@ -310,9 +307,9 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
 Nothing is simpler, see code below:
 ```cpp
-LISTEXCREATESTRUCT lcs;
+LISTEXCREATE lcs;
 lcs.rect = CRect(0, 0, 500, 300)
-lcs.pwndParent = this;
+lcs.pParent = this;
 lcs.dwHdrHeight = 50;
 lcs.stColor.clrListBkRow1 = RGB(255, 255, 0);
 lcs.stColor.clrListBkRow2 = RGB(255, 255, 0);
