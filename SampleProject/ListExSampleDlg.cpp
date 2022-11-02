@@ -68,8 +68,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_menuHdr.AppendMenuW(MF_STRING, IDC_LIST_MENU_HDR_BEGIN, L"Test column 0");
 	m_menuHdr.CheckMenuItem(IDC_LIST_MENU_HDR_BEGIN, MF_CHECKED | MF_BYCOMMAND);
 
-	for (int i = 1; i < g_iColumns; ++i)
-	{
+	for (int i = 1; i < g_iColumns; ++i) {
 		auto wstrName = std::wstring(L"Test column ") + std::to_wstring(i);
 		m_pList->InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 200);
 		m_pList->SetHdrColumnColor(i, RGB(200, 200, 200));
@@ -84,8 +83,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
-	for (unsigned i = 0; i < g_iDataSize; ++i)
-	{
+	for (unsigned i = 0; i < g_iDataSize; ++i) {
 		m_vecData.emplace_back(VIRTLISTDATA
 			{
 				L"Virtual item "
@@ -150,8 +148,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 void CListExSampleDlg::OnPaint()
 {
-	if (IsIconic())
-	{
+	if (IsIconic()) {
 		CPaintDC dc(this); // device context for painting
 
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
@@ -167,8 +164,7 @@ void CListExSampleDlg::OnPaint()
 		// Draw the icon
 		dc.DrawIcon(x, y, m_hIcon);
 	}
-	else
-	{
+	else {
 		CDialogEx::OnPaint();
 	}
 }
@@ -186,13 +182,11 @@ BOOL CListExSampleDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 
 	const auto uState = m_menuHdr.GetMenuState(wMenuID, MF_BYCOMMAND);
 
-	if (uState & MF_CHECKED)
-	{
+	if (uState & MF_CHECKED) {
 		m_menuHdr.CheckMenuItem(wMenuID, MF_UNCHECKED | MF_BYCOMMAND);
 		m_pList->HideColumn(wMenuID - IDC_LIST_MENU_HDR_BEGIN, true);
 	}
-	else
-	{
+	else {
 		m_menuHdr.CheckMenuItem(wMenuID, MF_CHECKED | MF_BYCOMMAND);
 		m_pList->HideColumn(wMenuID - IDC_LIST_MENU_HDR_BEGIN, false);
 	}
@@ -204,10 +198,8 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
 	const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
-	if (pNMI->hdr.idFrom == IDC_LISTEX)
-	{
-		switch (pNMI->hdr.code)
-		{
+	if (pNMI->hdr.idFrom == IDC_LISTEX) {
+		switch (pNMI->hdr.code) {
 		case LVN_COLUMNCLICK:
 			SortVecData();
 			return TRUE; //Disable further message processing.
@@ -227,10 +219,8 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	LVITEMW* pItem = &pDispInfo->item;
 	const auto index = pItem->iItem < g_iDataSize ? pItem->iItem : 1;
 
-	if (pItem->mask & LVIF_TEXT)
-	{
-		switch (pItem->iSubItem)
-		{
+	if (pItem->mask & LVIF_TEXT) {
+		switch (pItem->iSubItem) {
 		case 0:
 			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr1.data();
 			break;
@@ -251,8 +241,7 @@ void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
 		return;
 
-	if (pNMI->iSubItem == 1) //Column number 1 (for all rows) colored to RGB(0, 220, 220).
-	{
+	if (pNMI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
 		static LISTEXCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
 		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
 	}
@@ -282,8 +271,7 @@ void CListExSampleDlg::OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		return;
 
 	const auto index = pNMI->iItem < g_iDataSize ? pNMI->iItem : 1;
-	if (m_vecData.at(static_cast<size_t>(index)).fToolTip && pNMI->iSubItem == 0)
-	{
+	if (m_vecData.at(static_cast<size_t>(index)).fToolTip && pNMI->iSubItem == 0) {
 		static LISTEXTOOLTIP tt { L"Tooltip text...", L"Caption of the tooltip:" };
 		pNMI->lParam = reinterpret_cast<LPARAM>(&tt); //Tooltip pointer.
 	}
@@ -315,35 +303,31 @@ void CListExSampleDlg::SortVecData()
 		return;
 
 	//Sorts the vector of data according to clicked column.
-	std::sort(m_vecData.begin(), m_vecData.end(), [&](const VIRTLISTDATA& st1, const VIRTLISTDATA& st2)
-		{
-			int iCompare { };
-			switch (iColumnIndex)
-			{
-			case 0:
-				iCompare = st1.wstr1.compare(st2.wstr1);
-				break;
-			case 1:
-				iCompare = st1.wstr2.compare(st2.wstr2);
-				break;
-			case 2:
-				iCompare = st1.wstr3.compare(st2.wstr3);
-				break;
-			}
+	std::sort(m_vecData.begin(), m_vecData.end(), [&](const VIRTLISTDATA& st1, const VIRTLISTDATA& st2) {
+		int iCompare { };
+		switch (iColumnIndex) {
+		case 0:
+			iCompare = st1.wstr1.compare(st2.wstr1);
+			break;
+		case 1:
+			iCompare = st1.wstr2.compare(st2.wstr2);
+			break;
+		case 2:
+			iCompare = st1.wstr3.compare(st2.wstr3);
+			break;
+		}
 
-			bool result { false };
-			if (m_pList->GetSortAscending())
-			{
-				if (iCompare < 0)
-					result = true;
-			}
-			else
-			{
-				if (iCompare > 0)
-					result = true;
-			}
+		bool result { false };
+		if (m_pList->GetSortAscending()) {
+			if (iCompare < 0)
+				result = true;
+		}
+		else {
+			if (iCompare > 0)
+				result = true;
+		}
 
-			return result;
+		return result;
 		});
 
 	m_pList->RedrawWindow();
