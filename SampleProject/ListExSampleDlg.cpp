@@ -22,7 +22,7 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListExGetToolTip)
 	ON_NOTIFY(LISTEX_MSG_HDRICONCLICK, IDC_LISTEX, &CListExSampleDlg::OnListHdrIconClick)
 	ON_NOTIFY(LISTEX_MSG_HDRRBTNUP, IDC_LISTEX, &CListExSampleDlg::OnListHdrRClick)
-	ON_NOTIFY(LVN_KEYDOWN, IDC_LISTEX, &CListExSampleDlg::OnListKeyDown)
+	ON_NOTIFY(LISTEX_MSG_DATACHANGED, IDC_LISTEX, &CListExSampleDlg::OnListDataChanged)
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
@@ -50,12 +50,11 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.dwHdrHeight = 25;
 	lcs.fSortable = true;
 	lcs.stColor.clrHdrText = RGB(250, 250, 250);
-	//	lcs.fHighLatency = true;
 
 	m_pList->Create(lcs);
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
 
-	m_pList->InsertColumn(0, L"Test column 0", 0, 200);
+	m_pList->InsertColumn(0, L"Test column 0", 0, 200, -1, LVCFMT_CENTER);
 	//First (0 index) column is always left aligned by default.
 	//To change its alignment SetColumn() must be called explicitly.
 	LVCOLUMNW stCol { };
@@ -70,7 +69,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	for (int i = 1; i < g_iColumns; ++i) {
 		auto wstrName = std::wstring(L"Test column ") + std::to_wstring(i);
-		m_pList->InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 200);
+		m_pList->InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 200, -1, LVCFMT_CENTER);
 		m_pList->SetHdrColumnColor(i, RGB(200, 200, 200));
 		m_menuHdr.AppendMenuW(MF_STRING, IDC_LIST_MENU_HDR_BEGIN + i, wstrName.data());
 		m_menuHdr.CheckMenuItem(IDC_LIST_MENU_HDR_BEGIN + i, MF_CHECKED | MF_BYCOMMAND);
@@ -84,10 +83,9 @@ BOOL CListExSampleDlg::OnInitDialog()
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
 	for (unsigned i = 0; i < g_iDataSize; ++i) {
-		m_vecData.emplace_back(VIRTLISTDATA
-			{
-				L"Virtual item "
-				L"<link=\"0\" title=\"Custom title\">column:0</link>"
+		m_vecData.emplace_back(VIRTLISTDATA {
+			L"Virtual item "
+			L"<link=\"0\" title=\"Custom title\">column:0</link>"
 			L"/"
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
 			L"Virtual item column:1/row:" + std::to_wstring((i % 2) ? i * i : i),
@@ -136,6 +134,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
 	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
 	m_pList->SetHdrImageList(&m_stImgList);
+	m_pList->SetColumnEditable(2, true);
 
 	LISTEXHDRICON stHdrIcon;
 	stHdrIcon.iIndex = 0;
@@ -151,7 +150,7 @@ void CListExSampleDlg::OnPaint()
 	if (IsIconic()) {
 		CPaintDC dc(this); // device context for painting
 
-		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
+		SendMessageW(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
 		// Center icon in client rectangle
 		const auto cxIcon = GetSystemMetrics(SM_CXICON);
@@ -203,14 +202,17 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 		case LVN_COLUMNCLICK:
 			SortVecData();
 			return TRUE; //Disable further message processing.
-			break;
 		case LISTEX_MSG_LINKCLICK:
 			MessageBoxW(reinterpret_cast<LPWSTR>(pNMI->lParam));
-			break;
+			return TRUE;
 		}
 	}
 
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
+}
+
+void CListExSampleDlg::OnOK()
+{
 }
 
 void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -222,13 +224,13 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (pItem->mask & LVIF_TEXT) {
 		switch (pItem->iSubItem) {
 		case 0:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr1.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr0.data();
 			break;
 		case 1:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr2.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr1.data();
 			break;
 		case 2:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr3.data();
+			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr2.data();
 			break;
 		}
 	}
@@ -291,9 +293,23 @@ void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	m_menuHdr.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, pt.x, pt.y, this);
 }
 
-void CListExSampleDlg::OnListKeyDown(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+void CListExSampleDlg::OnListDataChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
-	//const auto pKey = reinterpret_cast<NMLVKEYDOWN*>(pNMHDR);
+	//Changing virtual data in internal m_vecData.
+	const auto ptr = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	auto& ref = m_vecData[ptr->iItem];
+	const auto pwszText = reinterpret_cast<LPCWSTR>(ptr->lParam);
+	switch (ptr->iSubItem) {
+	case 0:
+		ref.wstr0 = pwszText;
+		break;
+	case 1:
+		ref.wstr1 = pwszText;
+		break;
+	case 2:
+		ref.wstr2 = pwszText;
+		break;
+	}
 }
 
 void CListExSampleDlg::SortVecData()
@@ -307,13 +323,13 @@ void CListExSampleDlg::SortVecData()
 		int iCompare { };
 		switch (iColumnIndex) {
 		case 0:
-			iCompare = st1.wstr1.compare(st2.wstr1);
+			iCompare = st1.wstr0.compare(st2.wstr0);
 			break;
 		case 1:
-			iCompare = st1.wstr2.compare(st2.wstr2);
+			iCompare = st1.wstr1.compare(st2.wstr1);
 			break;
 		case 2:
-			iCompare = st1.wstr3.compare(st2.wstr3);
+			iCompare = st1.wstr2.compare(st2.wstr2);
 			break;
 		}
 

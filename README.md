@@ -9,6 +9,8 @@
     * [In Dialog](#in-dialog)
 * [Tooltips](#tooltips)
 * [Sorting](#sorting)
+* [Editing Cells](#editing-cells)
+* [Data Alignment](#data-alignment)
 * [Public Methods](#public-methods)
    * [SetHdrColumnIcon](#sethdrcolumnicon)
    * [SetSortable](#setsortable)
@@ -26,6 +28,8 @@
    * [LISTEX_MSG_HDRICONCLICK](#listex_msg_hdriconclick)
    * [LISTEX_MSG_HDRRBTNDOWN](#)
    * [LISTEX_MSG_HDRRBTNUP](#)
+   * [LISTEX_MSG_EDITBEGIN](#listex_msg_editbegin)
+   * [LISTEX_MSG_DATACHANGED](#listex_msg_datachanged)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -113,38 +117,15 @@ To enable sorting set the [`LISTEXCREATE::fSortable`](#listexcreate) flag to tru
 
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
+## [](#)Editing Cells
+By default list control works in the read-only mode. To enable cells editing call the `SetColumnEditable` method with the column ID which cells you wish to become editable.
+
+## [](#)Data Alignment
+Classical MFC list control allows setting alignment only for header and column text simultaneously.  
+**ListEx** allows setting alignment separately for header and for data respectively. The `iDataAlign` argument in the `InsertColumn()` both methods is responsible exactly for that.
+
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
-```cpp
-bool Create(const LISTEXCREATE& lcs);
-void CreateDialogCtrl(UINT uCtrlID, CWnd* pwndDlg);
-BOOL DeleteAllItems();
-BOOL DeleteColumn(int nCol);
-BOOL DeleteItem(int nItem);
-void Destroy();
-[[nodiscard]] ULONGLONG GetCellData(int iItem, int iSubitem)const;
-[[nodiscard]] LISTEXCOLORS GetColors()const;
-[[nodiscard]] EListExSortMode GetColumnSortMode(int iColumn)const;
-[[nodiscard]] int GetSortColumn()const;
-[[nodiscard]] bool GetSortAscending()const;
-void HideColumn(int iIndex, bool fHide);
-[[nodiscard]] bool IsCreated()const;
-void ResetSort();
-void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1);
-void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
-void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"");
-void SetColors(const LISTEXCOLORS& lcs);
-void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
-void SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode = { });
-void SetFont(const LOGFONTW* pLogFontNew);
-void SetHdrHeight(DWORD dwHeight);
-void SetHdrFont(const LOGFONTW* pLogFontNew);
-void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1);
-void SetHdrColumnIcon(int iColumn, const LISTEXHDRICON& stIcon);
-void SetHdrImageList(CImageList* pList);
-void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1);
-void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX);
-```
 
 ### [](#)SetSortable
 ```cpp
@@ -173,8 +154,7 @@ Flag `fClick` means that icon is clickable. See [`LISTEX_MSG_HDRICONCLICK`](#lis
 
 ### [](#)LISTEXCREATE
 ```cpp
-struct LISTEXCREATE
-{
+struct LISTEXCREATE {
     LISTEXCOLORS stColor { };             //All control's colors.
     CRect        rect;                    //Initial rect.
     CWnd*        pParent { };             //Parent window.
@@ -183,10 +163,11 @@ struct LISTEXCREATE
     UINT         uID { };                 //List control ID.
     DWORD        dwStyle { };             //Control's styles. Zero for default.
     DWORD        dwListGridWidth { 1 };   //Width of the list grid.
-    DWORD        dwHdrHeight { };      //Header height.
+    DWORD        dwHdrHeight { };         //Header height.
     bool         fDialogCtrl { false };   //If it's a list within dialog.
     bool         fSortable { false };     //Is list sortable, by clicking on the header column?
     bool         fLinkUnderline { true }; //Links are displayed underlined or not.
+    bool         fTooltipBaloon { true }; //Baloon type tooltip for cells.
     bool         fLinkTooltip { true };   //Show links' toolips.
     bool         fHighLatency { false };  //Do not redraw window until scrolling completes.
 };
@@ -300,6 +281,28 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
     	const auto pNMI = reinterpret_cast<NMHEADERW*>(lParam);
     	//pNMI->iItem holds clicked column index.
     }
+    ...
+```
+
+### [](#)LISTEX_MSG_EDITBEGIN
+Sent when edit box for data editing is about to show up. If you don't want it to show up, you can set `lParam` to `0` in response.
+```cpp
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
+{
+    const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+    pNMI->lParam = 0; //Edit-box won't show up.
+    ...
+```
+
+### [](#)LISTEX_MSG_DATACHANGED
+Sent in Virtual mode when cell's text has changed. 
+```cpp
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
+{
+    const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+    const auto iItem = pNMI->iItem;
+    const auto iSubItem = pNMI->iSubItem;
+    const pwszNewText = reinterpret_cast<LPCWSTR>(pNMI->lParam);
     ...
 ```
 
