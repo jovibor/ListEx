@@ -47,14 +47,14 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.uID = IDC_LISTEX;
 	lcs.pParent = this;
 	lcs.fDialogCtrl = true;
-	lcs.dwHdrHeight = 25;
+	lcs.dwHdrHeight = 30;
 	lcs.fSortable = true;
 	lcs.stColor.clrHdrText = RGB(250, 250, 250);
 
 	m_pList->Create(lcs);
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
 
-	m_pList->InsertColumn(0, L"Test column 0", 0, 200, -1, LVCFMT_CENTER);
+	m_pList->InsertColumn(0, L"Test column 0\n Multiline", 0, 200, -1, LVCFMT_CENTER);
 	//First (0 index) column is always left aligned by default.
 	//To change its alignment SetColumn() must be called explicitly.
 	LVCOLUMNW stCol { };
