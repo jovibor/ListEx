@@ -12,7 +12,13 @@
 * [Editing Cells](#editing-cells)
 * [Data Alignment](#data-alignment)
 * [Public Methods](#public-methods)
+   * [HideColumn](#hidecolumn)
+   * [SetCellColor](#setcellcolor)
+   * [SetCellData](#setcelldata)
+   * [SetCellTooltip](#setcelltooltip)
+   * [SetColumnEditable](setcolumneditable)
    * [SetHdrColumnIcon](#sethdrcolumnicon)
+   * [SetHdrHeight](#sethdrheight)
    * [SetSortable](#setsortable)
 * [Structures](#structures)
    * [LISTEXCREATE](#listexcreate)
@@ -34,26 +40,28 @@
 * [Appearance](#appearance)
 
 ## [](#)Introduction
-`IListEx` class is basically an extension of the standard **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class with many improvements.
+`IListEx` class is an extension of the **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class with many features:
 
-### The main features of the IListEx:
-* Set tooltips for individual cells that show up on mouse hover
-* Set popup menu for the individual cells as well as for the whole list control
-* Set background and text color for individual cells
-* Set additional item data for individual cells
+* [Editable cells](#editing-cells), not only the first column
+* [Hyperlinks](#listex_msg_linkclick) in a cells' text 
+* [Tooltips](#setcelltooltip) for individual cells
+* [Background and text color](#setcellcolor) for individual cells
 * Many options to set individual colors for lots of list aspects with [`LISTEXCOLORSTRUCT`](#listexcolors)
-* Set header height and font, as well as color for individual header columns
-* Innate ability to sort list columns with no additional efforts
+* Header height and font
+* Header color for individual columns
+* Individual alignment for header text and column data itself
+* [Header icons](#listex_msg_hdriconclick)
+* [Hiding individual columns](#hidecolumn)
+* [Additional item data](#setcelldata) for individual cells
+* Innate ability to sort list columns with no additional effort
 * Dynamically change list font size with <kbd>Ctrl</kbd>+<kbd>MouseWheel</kbd>
 
 ## [](#)Installation
-The usage of the control is quite simple:
-1. Copy *ListEx* folder into your project's folder.
-2. Add all files from *ListEx* folder into your project.
-3. Add `#include "ListEx/ListEx.h"` where you suppose to use the control.
-4. Declare `IListExPtr` variable: `IListExPtr myList { CreateListEx() };`
+The usage of the control is simple:
+1. Add *ListEx.h* and *CListEx* into your project
+2. Declare `IListExPtr` variable: `IListExPtr myList { CreateListEx() };`
 
-`IListExPtr` is a pointer to the `IListEx` class wrapped in `std::unique_ptr`.
+`IListExPtr` is a pointer to the `IListEx` class, wrapped in `std::unique_ptr`.
 This wrapper is used mainly for convenience, so you don't have to bother about object lifetime, it will be destroyed automatically.
 That's why there is a call to the factory function `CreateListEx()`, to properly initialize a pointer.
 
@@ -67,8 +75,9 @@ using namespace LISTEX;
 ```
 
 ## [](#)Create
+
 ### [](#)Manually
-`Create` is the main method to create list control. It takes reference to the [`LISTEXCREATE`](#listexcreate) structure.
+`Create` is the main method to create list control. It takes [`LISTEXCREATE`](#listexcreate) structure as argument.
 
 Below is a simple example of the **control**'s creation:
 ```cpp
@@ -82,21 +91,9 @@ lcs.rect = CRect(0, 0, 500, 300);
 
 myList->Create(lcs);
 ```
-With `LISTEXCREATE` structure you can adjust a plethora of list’s aspects:
-
-* Color of the list text and bk (background). Bk is set separately for odd and even rows
-* Color of the list header
-* Height of the list header
-* Font of the list header, and font of list itself
-* Color of individual header's columns
-* Color of tooltip's window text and bk
-* Color of the text and bk of a cell that has tooltip
-* Color of list grid, and even its width
-* Color of row when it's selected
-* Make list sortable
 
 ### [](#)In Dialog
-To create the control in a *Dialog* you can manually do it with the [Create](#manually) method.
+To create the control in a Dialog you can manually do it with the [Create](#manually) method.
 
 But most of the times you prefer to place a standard *List Control* onto the *Dialog*'s template, by dragging it from the **Toolbox** within **Visual studio**.  
 To use the latter approach follow these steps:
@@ -118,14 +115,56 @@ To enable sorting set the [`LISTEXCREATE::fSortable`](#listexcreate) flag to tru
 To set your own sorting routine use [`SetSortable`](#setsortable) method. 
 
 ## [](#)Editing Cells
-By default list control works in the read-only mode. To enable cells editing call the `SetColumnEditable` method with the column ID which cells you wish to become editable.
+By default list control works in the read-only mode. To enable cells editing call the [`SetColumnEditable`](#setcolumneditable) method with the column ID which cells you wish to become editable.
 
 ## [](#)Data Alignment
 Classical MFC list control allows setting alignment only for header and column text simultaneously.  
-**ListEx** allows setting alignment separately for header and for data respectively. The `iDataAlign` argument in the `InsertColumn()` both methods is responsible exactly for that.
+**ListEx** allows setting alignment separately for header and for data respectively. The `iDataAlign` argument in the `InsertColumn()` method is responsible exactly for that.
 
 ## [](#)Public Methods
 `IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
+
+### [](#)HideColumn
+```cpp
+void HideColumn(int iIndex, bool fHide);
+```
+Hide or show column by `iIndex`.
+
+### [](#)SetCellColor
+```cpp
+SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1);
+```
+Sets background and text color for a given cell.
+
+### [](#)SetCellData
+```cpp
+void SetCellData(int iItem, int iSubitem, ULONGLONG ullData);
+```
+Sets arbitrary application-defined data associated with given cell.
+
+### [](#)SetCellTooltip
+```cpp
+void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"");
+```
+Sets tooltip and caption for a given cell.
+
+### [](#)SetColumnEditable
+```cpp
+void SetColumnEditable(int iColumn, bool fEditable);
+```
+Enables or disables edit mode for a given column.
+
+### [](#)SetHdrColumnIcon
+```cpp
+void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false);
+```
+Sets the icon index in the header's image list for a given `iColumn`. To remove icon from column set the `iIconIndex` to `-1`.  
+Flag `fClick` means that icon is clickable. See [`LISTEX_MSG_HDRICONCLICK`](#listex_msg_hdriconclick) message for more info.
+
+### [](#)SetHdrHeight
+```cpp
+void SetHdrHeight(DWORD dwHeight);
+```
 
 ### [](#)SetSortable
 ```cpp
@@ -142,13 +181,6 @@ The comparison function must be either a static member of a class or a stand-alo
 
 `EListExSortMode enSortMode`  
 Default sorting mode for the list.
-
-### [](#)SetHdrColumnIcon
-```cpp
-void SetHdrColumnIcon(int iColumn, int iIconIndex, bool fClick = false);
-```
-Sets the icon index in the header's image list for a given `iColumn`. To remove icon from column set the `iIconIndex` to `-1`.  
-Flag `fClick` means that icon is clickable. See [`LISTEX_MSG_HDRICONCLICK`](#listex_msg_hdriconclick) message for more info.
 
 ## [](#)Structures
 
@@ -308,7 +340,7 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 
 ## [](#)Example
 Let’s imagine that you need a list control with a non standard header height, and yellow background color.
-Nothing is simpler, see code below:
+Nothing is simpler, see the code below:
 ```cpp
 LISTEXCREATE lcs;
 lcs.rect = CRect(0, 0, 500, 300)
