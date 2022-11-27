@@ -359,7 +359,7 @@ bool CListExHdr::IsColumnSortable(int iIndex)const
 	return IsSortable(ColumnIndexToID(iIndex));
 }
 
-bool CListExHdr::IsColumnEditable(int iIndex) const
+bool CListExHdr::IsColumnEditable(int iIndex)const
 {
 	return IsEditable(ColumnIndexToID(iIndex));
 }
@@ -755,7 +755,7 @@ bool CListExHdr::IsSortable(UINT ID)const
 	return iter == m_umapSortable.end() || iter->second;
 }
 
-bool CListExHdr::IsEditable(UINT ID) const
+bool CListExHdr::IsEditable(UINT ID)const
 {
 	const auto iter = m_umapEditable.find(ID); //It's editable only if found explicitly as true.
 	return iter != m_umapEditable.end() && iter->second;

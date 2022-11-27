@@ -1,5 +1,5 @@
 ## **List control for MFC applications**
-![](docs/img/listex_mainwndtooltip.jpg)
+![](docs/img/listex_mainwnd.jpg)
 
 ## Table of Contents
 * [Introduction](#introduction)
@@ -40,7 +40,7 @@
 * [Appearance](#appearance)
 
 ## [](#)Introduction
-`IListEx` class is an extension of the **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class with many features:
+`IListEx` is an owner-draw extension of the **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class with many features:
 
 * [Editable cells](#editing-cells), not only the first column
 * [Hyperlinks](#listex_msg_linkclick) in a cells' text 
