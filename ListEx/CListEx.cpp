@@ -1,5 +1,5 @@
 /****************************************************************************************
-* Copyright © 2018-2022 Jovibor https://github.com/jovibor/                             *
+* Copyright © 2018-2023 Jovibor https://github.com/jovibor/                             *
 * This is very extended and featured version of CMFCListCtrl class.                     *
 * Official git repository: https://github.com/jovibor/ListEx/                           *
 * This code is available under the "MIT License".                                       *
@@ -95,8 +95,8 @@ namespace LISTEX::INTERNAL
 		[[nodiscard]] bool GetSortAscending()const override;
 		void HideColumn(int iIndex, bool fHide)override;
 		int InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign = LVCFMT_LEFT)override;
-		int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT,
-			int nWidth = -1, int nSubItem = -1, int iDataAlign = LVCFMT_LEFT)override;
+		int InsertColumn(int nCol, LPCWSTR pwszName, int nFormat = LVCFMT_LEFT, int nWidth = -1,
+			int nSubItem = -1, int iDataAlign = LVCFMT_LEFT)override;
 		[[nodiscard]] bool IsCreated()const override;
 		[[nodiscard]] bool IsColumnSortable(int iColumn)override;
 		void ResetSort()override; //Reset all the sort by any column to its default state.
@@ -1118,7 +1118,7 @@ int CListEx::InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign)
 	return iNewIndex;
 }
 
-int CListEx::InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat, int nWidth, int nSubItem, int iDataAlign)
+int CListEx::InsertColumn(int nCol, LPCWSTR pwszName, int nFormat, int nWidth, int nSubItem, int iDataAlign)
 {
 	assert(IsCreated());
 	if (!IsCreated())
@@ -1129,7 +1129,7 @@ int CListEx::InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat, int 
 	lvcol.fmt = nFormat;
 	lvcol.cx = nWidth;
 	lvcol.iSubItem = nSubItem;
-	lvcol.pszText = const_cast<LPWSTR>(lpszColumnHeading);
+	lvcol.pszText = const_cast<LPWSTR>(pwszName);
 
 	return InsertColumn(nCol, &lvcol, iDataAlign);
 }
@@ -1995,16 +1995,17 @@ void CListEx::OnDestroy()
 
 auto CListEx::ParseItemText(int iItem, int iSubitem)->std::vector<CListEx::SITEMDATA>
 {
-	std::vector<SITEMDATA> vecData;
-	auto cstrText = GetItemText(iItem, iSubitem);
+	constexpr auto iIndentRc { 4 };
+	const auto cstrText = GetItemText(iItem, iSubitem);
 	const std::wstring_view wstrText = cstrText.GetString();
 	CRect rcTextOrig;  //Original rect of the subitem's text.
 	GetSubItemRect(iItem, iSubitem, LVIR_LABEL, rcTextOrig);
-	constexpr auto iIndentRc { 4 };
-	if (iSubitem != 0) //Not needed for item itself (not subitem).
+	if (iSubitem != 0) { //Not needed for item itself (not subitem).
 		rcTextOrig.left += iIndentRc;
-
+	}
+	std::vector<SITEMDATA> vecData;
 	int iImageWidth { 0 };
+
 	if (const auto iIndex = HasIcon(iItem, iSubitem); iIndex > -1) { //If cell has icon.
 		IMAGEINFO stIMG;
 		GetImageList(LVSIL_NORMAL)->GetImageInfo(iIndex, &stIMG);
