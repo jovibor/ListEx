@@ -25,7 +25,7 @@ namespace LISTEX
 		COLORREF clrBk { };
 		COLORREF clrText { };
 	};
-	using PLISTEXCOLOR = LISTEXCOLOR*;
+	using PLISTEXCOLOR = const LISTEXCOLOR*;
 
 	/**********************************************************************************
 	* LISTEXCOLORS - All ListEx colors.                                               *
@@ -78,7 +78,7 @@ namespace LISTEX
 		std::wstring wstrText;
 		std::wstring wstrCaption;
 	};
-	using PLISTEXTOOLTIP = LISTEXTOOLTIP*;
+	using PLISTEXTOOLTIP = const LISTEXTOOLTIP*;
 
 	/********************************************
 	* LISTEXHDRICON - Icon for header column.   *
@@ -116,7 +116,7 @@ namespace LISTEX
 		virtual void SetCellColor(int iItem, int iSubitem, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetCellData(int iItem, int iSubitem, ULONGLONG ullData) = 0;
 		virtual void SetCellIcon(int iItem, int iSubitem, int iIndex) = 0;
-		virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wstrTooltip, std::wstring_view wstrCaption = L"") = 0;
+		virtual void SetCellTooltip(int iItem, int iSubitem, std::wstring_view wsvTooltip, std::wstring_view wsvCaption = L"") = 0;
 		virtual void SetColors(const LISTEXCOLORS& lcs) = 0;
 		virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetColumnEditable(int iColumn, bool fEditable) = 0;

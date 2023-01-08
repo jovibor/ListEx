@@ -9,9 +9,9 @@
 #define new DEBUG_NEW
 #endif
 
-constexpr auto g_iVirtualDataSize { 10 };
-constexpr auto g_iDataSize { 10 };
 constexpr auto g_iColumns { 3 };
+constexpr auto g_iRows { 10 };
+constexpr auto g_iDataSize { 10 };
 
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_WM_PAINT()
@@ -85,8 +85,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	for (unsigned i = 0; i < g_iDataSize; ++i) {
 		m_vecData.emplace_back(VIRTLISTDATA {
 			L"Virtual item "
-			L"<link=\"0\" title=\"Custom title\">column:0</link>"
-			L"/"
+			L"<link=\"0\" title=\"Custom title\">column:0</link>/"
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
 			L"Virtual item column:1/row:" + std::to_wstring((i % 2) ? i * i : i),
 			L"Virtual item column:2/row:" + std::to_wstring(i),
@@ -94,7 +93,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 			i == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
 			});
 	}
-	m_pList->SetItemCountEx(g_iVirtualDataSize, LVSICF_NOSCROLL); //Amount of Virtual items.
+	m_pList->SetItemCountEx(g_iRows, LVSICF_NOSCROLL); //Amount of Virtual items.
 
 	//For classical list.
 /*	m_pList->InsertItem(0, L"Test item - row:0/column:0");
@@ -134,6 +133,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
 	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
 	m_pList->SetHdrImageList(&m_stImgList);
+	m_pList->SetColumnEditable(0, true);
 	m_pList->SetColumnEditable(2, true);
 
 	LISTEXHDRICON stHdrIcon;
@@ -218,21 +218,24 @@ void CListExSampleDlg::OnOK()
 void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
-	LVITEMW* pItem = &pDispInfo->item;
-	const auto index = pItem->iItem < g_iDataSize ? pItem->iItem : 1;
+	const auto pItem = &pDispInfo->item;
+	const auto iItem = pItem->iItem;
+	if (iItem >= g_iDataSize)
+		return;
 
-	if (pItem->mask & LVIF_TEXT) {
-		switch (pItem->iSubItem) {
-		case 0:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr0.data();
-			break;
-		case 1:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr1.data();
-			break;
-		case 2:
-			pItem->pszText = m_vecData.at(static_cast<size_t>(index)).wstr2.data();
-			break;
-		}
+	if ((pItem->mask & LVIF_TEXT) == 0)
+		return;
+
+	switch (pItem->iSubItem) {
+	case 0:
+		pItem->pszText = m_vecData[static_cast<size_t>(iItem)].wstr0.data();
+		break;
+	case 1:
+		pItem->pszText = m_vecData[static_cast<size_t>(iItem)].wstr1.data();
+		break;
+	case 2:
+		pItem->pszText = m_vecData[static_cast<size_t>(iItem)].wstr2.data();
+		break;
 	}
 }
 
@@ -242,15 +245,16 @@ void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
 		return;
+	if (pNMI->iItem >= g_iDataSize)
+		return;
 
 	if (pNMI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
 		static LISTEXCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
 		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
 	}
 
-	const auto index = pNMI->iItem < g_iDataSize ? pNMI->iItem : 1;
-	if (m_vecData.at(static_cast<size_t>(index)).fColor)
-		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData.at(static_cast<size_t>(index)).clr);
+	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fColor)
+		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData.at(static_cast<size_t>(pNMI->iItem)).clr);
 }
 
 void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -269,11 +273,11 @@ void CListExSampleDlg::OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Virtual data tooltips.
 	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
+	const auto iItem = pNMI->iItem;
+	if (iItem < 0 || pNMI->iSubItem < 0 || iItem >= g_iDataSize)
 		return;
 
-	const auto index = pNMI->iItem < g_iDataSize ? pNMI->iItem : 1;
-	if (m_vecData.at(static_cast<size_t>(index)).fToolTip && pNMI->iSubItem == 0) {
+	if (m_vecData.at(static_cast<size_t>(iItem)).fToolTip && pNMI->iSubItem == 0) {
 		static LISTEXTOOLTIP tt { L"Tooltip text...", L"Caption of the tooltip:" };
 		pNMI->lParam = reinterpret_cast<LPARAM>(&tt); //Tooltip pointer.
 	}
@@ -283,7 +287,7 @@ void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pNMI = reinterpret_cast<NMHEADERW*>(pNMHDR);
 	const auto wstr = L"Header icon clicked at column: " + std::to_wstring(pNMI->iItem);
-	MessageBox(wstr.data());
+	MessageBoxW(wstr.data());
 }
 
 void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
