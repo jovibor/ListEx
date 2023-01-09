@@ -1408,9 +1408,6 @@ BOOL CListEx::PreTranslateMessage(MSG* pMsg)
 void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 {
 	const auto iItem = pDIS->itemID;
-	if (iItem < 0) {
-		return;
-	}
 
 	switch (pDIS->itemAction) {
 	case ODA_SELECT:
@@ -1472,8 +1469,9 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 				}
 				if (itItemData.fLink) {
 					pDC->SetTextColor(clrTextLink);
-					if (m_fLinksUnderline)
+					if (m_fLinksUnderline) {
 						pDC->SelectObject(m_fontListUnderline);
+					}
 				}
 				else {
 					pDC->SetTextColor(clrText);
@@ -1673,31 +1671,30 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 {
 	LVHITTESTINFO hi { pt };
 	SubItemHitTest(&hi);
-	if (hi.iItem < 0 || hi.iSubItem < 0)
-		return;
-
 	bool fLink { false }; //Cursor at link's rect area.
-	const auto vecText = ParseItemData(hi.iItem, hi.iSubItem);
-	if (const auto iterFind = std::find_if(vecText.begin(), vecText.end(), [&](const SITEMDATA& item) {
-		return item.fLink && item.rect.PtInRect(pt); }); iterFind != vecText.end()) {
-		fLink = true;
-		if (m_fLinkTooltip && !m_fLDownAtLink && m_rcLinkCurr != iterFind->rect) {
-			TtLinkHide();
-			m_rcLinkCurr = iterFind->rect;
-			m_stCurrLink.iItem = hi.iItem;
-			m_stCurrLink.iSubItem = hi.iSubItem;
-			m_wstrTtText = iterFind->fTitle ? iterFind->wstrTitle : iterFind->wstrLink;
-			m_stTInfoLink.lpszText = m_wstrTtText.data();
-
-			SetTimer(ID_TIMER_TT_LINK_ACTIVATE, 400, nullptr); //Activate (show) tooltip after delay.
+	if (hi.iItem >= 0) {
+		const auto vecText = ParseItemData(hi.iItem, hi.iSubItem);
+		if (const auto iterFind = std::find_if(vecText.begin(), vecText.end(), [&](const SITEMDATA& item) {
+			return item.fLink && item.rect.PtInRect(pt); }); iterFind != vecText.end()) {
+			fLink = true;
+			if (m_fLinkTooltip && !m_fLDownAtLink && m_rcLinkCurr != iterFind->rect) {
+				TtLinkHide();
+				m_rcLinkCurr = iterFind->rect;
+				m_stCurrLink.iItem = hi.iItem;
+				m_stCurrLink.iSubItem = hi.iSubItem;
+				m_wstrTtText = iterFind->fTitle ? iterFind->wstrTitle : iterFind->wstrLink;
+				m_stTInfoLink.lpszText = m_wstrTtText.data();
+				SetTimer(ID_TIMER_TT_LINK_ACTIVATE, 400, nullptr); //Activate (show) tooltip after delay.
+			}
 		}
 	}
 	SetCursor(fLink ? m_cursorHand : m_cursorDefault);
 
 	//Link's tooltip area is under the cursor.
 	if (fLink) {
-		if (m_fTtCellShown) //If there is a cell's tooltip atm, hide it.
+		if (m_fTtCellShown) { //If there is a cell's tooltip atm, hide it.
 			TtCellHide();
+		}
 
 		return; //Do not process further, cursor is on the link's rect.
 	}
@@ -1705,8 +1702,9 @@ void CListEx::OnMouseMove(UINT /*nFlags*/, CPoint pt)
 	m_fLDownAtLink = false;
 
 	//If there was a link's tool-tip shown, hide it.
-	if (m_fTtLinkShown)
+	if (m_fTtLinkShown) {
 		TtLinkHide();
+	}
 
 	if (const auto pTooltip = GetTooltip(hi.iItem, hi.iSubItem); pTooltip != nullptr) {
 		//Check if cursor is still in the same cell's rect. If so - just leave.
