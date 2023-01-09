@@ -94,9 +94,9 @@ namespace LISTEX::INTERNAL
 		[[nodiscard]] int GetSortColumn()const override;
 		[[nodiscard]] bool GetSortAscending()const override;
 		void HideColumn(int iIndex, bool fHide)override;
-		int InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign = LVCFMT_LEFT)override;
+		int InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign = LVCFMT_LEFT, bool fEditable = false)override;
 		int InsertColumn(int nCol, LPCWSTR pwszName, int nFormat = LVCFMT_LEFT, int nWidth = -1,
-			int nSubItem = -1, int iDataAlign = LVCFMT_LEFT)override;
+			int nSubItem = -1, int iDataAlign = LVCFMT_LEFT, bool fEditable = false)override;
 		[[nodiscard]] bool IsCreated()const override;
 		[[nodiscard]] bool IsColumnSortable(int iColumn)override;
 		void ResetSort()override; //Reset all the sort by any column to its default state.
@@ -1088,7 +1088,7 @@ void CListEx::HideColumn(int iIndex, bool fHide)
 	RedrawWindow();
 }
 
-int CListEx::InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign)
+int CListEx::InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign, bool fEditable)
 {
 	assert(IsCreated());
 	if (!IsCreated())
@@ -1109,17 +1109,27 @@ int CListEx::InsertColumn(int nCol, const LVCOLUMNW* pColumn, int iDataAlign)
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<unsigned int> distrib(1, (std::numeric_limits<unsigned int>::max)());
-
 	HDITEMW hdi { };
 	hdi.mask = HDI_LPARAM;
 	hdi.lParam = static_cast<LPARAM>(distrib(gen));
 	refHdr.SetItem(iNewIndex, &hdi);
 	refHdr.SetColumnDataAlign(iNewIndex, iDataAlign);
 
+	//First (zero index) column is always left-aligned by default, no matter what the pColumn->fmt is set to.
+	//To change the alignment a user must explicitly call the SetColumn after the InsertColumn.
+	//This call here is just to remove that absurd limitation.
+	const LVCOLUMNW stCol { LVCF_FMT, pColumn->fmt };
+	SetColumn(iNewIndex, &stCol);
+
+	//All new columns are not editable by default.
+	if (fEditable) {
+		SetColumnEditable(iNewIndex, true);
+	}
+
 	return iNewIndex;
 }
 
-int CListEx::InsertColumn(int nCol, LPCWSTR pwszName, int nFormat, int nWidth, int nSubItem, int iDataAlign)
+int CListEx::InsertColumn(int nCol, LPCWSTR pwszName, int nFormat, int nWidth, int nSubItem, int iDataAlign, bool fEditable)
 {
 	assert(IsCreated());
 	if (!IsCreated())
@@ -1132,7 +1142,7 @@ int CListEx::InsertColumn(int nCol, LPCWSTR pwszName, int nFormat, int nWidth, i
 	lvcol.iSubItem = nSubItem;
 	lvcol.pszText = const_cast<LPWSTR>(pwszName);
 
-	return InsertColumn(nCol, &lvcol, iDataAlign);
+	return InsertColumn(nCol, &lvcol, iDataAlign, fEditable);
 }
 
 bool CListEx::IsCreated()const
@@ -1397,19 +1407,21 @@ BOOL CListEx::PreTranslateMessage(MSG* pMsg)
 
 void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 {
-	if (pDIS->itemID == -1)
+	const auto iItem = pDIS->itemID;
+	if (iItem < 0) {
 		return;
+	}
 
 	switch (pDIS->itemAction) {
 	case ODA_SELECT:
 	case ODA_DRAWENTIRE:
 	{
 		const auto pDC = CDC::FromHandle(pDIS->hDC);
-		const auto clrBkCurrRow = (pDIS->itemID % 2) ? m_stColors.clrListBkRow2 : m_stColors.clrListBkRow1;
-		const auto iColumns = GetHeaderCtrl().GetItemCount();
+		const auto clrBkCurrRow = (iItem % 2) ? m_stColors.clrListBkRow2 : m_stColors.clrListBkRow1;
 		const auto& refHdr = GetHeaderCtrl();
-		for (auto iColumn = 0; iColumn < iColumns; ++iColumn) {
-			if (refHdr.IsColumnHidden(iColumn))
+		const auto iColumns = refHdr.GetItemCount();
+		for (auto iSubitem = 0; iSubitem < iColumns; ++iSubitem) {
+			if (refHdr.IsColumnHidden(iSubitem))
 				continue;
 
 			COLORREF clrText;
@@ -1426,13 +1438,13 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 			else {
 				clrTextLink = m_stColors.clrListTextLink;
 
-				if (const auto pClr = GetColor(pDIS->itemID, iColumn); pClr != nullptr) {
+				if (const auto pClr = GetColor(iItem, iSubitem); pClr != nullptr) {
 					//Check for default colors (-1).
 					clrText = pClr->clrText == -1 ? m_stColors.clrListText : pClr->clrText;
 					clrBk = pClr->clrBk == -1 ? clrBkCurrRow : pClr->clrBk;
 				}
 				else {
-					if (GetTooltip(pDIS->itemID, iColumn) != nullptr) {
+					if (GetTooltip(iItem, iSubitem) != nullptr) {
 						clrText = m_stColors.clrListTextCellTt;
 						clrBk = m_stColors.clrListBkCellTt;
 					}
@@ -1443,21 +1455,22 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 				}
 			}
 			CRect rcBounds;
-			GetSubItemRect(pDIS->itemID, iColumn, LVIR_BOUNDS, rcBounds);
+			GetSubItemRect(iItem, iSubitem, LVIR_BOUNDS, rcBounds);
 			pDC->FillSolidRect(rcBounds, clrBk);
 
 			CRect rcText;
-			GetSubItemRect(pDIS->itemID, iColumn, LVIR_LABEL, rcText);
-			if (iColumn != 0) //Not needed for item itself (not subitem).
+			GetSubItemRect(iItem, iSubitem, LVIR_LABEL, rcText);
+			if (iSubitem != 0) { //Not needed for item itself (not subitem).
 				rcText.left += 4;
+			}
 
-			for (const auto& iterVecText : ParseItemData(pDIS->itemID, iColumn)) {
-				if (iterVecText.iIconIndex > -1) {
-					GetImageList(LVSIL_NORMAL)->DrawEx(
-						pDC, iterVecText.iIconIndex, { iterVecText.rect.left, iterVecText.rect.top }, { }, CLR_NONE, CLR_NONE, ILD_NORMAL);
+			for (const auto& itItemData : ParseItemData(iItem, iSubitem)) {
+				if (itItemData.iIconIndex > -1) {
+					GetImageList(LVSIL_NORMAL)->DrawEx(pDC, itItemData.iIconIndex,
+						{ itItemData.rect.left, itItemData.rect.top }, { }, CLR_NONE, CLR_NONE, ILD_NORMAL);
 					continue;
 				}
-				if (iterVecText.fLink) {
+				if (itItemData.fLink) {
 					pDC->SetTextColor(clrTextLink);
 					if (m_fLinksUnderline)
 						pDC->SelectObject(m_fontListUnderline);
@@ -1466,8 +1479,8 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 					pDC->SetTextColor(clrText);
 					pDC->SelectObject(m_fontList);
 				}
-				ExtTextOutW(pDC->m_hDC, iterVecText.rect.left, iterVecText.rect.top, ETO_CLIPPED,
-					rcText, iterVecText.wstrText.data(), static_cast<UINT>(iterVecText.wstrText.size()), nullptr);
+				ExtTextOutW(pDC->m_hDC, itItemData.rect.left, itItemData.rect.top, ETO_CLIPPED,
+					rcText, itItemData.wstrText.data(), static_cast<UINT>(itItemData.wstrText.size()), nullptr);
 			}
 
 			//Drawing subitem's rect lines.

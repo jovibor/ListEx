@@ -4,6 +4,7 @@
 #include "afxdialogex.h"
 #include "framework.h"
 #include <algorithm>
+#include <ctime>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -12,6 +13,7 @@
 constexpr auto g_iColumns { 3 };
 constexpr auto g_iRows { 10 };
 constexpr auto g_iDataSize { 10 };
+constexpr auto IDC_LIST_MENU_HDR_BEGIN = 0x5;
 
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_WM_PAINT()
@@ -53,14 +55,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	m_pList->Create(lcs);
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-
-	m_pList->InsertColumn(0, L"Test column 0\n Multiline", 0, 200, -1, LVCFMT_CENTER);
-	//First (0 index) column is always left aligned by default.
-	//To change its alignment SetColumn() must be called explicitly.
-	LVCOLUMNW stCol { };
-	stCol.mask = LVCF_FMT;
-	stCol.fmt = LVCFMT_CENTER;
-	m_pList->SetColumn(0, &stCol);
+	m_pList->InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_CENTER, 200, -1, LVCFMT_CENTER);
 
 	//Header menu
 	m_menuHdr.CreatePopupMenu();
@@ -68,8 +63,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_menuHdr.CheckMenuItem(IDC_LIST_MENU_HDR_BEGIN, MF_CHECKED | MF_BYCOMMAND);
 
 	for (int i = 1; i < g_iColumns; ++i) {
-		auto wstrName = std::wstring(L"Test column ") + std::to_wstring(i);
-		m_pList->InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 200, -1, LVCFMT_CENTER);
+		const auto wstrName = std::wstring(L"Test column ") + std::to_wstring(i);
+		m_pList->InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 200, -1, LVCFMT_CENTER, true);
 		m_pList->SetHdrColumnColor(i, RGB(200, 200, 200));
 		m_menuHdr.AppendMenuW(MF_STRING, IDC_LIST_MENU_HDR_BEGIN + i, wstrName.data());
 		m_menuHdr.CheckMenuItem(IDC_LIST_MENU_HDR_BEGIN + i, MF_CHECKED | MF_BYCOMMAND);
@@ -82,13 +77,15 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
+	std::srand(static_cast<unsigned>(std::time(0)));
 	for (unsigned i = 0; i < g_iDataSize; ++i) {
 		m_vecData.emplace_back(VIRTLISTDATA {
-			L"Virtual item "
+			L"Virtual: "
 			L"<link=\"0\" title=\"Custom title\">column:0</link>/"
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
-			L"Virtual item column:1/row:" + std::to_wstring((i % 2) ? i * i : i),
-			L"Virtual item column:2/row:" + std::to_wstring(i),
+			//Some random numbers at the beginning, for checking the sorting.
+			L"[" + std::to_wstring(std::rand()) + L"] " + L"Virtual: column:1/row:" + std::to_wstring(i),
+			L"Virtual: column:2/row:" + std::to_wstring(i),
 			i == 2, i == 7, i == 1,
 			i == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
 			});
@@ -120,21 +117,11 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
 	*/
 
-	//Set list's cells colors, menu, tool-tips.
-	m_menuCell.CreatePopupMenu();
-	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_FIRST, L"Cell's first menu");
-	m_menuCell.AppendMenuW(MF_STRING, IDC_LIST_MENU_CELL_SECOND, L"Cell's second menu");
-	m_menuList.CreatePopupMenu();
-	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_FIRST, L"List's first menu");
-	m_menuList.AppendMenuW(MF_STRING, IDC_LIST_MENU_GLOBAL_SECOND, L"List's second menu");
-
 	m_stImgList.Create(16, 16, ILC_COLOR | ILC_MASK, 0, 1);
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
 		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
 	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
 	m_pList->SetHdrImageList(&m_stImgList);
-	m_pList->SetColumnEditable(0, true);
-	m_pList->SetColumnEditable(2, true);
 
 	LISTEXHDRICON stHdrIcon;
 	stHdrIcon.iIndex = 0;
