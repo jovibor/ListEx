@@ -57,7 +57,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
 	m_pList->InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_CENTER, 200, -1, LVCFMT_CENTER);
 
-	//Header menu
+	//Header menu.
 	m_menuHdr.CreatePopupMenu();
 	m_menuHdr.AppendMenuW(MF_STRING, IDC_LIST_MENU_HDR_BEGIN, L"Test column 0");
 	m_menuHdr.CheckMenuItem(IDC_LIST_MENU_HDR_BEGIN, MF_CHECKED | MF_BYCOMMAND);
@@ -80,12 +80,11 @@ BOOL CListExSampleDlg::OnInitDialog()
 	std::srand(static_cast<unsigned>(std::time(0)));
 	for (unsigned i = 0; i < g_iDataSize; ++i) {
 		m_vecData.emplace_back(VIRTLISTDATA {
-			L"Virtual: "
-			L"<link=\"0\" title=\"Custom title\">column:0</link>/"
+			L"<link=\"0\" title=\"Custom title\">Column:0</link>/"
 			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
 			//Some random numbers at the beginning, for checking the sorting.
-			L"[" + std::to_wstring(std::rand()) + L"] " + L"Virtual: column:1/row:" + std::to_wstring(i),
-			L"Virtual: column:2/row:" + std::to_wstring(i),
+			L"[" + std::to_wstring(std::rand()) + L"] " + L"Column:1/row:" + std::to_wstring(i),
+			L"Column:2/row:" + std::to_wstring(i),
 			i == 2, i == 7, i == 1,
 			i == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
 			});
@@ -240,8 +239,9 @@ void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
 	}
 
-	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fColor)
-		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData.at(static_cast<size_t>(pNMI->iItem)).clr);
+	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fColor) {
+		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData[static_cast<size_t>(pNMI->iItem)].clr);
+	}
 }
 
 void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
