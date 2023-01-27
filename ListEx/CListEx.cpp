@@ -1412,7 +1412,7 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 	case ODA_DRAWENTIRE:
 	{
 		const auto pDC = CDC::FromHandle(pDIS->hDC);
-		const auto clrBkCurrRow = (iItem % 2) ? m_stColors.clrListBkRow2 : m_stColors.clrListBkRow1;
+		const auto clrBkCurrRow = (iItem % 2) ? m_stColors.clrListBkEven : m_stColors.clrListBkOdd;
 		const auto& refHdr = GetHeaderCtrl();
 		const auto iColumns = refHdr.GetItemCount();
 		for (auto iSubitem = 0; iSubitem < iColumns; ++iSubitem) {
