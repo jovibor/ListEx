@@ -121,10 +121,10 @@ namespace LISTEX
 		virtual void SetColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetColumnEditable(int iColumn, bool fEditable) = 0;
 		virtual void SetColumnSortMode(int iColumn, bool fSortable, EListExSortMode enSortMode = { }) = 0;
-		virtual void SetFont(const LOGFONTW* pLogFontNew) = 0;
+		virtual void SetFont(const LOGFONTW* pLogFont) = 0;
 		virtual void SetHdrColumnColor(int iColumn, COLORREF clrBk, COLORREF clrText = -1) = 0;
 		virtual void SetHdrColumnIcon(int iColumn, const LISTEXHDRICON& stIcon) = 0; //Icon for a given column.
-		virtual void SetHdrFont(const LOGFONTW* pLogFontNew) = 0;
+		virtual void SetHdrFont(const LOGFONTW* pLogFont) = 0;
 		virtual void SetHdrHeight(DWORD dwHeight) = 0;
 		virtual void SetHdrImageList(CImageList* pList) = 0;
 		virtual void SetRowColor(DWORD dwRow, COLORREF clrBk, COLORREF clrText = -1) = 0;
