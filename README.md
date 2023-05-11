@@ -1,8 +1,9 @@
-## **List control for MFC applications**
+## **Introduction**
+**ListEx** is an advanced owner-drawn **List Control**, an extended version of the [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class.
 ![](docs/img/listex_mainwnd.jpg)
 
 ## Table of Contents
-* [Introduction](#introduction)
+* [Features](#features)
 * [Installation](#installation)
 * [Create](#create)
     * [Manually](#manually)
@@ -39,29 +40,27 @@
 * [Example](#example)
 * [Appearance](#appearance)
 
-## [](#)Introduction
-`IListEx` is an owner-draw extension of the **MFC** [`CMFCListCtrl`](#https://docs.microsoft.com/en-us/cpp/mfc/reference/cmfclistctrl-class?view=vs-2019#sort) class with many features:
-
+## [](#)Features
 * [Editable cells](#editing-cells), not only the first column
-* [Hyperlinks](#listex_msg_linkclick) in a cells' text 
+* [Hyperlinks](#listex_msg_linkclick) in a cells' text
 * [Tooltips](#setcelltooltip) for individual cells
 * [Background and text color](#setcellcolor) for individual cells
-* Many options to set individual colors for lots of list aspects with [`LISTEXCOLORSTRUCT`](#listexcolors)
-* Header height and font
-* Header color for individual columns
-* Individual alignment for header text and column data itself
+* Many options to set individual colors for lots of list aspects with the [`LISTEXCOLORSTRUCT`](#listexcolors)
+* Set header height and font
+* Set header color for individual columns
+* Individual text alignment for a header and column itself
 * [Header icons](#listex_msg_hdriconclick)
 * [Hiding individual columns](#hidecolumn)
 * [Additional item data](#setcelldata) for individual cells
 * Innate ability to sort list columns with no additional effort
-* Dynamically change list font size with <kbd>Ctrl</kbd>+<kbd>MouseWheel</kbd>
+* Dynamically changed list's font size with the **Ctrl+MouseWheel**
 
 ## [](#)Installation
 The usage of the control is simple:
-1. Add *ListEx.h* and *CListEx* into your project
+1. Add *ListEx.h* and *CListEx.cpp* into your project
 2. Declare `IListExPtr` variable: `IListExPtr myList { CreateListEx() };`
 
-`IListExPtr` is a pointer to the `IListEx` class, wrapped in `std::unique_ptr`.
+`IListExPtr` is a pointer to the `IListEx` class wrapped in `std::unique_ptr`.
 This wrapper is used mainly for convenience, so you don't have to bother about object lifetime, it will be destroyed automatically.
 That's why there is a call to the factory function `CreateListEx()`, to properly initialize a pointer.
 
@@ -77,9 +76,8 @@ using namespace LISTEX;
 ## [](#)Create
 
 ### [](#)Manually
-`Create` is the main method to create list control. It takes [`LISTEXCREATE`](#listexcreate) structure as argument.
-
-Below is a simple example of the **control**'s creation:
+`Create` is the main method to create **ListEx** control, it takes [`LISTEXCREATE`](#listexcreate) structure as an argument.  
+Below is a simple example of the **ListEx** creation:
 ```cpp
 IListExPtr myList { CreateListEx() };
 .
@@ -93,36 +91,33 @@ myList->Create(lcs);
 ```
 
 ### [](#)In Dialog
-To create the control in a Dialog you can manually do it with the [Create](#manually) method.
-
-But most of the times you prefer to place a standard *List Control* onto the *Dialog*'s template, by dragging it from the **Toolbox** within **Visual studio**.  
+To create **ListEx** in a Dialog you can manually do it with the [Create](#manually) method.  
+But most of the time you prefer to place a standard **List Control** onto a Dialog's template, by dragging it from the **Toolbox** within **Visual studio**.  
 To use the latter approach follow these steps:
-1. Put standard *List Control* from the toolbox onto your dialog template. Give it appropriate ID (`IDC_LISTEX`) and make it desirable size.
-2. Declare `IListExPtr` member varable within your dialog class: `IListExPtr m_myList { CreateListEx() };`
-3. In your `OnInitDialog` method call `m_myList->CreateDialogCtrl(IDC_LISTEX, this);` function.
+1. Put a standard **List Control** from the toolbox onto your dialog.
+2. Declare `IListExPtr` member variable within your dialog class: `IListExPtr m_myList { CreateListEx() };`
+3. In your `OnInitDialog` method call the `m_myList->CreateDialogCtrl(ID_OF_THE_LIST, this);` method.
 
 ## [](#)Tooltips
-To set a tooltip for a given cell, just write:
-
+To set a tooltip for a given cell:
 ```cpp
 myList->SetCellTooltip(0, 1, L"Tooltip text", L"Tooltip caption:");
 ```
-This will set a tooltip for cell (0, 1) with the text: **_Tooltip text_**, and the caption **_Tooltip caption_**.
+This will set a tooltip for a Cell (0, 1) with the text: **_Tooltip text_**, and the caption **_Tooltip caption_**.
 
 ## [](#)Sorting
-To enable sorting set the [`LISTEXCREATE::fSortable`](#listexcreate) flag to true. In this case, when you click on the header, list will be sorted according to the clicked column. By default `IListEx` performs lexicographical sorting.
-
-To set your own sorting routine use [`SetSortable`](#setsortable) method. 
+To enable a sorting set the [`LISTEXCREATE::fSortable`](#listexcreate) flag to `true`. In this case, when you click on the header, list will be sorted according to the clicked column. By default **ListEx** performs lexicographical sorting.  
+To set your own sorting routine use the [`SetSortable`](#setsortable) method. 
 
 ## [](#)Editing Cells
-By default list control works in the read-only mode. To enable cells editing call the [`SetColumnEditable`](#setcolumneditable) method with the column ID which cells you wish to become editable.
+By default **ListEx** works in the read-only mode. To enable cells editing call the [`SetColumnEditable`](#setcolumneditable) method with the column ID which cells you wish to become editable.
 
 ## [](#)Data Alignment
-Classical MFC list control allows setting alignment only for header and column text simultaneously.  
-**ListEx** allows setting alignment separately for header and for data respectively. The `iDataAlign` argument in the `InsertColumn()` method is responsible exactly for that.
+Classical List Control allows setting an alignment only for a header and column  simultaneously.  
+**ListEx** allows setting alignment separately for the header and the data. The `iDataAlign` argument in the `InsertColumn()` method is responsible exactly for that.
 
 ## [](#)Public Methods
-`IListEx` class also has a set of additional public methods to help customize your control in many different aspects.
+`IListEx` class also has a set of additional methods to help customize your control in many different aspects.
 
 ### [](#)HideColumn
 ```cpp
@@ -171,12 +166,11 @@ void SetHdrHeight(DWORD dwHeight);
 void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr, EListExSortMode enSortMode = EListExSortMode::SORT_LEX)
 ```
 **Parameters:**  
-
 `bool fSortable`  
 Enables or disables sorting
 
 `PFNLVCOMPARE pfnCompare`  
-Callback function pointer with type `int (CALLBACK *PFNLVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)` that is used to set your own comparison function. If it's `nullptr` `IListEx` performs default sorting.  
+Callback function pointer with the type `int (CALLBACK *PFNLVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)` that is used to set your own comparison function. If it's `nullptr` **ListEx** performs default sorting.  
 The comparison function must be either a static member of a class or a stand-alone function that is not a member of any class. For more information see official [MSDN documentation](https://docs.microsoft.com/en-us/cpp/mfc/reference/clistctrl-class?view=vs-2019#remarks-100).
 
 `EListExSortMode enSortMode`  
@@ -260,11 +254,11 @@ enum class EListExSortMode : short
 ```
 
 ## [](#)Notification Messages
-These messages are sent to the parent window in form of `WM_NOTIFY` windows message.  
-The `lParam` will contain pointer to `NMHDR` standard windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
+These messages are sent to the parent window in form of `WM_NOTIFY` Windows messages.  
+The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
 
 ### [](#)LISTEX_MSG_GETCOLOR
-When in virtual mode, sent to the parent window to retrieve cell's color. Expects pointer to the `LISTEXCOLOR` struct in response, or nothing to use defaults.
+When in Virtual Mode, sent to the parent window to retrieve cell's color. Expects a pointer to the `LISTEXCOLOR` struct in response, or nothing to use defaults.
 ```cpp
 void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
@@ -290,18 +284,18 @@ void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
     pNMI->lParam = SomeIndex; //Icon index in list's image list.
 }
 ```
-This message is used in Virtual List mode to obtain icon index in list image list.
+This message is used in Virtual Mode to obtain an icon index in the List's image-list.
 
 ### [](#)LISTEX_MSG_LINKCLICK
 List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the `NMITEMACTIVATE` struct.  
 `NMITEMACTIVATE::lParam` will contain `wchar_t*` pointer to the `link` text of the clicked hyperlink. The `iItem` and `iSubItem` members will contain indexes of the list item/subitem the link was clicked at. 
 
 Hyperlink syntax is: `L"Text with the <link="any_text_here" title="Optional tool-tip text">embedded link</link>"`  
-If no optional `title` tag is provided then the `link` text itself will be used as hyperlink's tool-tip.  
-Link and title text must be quoted `""`.
+If no optional `title` tag is provided then the link text itself will be used as hyperlink's tool-tip.  
+The `link` and the `title`'s text must be quoted `""`.
 
 ### [](#)LISTEX_MSG_HDRICONCLICK
-Header icon that previously was set by [`SetHdrColumnIcon`](#sethdrcolumnicon) call has been clicked.  
+Header icon that previously was set by the [`SetHdrColumnIcon`](#sethdrcolumnicon) method has been clicked.  
 Example code for handling this message:
 ```cpp
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
@@ -314,20 +308,22 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
     	//pNMI->iItem holds clicked column index.
     }
     ...
+}
 ```
 
 ### [](#)LISTEX_MSG_EDITBEGIN
-Sent when edit box for data editing is about to show up. If you don't want it to show up, you can set `lParam` to `0` in response.
+Sent when the edit box for data editing is about to show up. If you don't want it to show up, you can set `lParam` to `0` in response.
 ```cpp
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
     const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
     pNMI->lParam = 0; //Edit-box won't show up.
     ...
+}
 ```
 
 ### [](#)LISTEX_MSG_DATACHANGED
-Sent in Virtual mode when cell's text has changed. 
+Sent in the Virtual Mode when cell's text has been changed. 
 ```cpp
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
@@ -336,25 +332,26 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
     const auto iSubItem = pNMI->iSubItem;
     const pwszNewText = reinterpret_cast<LPCWSTR>(pNMI->lParam);
     ...
+}
 ```
 
 ## [](#)Example
-Let’s imagine that you need a list control with a non standard header height, and yellow background color.
+Let’s imagine that you need a **ListEx** control with the non standard header height, and yellow background color.
 Nothing is simpler, see the code below:
 ```cpp
 LISTEXCREATE lcs;
 lcs.rect = CRect(0, 0, 500, 300)
 lcs.pParent = this;
 lcs.dwHdrHeight = 50;
-lcs.stColor.clrListBkRow1 = RGB(255, 255, 0);
-lcs.stColor.clrListBkRow2 = RGB(255, 255, 0);
+lcs.stColor.clrListBkOdd = RGB(255, 255, 0);
+lcs.stColor.clrListBkEven = RGB(255, 255, 0);
 
+IListExPtr myList { CreateListEx() };
 myList->Create(lcs);
-
 myList->InsertColumn(...);
 myList->InsertItem(...);
 ```
-Here, we set both - even and odd rows (`clrListBkRow1` and `clrListBkRow2`) to the same yellow color.
+Here we set both even and odd rows to the same yellow color.
 
 ## [](#)Appearance
-With the **Ctrl+MouseWheel** combination you can dynamically change list's font size.
+With the **Ctrl+MouseWheel** you can dynamically change the **ListEx**'s font size.
