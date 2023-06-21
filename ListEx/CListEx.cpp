@@ -2112,11 +2112,11 @@ auto CListEx::ParseItemData(int iItem, int iSubitem)->std::vector<CListEx::SITEM
 	const auto pDC = GetDC();
 
 	while (nPosCurr != std::wstring_view::npos) {
-		constexpr std::wstring_view wsvTagLink { L"<link=" };
-		constexpr std::wstring_view wsvTagFirstClose { L">" };
-		constexpr std::wstring_view wsvTagLast { L"</link>" };
-		constexpr std::wstring_view wsvTagTitle { L"title=" };
-		constexpr std::wstring_view wsvQuote { L"\"" };
+		static constexpr std::wstring_view wsvTagLink { L"<link=" };
+		static constexpr std::wstring_view wsvTagFirstClose { L">" };
+		static constexpr std::wstring_view wsvTagLast { L"</link>" };
+		static constexpr std::wstring_view wsvTagTitle { L"title=" };
+		static constexpr std::wstring_view wsvQuote { L"\"" };
 
 		//Searching the string for a <link=...></link> pattern.
 		if (const std::size_t nPosTagLink { wsvText.find(wsvTagLink, nPosCurr) }, //Start position of the opening tag "<link=".
