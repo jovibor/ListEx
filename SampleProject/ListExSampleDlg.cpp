@@ -312,29 +312,29 @@ void CListExSampleDlg::SortVecData()
 	//Sorts the vector of data according to clicked column.
 	std::sort(m_vecData.begin(), m_vecData.end(), [&](const VIRTLISTDATA& st1, const VIRTLISTDATA& st2) {
 		int iCompare { };
-	switch (iColumnIndex) {
-	case 0:
-		iCompare = st1.wstr0.compare(st2.wstr0);
-		break;
-	case 1:
-		iCompare = st1.wstr1.compare(st2.wstr1);
-		break;
-	case 2:
-		iCompare = st1.wstr2.compare(st2.wstr2);
-		break;
-	}
+		switch (iColumnIndex) {
+		case 0:
+			iCompare = st1.wstr0.compare(st2.wstr0);
+			break;
+		case 1:
+			iCompare = st1.wstr1.compare(st2.wstr1);
+			break;
+		case 2:
+			iCompare = st1.wstr2.compare(st2.wstr2);
+			break;
+		}
 
-	bool result { false };
-	if (m_pList->GetSortAscending()) {
-		if (iCompare < 0)
-			result = true;
-	}
-	else {
-		if (iCompare > 0)
-			result = true;
-	}
+		bool result { false };
+		if (m_pList->GetSortAscending()) {
+			if (iCompare < 0)
+				result = true;
+		}
+		else {
+			if (iCompare > 0)
+				result = true;
+		}
 
-	return result;
+		return result;
 		});
 
 	m_pList->RedrawWindow();
