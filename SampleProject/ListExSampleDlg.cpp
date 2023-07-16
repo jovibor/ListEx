@@ -24,7 +24,7 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListExGetToolTip)
 	ON_NOTIFY(LISTEX_MSG_HDRICONCLICK, IDC_LISTEX, &CListExSampleDlg::OnListHdrIconClick)
 	ON_NOTIFY(LISTEX_MSG_HDRRBTNUP, IDC_LISTEX, &CListExSampleDlg::OnListHdrRClick)
-	ON_NOTIFY(LISTEX_MSG_DATACHANGED, IDC_LISTEX, &CListExSampleDlg::OnListDataChanged)
+	ON_NOTIFY(LISTEX_MSG_SETDATA, IDC_LISTEX, &CListExSampleDlg::OnListSetData)
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
@@ -225,35 +225,38 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	//Virtual data colors.
-	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
-		return;
-	if (pNMI->iItem >= g_iDataSize)
+	const auto pLCI = reinterpret_cast<PLISTEXCOLORINFO>(pNMHDR);
+	if (pLCI->iItem < 0 || pLCI->iSubItem < 0)
 		return;
 
-	if (pNMI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
-		static LISTEXCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
-		pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
+	if (pLCI->iItem >= g_iDataSize)
+		return;
+
+	if (pLCI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
+		pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
+		*pResult = TRUE;
 	}
 
-	if (m_vecData.at(static_cast<size_t>(pNMI->iItem)).fColor) {
-		pNMI->lParam = reinterpret_cast<LPARAM>(&m_vecData[static_cast<size_t>(pNMI->iItem)].clr);
+	if (m_vecData.at(static_cast<size_t>(pLCI->iItem)).fColor) {
+		pLCI->stClr = m_vecData[static_cast<size_t>(pLCI->iItem)].clr;
+		*pResult = TRUE;
 	}
 }
 
 void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Virtual data icons.
-	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-	if (pNMI->iItem < 0 || pNMI->iSubItem < 0)
+	const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
+	if (pLII->iItem < 0 || pLII->iSubItem < 0)
 		return;
 
-	const auto index = pNMI->iItem < g_iDataSize ? pNMI->iItem : 1;
-	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pNMI->iSubItem == 1)
-		pNMI->lParam = 0; //Icon index in list's image list.
+	const auto index = pLII->iItem < g_iDataSize ? pLII->iItem : 1;
+	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pLII->iSubItem == 1) {
+		pLII->iIconIndex = 0; //Icon index in the list's image list.
+	}
 }
 
 void CListExSampleDlg::OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -284,21 +287,23 @@ void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	m_menuHdr.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, pt.x, pt.y, this);
 }
 
-void CListExSampleDlg::OnListDataChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CListExSampleDlg::OnListSetData(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Changing virtual data in internal m_vecData.
-	const auto ptr = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
-	auto& ref = m_vecData[ptr->iItem];
-	const auto pwszText = reinterpret_cast<LPCWSTR>(ptr->lParam);
-	switch (ptr->iSubItem) {
+	const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
+	auto& ref = m_vecData[pLDI->iItem];
+
+	switch (pLDI->iSubItem) {
 	case 0:
-		ref.wstr0 = pwszText;
+		ref.wstr0 = pLDI->pwszData;
 		break;
 	case 1:
-		ref.wstr1 = pwszText;
+		ref.wstr1 = pLDI->pwszData;
 		break;
 	case 2:
-		ref.wstr2 = pwszText;
+		ref.wstr2 = pLDI->pwszData;
+		break;
+	default:
 		break;
 	}
 }

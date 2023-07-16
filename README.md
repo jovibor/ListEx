@@ -36,7 +36,7 @@
    * [LISTEX_MSG_HDRRBTNDOWN](#)
    * [LISTEX_MSG_HDRRBTNUP](#)
    * [LISTEX_MSG_EDITBEGIN](#listex_msg_editbegin)
-   * [LISTEX_MSG_DATACHANGED](#listex_msg_datachanged)
+   * [LISTEX_MSG_SETDATA](#listex_msg_setdata)
 * [Example](#example)
 * [Appearance](#appearance)
 
@@ -201,8 +201,7 @@ struct LISTEXCREATE {
 
 ### [](#)LISTEXCOLORS
 ```cpp
-struct LISTEXCOLORS
-{
+struct LISTEXCOLORS {
     COLORREF clrListText { GetSysColor(COLOR_WINDOWTEXT) };       //List text color.
     COLORREF clrListTextLink { RGB(0, 0, 200) };                  //List hyperlink text color.
     COLORREF clrListTextSel { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
@@ -226,8 +225,7 @@ This struct is also used in `SetColor` method.
 
 ### [](#)LISTEXCOLOR
 ```cpp
-struct LISTEXCOLOR
-{
+struct LISTEXCOLOR {
     COLORREF clrBk { };
     COLORREF clrText { };
 };
@@ -236,8 +234,7 @@ using PLISTEXCOLOR = LISTEXCOLOR*;
 
 ### [](#)LISTEXHDRICON
 ```cpp
-struct LISTEXHDRICON
-{
+struct LISTEXHDRICON {
     POINT pt { };              //Point of the top-left corner.
     int   iIconIndex { };      //Icon index in the header's image list.
     bool  fClickable { true }; //Is icon sending LISTEX_MSG_HDRICONCLICK message when clicked.
@@ -247,8 +244,7 @@ struct LISTEXHDRICON
 ### [](#)EListExSortMode
 Enum showing sorting type for list columns.
 ```cpp
-enum class EListExSortMode : short
-{
+enum class EListExSortMode : short {
     SORT_LEX, SORT_NUMERIC
 };
 ```
@@ -258,30 +254,24 @@ These messages are sent to the parent window in form of `WM_NOTIFY` Windows mess
 The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
 
 ### [](#)LISTEX_MSG_GETCOLOR
-When in Virtual Mode, sent to the parent window to retrieve cell's color. Expects a pointer to the `LISTEXCOLOR` struct in response, or nothing to use defaults.
+When in Virtual Mode message is sent to the parent window to retrieve cell's color. Message handler should return `TRUE` if it sets colors.
 ```cpp
-void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
-    const auto pNMI = reintepret_cast<NMITEMACTIVATE*>(pNMHDR);
-
-    //For column number 1 (all rows) set color to RGB(0, 220, 220).
-    if (pNMI->iSubItem == 1)
-    {
-        static LISTEXCOLOR clr { RGB(0, 220, 220), RGB(0, 0, 0) };
-        pNMI->lParam = reinterpret_cast<LPARAM>(&clr);
+void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult) {
+    const auto pLCI = reintepret_cast<PLISTEXCOLORINFO>(pNMHDR);
+    if (pLCI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
+        pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
+        *pResult = TRUE;
     }
 }
 ```
 
 ### [](#)LISTEX_MSG_GETICON
+When in Virtual Mode message is sent to the parent window to retrieve cell's icon index in the list internal image list. Icon index `-1` means no icon is set.
 ```cpp
-void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
-    //Virtual data icons.
-    const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
+    const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
     ...
-	
-    pNMI->lParam = SomeIndex; //Icon index in list's image list.
+    pLII->iIconIndex = 1; //Icon index in the list's image list.
 }
 ```
 This message is used in Virtual Mode to obtain an icon index in the List's image-list.
@@ -298,12 +288,10 @@ The `link` and the `title`'s text must be quoted `""`.
 Header icon that previously was set by the [`SetHdrColumnIcon`](#sethdrcolumnicon) method has been clicked.  
 Example code for handling this message:
 ```cpp
-BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
-{
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
     const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
-    if (pNMI->hdr.code == LISTEX_MSG_HDRICONCLICK && pNMI->hdr.idFrom == IDC_MYLIST)
-    {
+    if (pNMI->hdr.code == LISTEX_MSG_HDRICONCLICK && pNMI->hdr.idFrom == IDC_MYLIST) {
     	const auto pNMI = reinterpret_cast<NMHEADERW*>(lParam);
     	//pNMI->iItem holds clicked column index.
     }
@@ -312,25 +300,22 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 ```
 
 ### [](#)LISTEX_MSG_EDITBEGIN
-Sent when the edit box for data editing is about to show up. If you don't want it to show up, you can set `lParam` to `0` in response.
+Sent when an edit box for cell's data editing is about to show up. If you don't want it to show up, you can set the `PLISTEXDATAINFO::fAllowEdit` to `false` in response.
 ```cpp
-BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
-{
-    const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
-    pNMI->lParam = 0; //Edit-box won't show up.
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
+    const auto pLDI = reinterpret_cast<LISTEX::PLISTEXDATAINFO>(pNMHDR);
     ...
+    pLDI->fAllowEdit = false; //Edit-box won't show up.
 }
 ```
 
-### [](#)LISTEX_MSG_DATACHANGED
-Sent in the Virtual Mode when cell's text has been changed. 
+### [](#)LISTEX_MSG_SETDATA
+Sent in Virtual Mode when cell's text has been changed. 
 ```cpp
-BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
-{
-    const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
-    const auto iItem = pNMI->iItem;
-    const auto iSubItem = pNMI->iSubItem;
-    const pwszNewText = reinterpret_cast<LPCWSTR>(pNMI->lParam);
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
+    const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
+    
+    const pwszNewText = pLDI->pwszData;
     ...
 }
 ```

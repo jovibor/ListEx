@@ -5,8 +5,7 @@
 
 using namespace LISTEX;
 
-struct VIRTLISTDATA
-{
+struct VIRTLISTDATA {
 	std::wstring wstr0;      //Arbitrary data...
 	std::wstring wstr1;
 	std::wstring wstr2;
@@ -16,8 +15,7 @@ struct VIRTLISTDATA
 	LISTEXCOLOR clr { };     //Row color.
 };
 
-class CListExSampleDlg : public CDialogEx
-{
+class CListExSampleDlg : public CDialogEx {
 public:
 	CListExSampleDlg(CWnd* pParent = nullptr);
 protected:
@@ -34,7 +32,7 @@ protected:
 	afx_msg void OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListHdrRClick(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnListDataChanged(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListSetData(NMHDR* pNMHDR, LRESULT* pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP();
 protected:
