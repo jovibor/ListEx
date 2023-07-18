@@ -26,12 +26,13 @@ protected:
 	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
 	virtual void OnOK();
 	afx_msg HCURSOR OnQueryDragIcon();
-	afx_msg void OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnListExGetIcon(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListGetToolTip(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListHdrRClick(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListLinkClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListSetData(NMHDR* pNMHDR, LRESULT* pResult);
 	void SortVecData();
 	DECLARE_MESSAGE_MAP();

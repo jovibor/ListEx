@@ -254,7 +254,7 @@ These messages are sent to the parent window in form of `WM_NOTIFY` Windows mess
 The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
 
 ### [](#)LISTEX_MSG_GETCOLOR
-When in Virtual Mode message is sent to the parent window to retrieve cell's color. Message handler should return `TRUE` if it sets colors.
+When in Virtual Mode this message is sent to the parent window to retrieve cell's color. Message handler should return `TRUE` if it sets colors.
 ```cpp
 void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult) {
     const auto pLCI = reintepret_cast<PLISTEXCOLORINFO>(pNMHDR);
@@ -266,19 +266,18 @@ void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult) {
 ```
 
 ### [](#)LISTEX_MSG_GETICON
-When in Virtual Mode message is sent to the parent window to retrieve cell's icon index in the list internal image list. Icon index `-1` means no icon is set.
+When in Virtual Mode this message is sent to the parent window to retrieve cell's icon index in the list internal image list. Message handler should return `TRUE` if icon index is set.
 ```cpp
-void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
+void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* pResult) {
     const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
     ...
     pLII->iIconIndex = 1; //Icon index in the list's image list.
+    *pResult = TRUE;
 }
 ```
-This message is used in Virtual Mode to obtain an icon index in the List's image-list.
 
 ### [](#)LISTEX_MSG_LINKCLICK
-List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the `NMITEMACTIVATE` struct.  
-`NMITEMACTIVATE::lParam` will contain `wchar_t*` pointer to the `link` text of the clicked hyperlink. The `iItem` and `iSubItem` members will contain indexes of the list item/subitem the link was clicked at. 
+List embedded hyperlink has been clicked. `WM_NOTIFY` `lParam` will point to the `LISTEXLINKINFO` struct.  
 
 Hyperlink syntax is: `L"Text with the <link="any_text_here" title="Optional tool-tip text">embedded link</link>"`  
 If no optional `title` tag is provided then the link text itself will be used as hyperlink's tool-tip.  

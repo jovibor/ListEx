@@ -18,12 +18,13 @@ constexpr auto IDC_LIST_MENU_HDR_BEGIN = 0x5;
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListExGetDispInfo)
-	ON_NOTIFY(LISTEX_MSG_GETCOLOR, IDC_LISTEX, &CListExSampleDlg::OnListExGetColor)
-	ON_NOTIFY(LISTEX_MSG_GETICON, IDC_LISTEX, &CListExSampleDlg::OnListExGetIcon)
-	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListExGetToolTip)
+	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListGetDispInfo)
+	ON_NOTIFY(LISTEX_MSG_GETCOLOR, IDC_LISTEX, &CListExSampleDlg::OnListGetColor)
+	ON_NOTIFY(LISTEX_MSG_GETICON, IDC_LISTEX, &CListExSampleDlg::OnListGetIcon)
+	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListGetToolTip)
 	ON_NOTIFY(LISTEX_MSG_HDRICONCLICK, IDC_LISTEX, &CListExSampleDlg::OnListHdrIconClick)
 	ON_NOTIFY(LISTEX_MSG_HDRRBTNUP, IDC_LISTEX, &CListExSampleDlg::OnListHdrRClick)
+	ON_NOTIFY(LISTEX_MSG_LINKCLICK, IDC_LISTEX, &CListExSampleDlg::OnListLinkClick)
 	ON_NOTIFY(LISTEX_MSG_SETDATA, IDC_LISTEX, &CListExSampleDlg::OnListSetData)
 END_MESSAGE_MAP()
 
@@ -188,9 +189,6 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 		case LVN_COLUMNCLICK:
 			SortVecData();
 			return TRUE; //Disable further message processing.
-		case LISTEX_MSG_LINKCLICK:
-			MessageBoxW(reinterpret_cast<LPWSTR>(pNMI->lParam));
-			return TRUE;
 		}
 	}
 
@@ -201,7 +199,7 @@ void CListExSampleDlg::OnOK()
 {
 }
 
-void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDispInfo->item;
@@ -225,7 +223,7 @@ void CListExSampleDlg::OnListExGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult)
+void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	//Virtual data colors.
 	const auto pLCI = reinterpret_cast<PLISTEXCOLORINFO>(pNMHDR);
@@ -238,15 +236,17 @@ void CListExSampleDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult)
 	if (pLCI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
 		pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
 		*pResult = TRUE;
+		return;
 	}
 
 	if (m_vecData.at(static_cast<size_t>(pLCI->iItem)).fColor) {
 		pLCI->stClr = m_vecData[static_cast<size_t>(pLCI->iItem)].clr;
 		*pResult = TRUE;
+		return;
 	}
 }
 
-void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	//Virtual data icons.
 	const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
@@ -256,20 +256,25 @@ void CListExSampleDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	const auto index = pLII->iItem < g_iDataSize ? pLII->iItem : 1;
 	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pLII->iSubItem == 1) {
 		pLII->iIconIndex = 0; //Icon index in the list's image list.
+		*pResult = TRUE;
+		return;
 	}
 }
 
-void CListExSampleDlg::OnListExGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	//Virtual data tooltips.
-	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-	const auto iItem = pNMI->iItem;
-	if (iItem < 0 || pNMI->iSubItem < 0 || iItem >= g_iDataSize)
+	const auto pTTI = reinterpret_cast<PLISTEXTTINFO>(pNMHDR);
+	const auto iItem = pTTI->iItem;
+	if (iItem < 0 || pTTI->iSubItem < 0 || iItem >= g_iDataSize)
 		return;
 
-	if (m_vecData.at(static_cast<size_t>(iItem)).fToolTip && pNMI->iSubItem == 0) {
-		static LISTEXTOOLTIP tt { L"Tooltip text...", L"Caption of the tooltip:" };
-		pNMI->lParam = reinterpret_cast<LPARAM>(&tt); //Tooltip pointer.
+	if (m_vecData.at(static_cast<size_t>(iItem)).fToolTip && pTTI->iSubItem == 0) {
+		static constexpr const wchar_t* ttData[] { L"Tooltip text...", L"Caption of the tooltip:" };
+		pTTI->stData.pwszText = ttData[0];
+		pTTI->stData.pwszCaption = ttData[1];
+		*pResult = TRUE; //TRUE means that we set a tooltip for the given cell.
+		return;
 	}
 }
 
@@ -285,6 +290,12 @@ void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	CPoint pt;
 	GetCursorPos(&pt);
 	m_menuHdr.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, pt.x, pt.y, this);
+}
+
+void CListExSampleDlg::OnListLinkClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	const auto pLLI = reinterpret_cast<PLISTEXLINKINFO>(pNMHDR);
+	MessageBoxW(pLLI->pwszText);
 }
 
 void CListExSampleDlg::OnListSetData(NMHDR* pNMHDR, LRESULT* /*pResult*/)
