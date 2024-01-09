@@ -181,21 +181,22 @@ Default sorting mode for the list.
 ### [](#)LISTEXCREATE
 ```cpp
 struct LISTEXCREATE {
-    LISTEXCOLORS stColor { };             //All control's colors.
-    CRect        rect;                    //Initial rect.
-    CWnd*        pParent { };             //Parent window.
-    LOGFONTW*    pListLogFont { };        //List font.
-    LOGFONTW*    pHdrLogFont { };         //Header font.
-    UINT         uID { };                 //List control ID.
-    DWORD        dwStyle { };             //Control's styles. Zero for default.
-    DWORD        dwListGridWidth { 1 };   //Width of the list grid.
-    DWORD        dwHdrHeight { };         //Header height.
-    bool         fDialogCtrl { false };   //If it's a list within dialog.
-    bool         fSortable { false };     //Is list sortable, by clicking on the header column?
-    bool         fLinkUnderline { true }; //Links are displayed underlined or not.
-    bool         fTooltipBaloon { true }; //Baloon type tooltip for cells.
-    bool         fLinkTooltip { true };   //Show links' toolips.
-    bool         fHighLatency { false };  //Do not redraw window until scrolling completes.
+    CWnd*               pParent { };             //Parent window.
+    const LISTEXCOLORS* pColors { };             //ListEx colors.
+    const LOGFONTW*     pListLogFont { };        //ListEx font.
+    const LOGFONTW*     pHdrLogFont { };         //Header font.
+    CRect               rect { };                //Initial rect.
+    UINT                uID { };                 //ListEx control ID.
+    DWORD               dwStyle { };             //ListEx window styles.
+    DWORD               dwExStyle { };           //Extended window styles.
+    DWORD               dwListGridWidth { 1 };   //Width of the list grid.
+    DWORD               dwHdrHeight { };         //Header height.
+    bool                fDialogCtrl { false };   //If it's a list within dialog.
+    bool                fSortable { false };     //Is list sortable, by clicking on the header column?
+    bool                fLinkUnderline { true }; //Links are displayed underlined or not.
+    bool                fLinkTooltip { true };   //Show links' toolips or not.
+    bool                fTooltipBaloon { true }; //Baloon type tooltip for cells.
+    bool                fHighLatency { false };  //Do not redraw until scroll thumb is released.
 };
 ```
 
@@ -212,8 +213,8 @@ struct LISTEXCOLORS {
     COLORREF clrListBkSel { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
     COLORREF clrListBkCellTt { RGB(170, 170, 230) };              //Bk color of a cell that has tooltip.
     COLORREF clrListGrid { RGB(220, 220, 220) };                  //List grid color.
-    COLORREF clrTooltipText { GetSysColor(COLOR_INFOTEXT) };      //Tooltip window text color.
-    COLORREF clrTooltipBk { GetSysColor(COLOR_INFOBK) };          //Tooltip window bk color.
+    COLORREF clrTooltipText { 0xFFFFFFFFUL };                     //Tooltip text color, 0xFFFFFFFFUL for current Theme color.
+    COLORREF clrTooltipBk { 0xFFFFFFFFUL };                       //Tooltip bk color, 0xFFFFFFFFUL for current Theme color.
     COLORREF clrHdrText { GetSysColor(COLOR_WINDOWTEXT) };        //List header text color.
     COLORREF clrHdrBk { GetSysColor(COLOR_WINDOW) };              //List header bk color.
     COLORREF clrHdrHglInact { GetSysColor(COLOR_GRADIENTINACTIVECAPTION) };//Header highlight inactive.

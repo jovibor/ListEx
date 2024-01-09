@@ -52,7 +52,10 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.fDialogCtrl = true;
 	lcs.dwHdrHeight = 30;
 	lcs.fSortable = true;
-	lcs.stColor.clrHdrText = RGB(250, 250, 250);
+
+	LISTEXCOLORS stColor;
+	stColor.clrHdrText = RGB(250, 250, 250);
+	lcs.pColors = &stColor;
 
 	m_pList->Create(lcs);
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
