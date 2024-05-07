@@ -189,13 +189,15 @@ struct LISTEXCREATE {
     UINT                uID { };                 //ListEx control ID.
     DWORD               dwStyle { };             //ListEx window styles.
     DWORD               dwExStyle { };           //Extended window styles.
+    DWORD               dwTTStyleCell { };       //Cell's tooltip Window styles.
+    DWORD               dwTTStyleLink { };       //Link's tooltip Window styles.
+    DWORD               dwTTShowDelay { };       //Tooltip's delay in ms before show.
     DWORD               dwListGridWidth { 1 };   //Width of the list grid.
     DWORD               dwHdrHeight { };         //Header height.
     bool                fDialogCtrl { false };   //If it's a list within dialog.
     bool                fSortable { false };     //Is list sortable, by clicking on the header column?
     bool                fLinkUnderline { true }; //Links are displayed underlined or not.
     bool                fLinkTooltip { true };   //Show links' toolips or not.
-    bool                fTooltipBaloon { true }; //Baloon type tooltip for cells.
     bool                fHighLatency { false };  //Do not redraw until scroll thumb is released.
 };
 ```
@@ -207,11 +209,9 @@ struct LISTEXCOLORS {
     COLORREF clrListTextLink { RGB(0, 0, 200) };                  //List hyperlink text color.
     COLORREF clrListTextSel { GetSysColor(COLOR_HIGHLIGHTTEXT) }; //Selected item text color.
     COLORREF clrListTextLinkSel { RGB(250, 250, 250) };           //List hyperlink text color in selected cell.
-    COLORREF clrListTextCellTt { GetSysColor(COLOR_WINDOWTEXT) }; //Text color of a cell that has tooltip.
     COLORREF clrListBkOdd { GetSysColor(COLOR_WINDOW) };          //List Bk color of the odd rows.
     COLORREF clrListBkEven { GetSysColor(COLOR_WINDOW) };         //List Bk color of the even rows.
     COLORREF clrListBkSel { GetSysColor(COLOR_HIGHLIGHT) };       //Selected item bk color.
-    COLORREF clrListBkCellTt { RGB(170, 170, 230) };              //Bk color of a cell that has tooltip.
     COLORREF clrListGrid { RGB(220, 220, 220) };                  //List grid color.
     COLORREF clrTooltipText { 0xFFFFFFFFUL };                     //Tooltip text color, 0xFFFFFFFFUL for current Theme color.
     COLORREF clrTooltipBk { 0xFFFFFFFFUL };                       //Tooltip bk color, 0xFFFFFFFFUL for current Theme color.
@@ -255,25 +255,35 @@ These messages are sent to the parent window in form of `WM_NOTIFY` Windows mess
 The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
 
 ### [](#)LISTEX_MSG_GETCOLOR
-When in Virtual Mode this message is sent to the parent window to retrieve cell's color. Message handler should return `TRUE` if it sets colors.
+When in Virtual Mode this message is sent to the parent window to retrieve cell's color information.
 ```cpp
-void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* pResult) {
+void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
     const auto pLCI = reintepret_cast<PLISTEXCOLORINFO>(pNMHDR);
     if (pLCI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
         pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
-        *pResult = TRUE;
     }
 }
 ```
 
 ### [](#)LISTEX_MSG_GETICON
-When in Virtual Mode this message is sent to the parent window to retrieve cell's icon index in the list internal image list. Message handler should return `TRUE` if icon index is set.
+When in Virtual Mode this message is sent to the parent window to retrieve cell's icon index in the list internal image list.
 ```cpp
-void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* pResult) {
+void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
     const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
     ...
     pLII->iIconIndex = 1; //Icon index in the list's image list.
-    *pResult = TRUE;
+}
+```
+### [](#)LISTEX_MSG_GETTOOLTIP
+Sent to the parent window in Virtual Mode to retrieve cell's tooltip information.
+```cpp
+void CListDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
+    const auto pTTI = reinterpret_cast<PLISTEXTTINFO>(pNMHDR);
+    const auto iItem = pTTI->iItem;
+    
+    static constexpr const wchar_t* ttData[] { L"Cell tooltip text...", L"Caption of the cell tooltip:" };
+    pTTI->stData.pwszText = ttData[0];
+    pTTI->stData.pwszCaption = ttData[1];
 }
 ```
 

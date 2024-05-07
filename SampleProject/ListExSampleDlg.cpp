@@ -52,6 +52,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.fDialogCtrl = true;
 	lcs.dwHdrHeight = 30;
 	lcs.fSortable = true;
+	lcs.dwTTStyleCell = TTS_BALLOON;
+//	lcs.dwTTStyleLink = TTS_BALLOON;
 
 	LISTEXCOLORS stColor;
 	stColor.clrHdrText = RGB(250, 250, 250);
@@ -249,7 +251,7 @@ void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult)
 	}
 }
 
-void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
+void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Virtual data icons.
 	const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
@@ -259,12 +261,11 @@ void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
 	const auto index = pLII->iItem < g_iDataSize ? pLII->iItem : 1;
 	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pLII->iSubItem == 1) {
 		pLII->iIconIndex = 0; //Icon index in the list's image list.
-		*pResult = TRUE;
 		return;
 	}
 }
 
-void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* pResult)
+void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Virtual data tooltips.
 	const auto pTTI = reinterpret_cast<PLISTEXTTINFO>(pNMHDR);
@@ -273,10 +274,9 @@ void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* pResult)
 		return;
 
 	if (m_vecData.at(static_cast<size_t>(iItem)).fToolTip && pTTI->iSubItem == 0) {
-		static constexpr const wchar_t* ttData[] { L"Tooltip text...", L"Caption of the tooltip:" };
+		static constexpr const wchar_t* ttData[] { L"Cell tooltip text...", L"Caption of the cell tooltip:" };
 		pTTI->stData.pwszText = ttData[0];
 		pTTI->stData.pwszCaption = ttData[1];
-		*pResult = TRUE; //TRUE means that we set a tooltip for the given cell.
 		return;
 	}
 }
