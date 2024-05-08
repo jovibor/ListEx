@@ -54,6 +54,10 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.fSortable = true;
 	lcs.dwTTStyleCell = TTS_BALLOON;
 //	lcs.dwTTStyleLink = TTS_BALLOON;
+	lcs.dwTTShowTime = 3000;     //Tooltip show up time.
+	lcs.ptTTOffset = { 3, -20 }; //Tooltip window offset.
+	lcs.dwTTShowDelay = 500;
+
 
 	LISTEXCOLORS stColor;
 	stColor.clrHdrText = RGB(250, 250, 250);
@@ -98,29 +102,29 @@ BOOL CListExSampleDlg::OnInitDialog()
 	m_pList->SetItemCountEx(g_iRows, LVSICF_NOSCROLL); //Amount of Virtual items.
 
 	//For classical list.
-/*	m_pList->InsertItem(0, L"Test item - row:0/column:0");
-	m_pList->InsertItem(1, L"Test item - row:1/column:0.");
-	m_pList->InsertItem(2, L"Test item - row:2/column:0..");
-	m_pList->InsertItem(3, L"Test item - row:3/column:0...");
-	m_pList->InsertItem(4, L"Test item - row:4/column:0....");
-	m_pList->SetItemText(0, 1, L"Test item - row:0/column:1....");
-	m_pList->SetItemText(1, 1, L"Test item - row:1/column:1...");
-	m_pList->SetItemText(2, 1, L"Test item - row:2/column:1..");
-	m_pList->SetItemText(3, 1, L"Test item - row:3/column:1.");
-	m_pList->SetItemText(4, 1, L"Test item - row:4/column:1");
-	m_pList->SetItemText(0, 2, L"Test item - row:0/column:2...");
-	m_pList->SetItemText(1, 2, L"Test item - row:1/column:2.");
-	m_pList->SetItemText(2, 2, L"Test item - row:2/column:2....");
-	m_pList->SetItemText(3, 2, L"Test item - row:3/column:2..");
-	m_pList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
+	/*	m_pList->InsertItem(0, L"Test item - row:0/column:0");
+		m_pList->InsertItem(1, L"Test item - row:1/column:0.");
+		m_pList->InsertItem(2, L"Test item - row:2/column:0..");
+		m_pList->InsertItem(3, L"Test item - row:3/column:0...");
+		m_pList->InsertItem(4, L"Test item - row:4/column:0....");
+		m_pList->SetItemText(0, 1, L"Test item - row:0/column:1....");
+		m_pList->SetItemText(1, 1, L"Test item - row:1/column:1...");
+		m_pList->SetItemText(2, 1, L"Test item - row:2/column:1..");
+		m_pList->SetItemText(3, 1, L"Test item - row:3/column:1.");
+		m_pList->SetItemText(4, 1, L"Test item - row:4/column:1");
+		m_pList->SetItemText(0, 2, L"Test item - row:0/column:2...");
+		m_pList->SetItemText(1, 2, L"Test item - row:1/column:2.");
+		m_pList->SetItemText(2, 2, L"Test item - row:2/column:2....");
+		m_pList->SetItemText(3, 2, L"Test item - row:3/column:2..");
+		m_pList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
 
-	m_pList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
-	m_pList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
-	m_pList->SetCellColor(4, 2, RGB(255, 255, 0));
-	m_pList->SetRowColor(7, RGB(0, 220, 0));
-	m_pList->SetColumnColor(1, RGB(0, 220, 220));
-	m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
-	*/
+		m_pList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
+		m_pList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
+		m_pList->SetCellColor(4, 2, RGB(255, 255, 0));
+		m_pList->SetRowColor(7, RGB(0, 220, 0));
+		m_pList->SetColumnColor(1, RGB(0, 220, 220));
+		m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
+		*/
 
 	m_stImgList.Create(16, 16, ILC_COLOR | ILC_MASK, 0, 1);
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
@@ -270,11 +274,11 @@ void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	//Virtual data tooltips.
 	const auto pTTI = reinterpret_cast<PLISTEXTTINFO>(pNMHDR);
 	const auto iItem = pTTI->iItem;
-	if (iItem < 0 || pTTI->iSubItem < 0 || iItem >= g_iDataSize)
+	if (iItem < 0 || pTTI->iSubItem != 0 || iItem >= g_iDataSize)
 		return;
 
-	if (m_vecData.at(static_cast<size_t>(iItem)).fToolTip && pTTI->iSubItem == 0) {
-		static constexpr const wchar_t* ttData[] { L"Cell tooltip text...", L"Caption of the cell tooltip:" };
+	if (m_vecData[static_cast<size_t>(iItem)].fToolTip) {
+		static constexpr const wchar_t* ttData[2] { L"Cell tooltip text...", L"Caption of the cell tooltip:" };
 		pTTI->stData.pwszText = ttData[0];
 		pTTI->stData.pwszCaption = ttData[1];
 		return;
