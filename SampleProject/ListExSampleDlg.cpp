@@ -53,11 +53,10 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.dwHdrHeight = 30;
 	lcs.fSortable = true;
 	lcs.dwTTStyleCell = TTS_BALLOON;
-//	lcs.dwTTStyleLink = TTS_BALLOON;
-	lcs.dwTTShowTime = 3000;     //Tooltip show up time.
+	lcs.dwTTStyleLink = TTS_NOANIMATE;
+	lcs.dwTTShowTime = 1000;     //Tooltip show up time.
 	lcs.ptTTOffset = { 3, -20 }; //Tooltip window offset.
-	lcs.dwTTShowDelay = 500;
-
+	//lcs.dwTTShowDelay = 500;
 
 	LISTEXCOLORS stColor;
 	stColor.clrHdrText = RGB(250, 250, 250);
