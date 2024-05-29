@@ -261,7 +261,7 @@ The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMH
 When in Virtual Mode this message is sent to the parent window to retrieve cell's color information.
 ```cpp
 void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
-    const auto pLCI = reintepret_cast<PLISTEXCOLORINFO>(pNMHDR);
+    const auto pLCI = reinterpret_cast<PLISTEXCOLORINFO>(pNMHDR);
     if (pLCI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
         pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
     }
