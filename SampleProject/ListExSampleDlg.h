@@ -1,8 +1,8 @@
 #pragma once
-#include "../ListEx/ListEx.h"
 #include <string>
 #include <vector>
 
+import ListEx;
 using namespace LISTEX;
 
 struct VIRTLISTDATA {

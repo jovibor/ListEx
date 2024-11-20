@@ -113,26 +113,26 @@ namespace LISTEX {
 	* LISTEXCREATE - Main initialization helper struct for CListEx::Create method.    *
 	**********************************************************************************/
 	struct LISTEXCREATE {
-		CWnd*            pParent { };             //Parent window.
-		PCLISTEXCOLORS   pColors { };             //ListEx colors.
-		const LOGFONTW*  pListLogFont { };        //ListEx font.
-		const LOGFONTW*  pHdrLogFont { };         //Header font.
-		CRect            rect;                    //Initial rect.
-		UINT             uID { };                 //ListEx control ID.
-		DWORD            dwStyle { };             //ListEx window styles.
-		DWORD            dwExStyle { };           //Extended window styles.
-		DWORD            dwTTStyleCell { };       //Cell's tooltip Window styles.
-		DWORD            dwTTStyleLink { };       //Link's tooltip Window styles.
-		DWORD            dwTTShowDelay { };       //Tooltip delay before showing, in milliseconds.
-		DWORD            dwTTShowTime { 5000 };   //Tooltip show up time, in milliseconds.
-		DWORD            dwListGridWidth { 1 };   //Width of the list grid.
-		DWORD            dwHdrHeight { };         //Header height.
-		POINT            ptTTOffset { };          //Tooltip offset from cursor. Doesn't work for TTS_BALLOON.
-		bool             fDialogCtrl { false };   //If it's a list within dialog.
-		bool             fSortable { false };     //Is list sortable, by clicking on the header column?
-		bool             fLinkUnderline { true }; //Links are displayed underlined or not.
-		bool             fLinkTooltip { true };   //Show links' toolips or not.
-		bool             fHighLatency { false };  //Do not redraw until scroll thumb is released.
+		CWnd*           pParent { };             //Parent window.
+		PCLISTEXCOLORS  pColors { };             //ListEx colors.
+		const LOGFONTW* pListLogFont { };        //ListEx font.
+		const LOGFONTW* pHdrLogFont { };         //Header font.
+		CRect           rect;                    //Initial rect.
+		UINT            uID { };                 //ListEx control ID.
+		DWORD           dwStyle { };             //ListEx window styles.
+		DWORD           dwExStyle { };           //Extended window styles.
+		DWORD           dwTTStyleCell { };       //Cell's tooltip Window styles.
+		DWORD           dwTTStyleLink { };       //Link's tooltip Window styles.
+		DWORD           dwTTShowDelay { };       //Tooltip delay before showing, in milliseconds.
+		DWORD           dwTTShowTime { 5000 };   //Tooltip show up time, in milliseconds.
+		DWORD           dwListGridWidth { 1 };   //Width of the list grid.
+		DWORD           dwHdrHeight { };         //Header height.
+		POINT           ptTTOffset { };          //Tooltip offset from cursor. Doesn't work for TTS_BALLOON.
+		bool            fDialogCtrl { false };   //If it's a list within dialog.
+		bool            fSortable { false };     //Is list sortable, by clicking on the header column?
+		bool            fLinkUnderline { true }; //Links are displayed underlined or not.
+		bool            fLinkTooltip { true };   //Show links' toolips or not.
+		bool            fHighLatency { false };  //Do not redraw until scroll thumb is released.
 	};
 
 	/********************************************

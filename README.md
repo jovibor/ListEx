@@ -56,22 +56,15 @@
 * Dynamically changed list's font size with the **Ctrl+MouseWheel**
 
 ## [](#)Installation
-The usage of the control is simple:
-1. Add *ListEx.h* and *CListEx.cpp* into your project
-2. Declare `IListExPtr` variable: `IListExPtr myList { CreateListEx() };`
-
+1. Add `ListEx.ixx` into your project
+2. Import `ListEx` module and declare `IListExPtr` variable:
+```cpp
+import ListEx;
+LISTEX::IListExPtr myList { CreateListEx() };`
+```
 `IListExPtr` is a pointer to the `IListEx` class wrapped in `std::unique_ptr`.
 This wrapper is used mainly for convenience, so you don't have to bother about object lifetime, it will be destroyed automatically.
 That's why there is a call to the factory function `CreateListEx()`, to properly initialize a pointer.
-
-Control uses its own namespace `LISTEX`. So it's up to you, whether to use namespace prefix before declarations: 
-```cpp
-LISTEX::
-```
-or to define namespace in the source file's beginning:
-```cpp
-using namespace LISTEX;
-```
 
 ## [](#)Create
 
