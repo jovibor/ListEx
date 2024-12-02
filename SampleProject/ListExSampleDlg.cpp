@@ -64,7 +64,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	m_pList->Create(lcs);
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-	m_pList->InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_CENTER, 200, -1, LVCFMT_CENTER);
+//	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES);
+	m_pList->InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_LEFT, 200, -1, LVCFMT_LEFT);
 
 	//Header menu.
 	m_menuHdr.CreatePopupMenu();
