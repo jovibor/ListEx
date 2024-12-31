@@ -5,14 +5,15 @@
 #include "framework.h"
 #include <algorithm>
 #include <ctime>
+#include <format>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 constexpr auto g_iColumns { 3 };
-constexpr auto g_iRows { 10 };
-constexpr auto g_iDataSize { 10 };
+constexpr auto g_iRows { 30 };
+constexpr auto g_iDataSize { 30 };
 constexpr auto IDC_LIST_MENU_HDR_BEGIN = 0x5;
 
 BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
@@ -26,6 +27,8 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_NOTIFY(LISTEX_MSG_HDRRBTNUP, IDC_LISTEX, &CListExSampleDlg::OnListHdrRClick)
 	ON_NOTIFY(LISTEX_MSG_LINKCLICK, IDC_LISTEX, &CListExSampleDlg::OnListLinkClick)
 	ON_NOTIFY(LISTEX_MSG_SETDATA, IDC_LISTEX, &CListExSampleDlg::OnListSetData)
+	ON_WM_DRAWITEM()
+	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
@@ -48,24 +51,27 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	LISTEXCREATE lcs;
 	lcs.uID = IDC_LISTEX;
-	lcs.pParent = this;
+	lcs.hWndParent = m_hWnd;
 	lcs.fDialogCtrl = true;
 	lcs.dwHdrHeight = 30;
 	lcs.fSortable = true;
 	lcs.dwTTStyleCell = TTS_BALLOON;
 	lcs.dwTTStyleLink = TTS_NOANIMATE;
-	lcs.dwTTShowTime = 1000;     //Tooltip show up time.
-	lcs.ptTTOffset = { 3, -20 }; //Tooltip window offset.
-	//lcs.dwTTShowDelay = 500;
+	lcs.dwTTShowTime = 2000; //Tooltip show up time.
+//	lcs.dwTTDelayTime = 1000;
+	lcs.dwSizeFontList = 10;
+	lcs.dwSizeFontHdr = 10;
+	lcs.fLinks = true;
+	//lcs.fHighLatency = true;
+	//lcs.dwTTDelayTime = 500;
 
-	LISTEXCOLORS stColor;
-	stColor.clrHdrText = RGB(250, 250, 250);
+	LISTEXCOLORS stColor { .clrHdrText = RGB(250, 250, 250) };
 	lcs.pColors = &stColor;
+	m_MyList.Create(lcs);
 
-	m_pList->Create(lcs);
-	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-//	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES);
-	m_pList->InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_LEFT, 200, -1, LVCFMT_LEFT);
+	m_MyList.SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
+//	m_MyList.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES);
+	m_MyList.InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_LEFT, 170, -1, LVCFMT_LEFT);
 
 	//Header menu.
 	m_menuHdr.CreatePopupMenu();
@@ -74,69 +80,61 @@ BOOL CListExSampleDlg::OnInitDialog()
 
 	for (int i = 1; i < g_iColumns; ++i) {
 		const auto wstrName = std::wstring(L"Test column ") + std::to_wstring(i);
-		m_pList->InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 200, -1, LVCFMT_CENTER, true);
-		m_pList->SetHdrColumnColor(i, RGB(200, 200, 200));
+		m_MyList.InsertColumn(i, wstrName.data(), LVCFMT_CENTER, 170, -1, LVCFMT_CENTER, true);
+		m_MyList.SetHdrColumnColor(i, RGB(200, 200, 200));
 		m_menuHdr.AppendMenuW(MF_STRING, IDC_LIST_MENU_HDR_BEGIN + i, wstrName.data());
 		m_menuHdr.CheckMenuItem(IDC_LIST_MENU_HDR_BEGIN + i, MF_CHECKED | MF_BYCOMMAND);
 	}
 
-	m_pList->SetHdrColumnColor(0, RGB(70, 70, 70));
-	//	m_pList->SetHdrColumnColor(1, RGB(125, 125, 125));
-	//	m_pList->SetHdrColumnColor(2, RGB(200, 200, 200));
+	m_MyList.SetHdrColumnColor(0, RGB(70, 70, 70));
+	//	m_MyList.SetHdrColumnColor(1, RGB(125, 125, 125));
+	//	m_MyList.SetHdrColumnColor(2, RGB(200, 200, 200));
 	//	m_myList->SetColumnSortMode(0, false);
 
 	//For Virtual list.
 	//Sample data for Virtual mode (LVS_OWNERDATA).
 	std::srand(static_cast<unsigned>(std::time(0)));
-	for (unsigned i = 0; i < g_iDataSize; ++i) {
+	for (unsigned iItem = 0; iItem < g_iDataSize; ++iItem) {
 		m_vecData.emplace_back(VIRTLISTDATA {
 			L"<link=\"0\" title=\"Custom title\">Column:0</link>/"
-			L"<link=\"" + std::to_wstring(i) + L"\">row:" + std::to_wstring(i) + L"</link>",
+			L"<link=\"" + std::to_wstring(iItem) + L"\">row:" + std::to_wstring(iItem) + L"</link>",
 			//Some random numbers at the beginning, for checking the sorting.
-			L"[" + std::to_wstring(std::rand()) + L"] " + L"Column:1/row:" + std::to_wstring(i),
-			L"Column:2/row:" + std::to_wstring(i),
-			i == 2, i == 7, i == 1,
-			i == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
+			L"[" + std::to_wstring(std::rand()) + L"] " + L"Column:1/row:" + std::to_wstring(iItem),
+			L"Column:2/row:" + std::to_wstring(iItem),
+			iItem == 2, //Icon.
+			iItem == 7, //Color.
+			iItem == 1, //Tooltip.
+			iItem == 7 ? LISTEXCOLOR { RGB(0, 220, 0) } : LISTEXCOLOR { } //Row number 7 (for all columns) colored to RGB(0, 220, 0).
 			});
 	}
-	m_pList->SetItemCountEx(g_iRows, LVSICF_NOSCROLL); //Amount of Virtual items.
+	m_MyList.SetItemCountEx(g_iRows, LVSICF_NOSCROLL); //Amount of Virtual items.
 
 	//For classical list.
-	/*	m_pList->InsertItem(0, L"Test item - row:0/column:0");
-		m_pList->InsertItem(1, L"Test item - row:1/column:0.");
-		m_pList->InsertItem(2, L"Test item - row:2/column:0..");
-		m_pList->InsertItem(3, L"Test item - row:3/column:0...");
-		m_pList->InsertItem(4, L"Test item - row:4/column:0....");
-		m_pList->SetItemText(0, 1, L"Test item - row:0/column:1....");
-		m_pList->SetItemText(1, 1, L"Test item - row:1/column:1...");
-		m_pList->SetItemText(2, 1, L"Test item - row:2/column:1..");
-		m_pList->SetItemText(3, 1, L"Test item - row:3/column:1.");
-		m_pList->SetItemText(4, 1, L"Test item - row:4/column:1");
-		m_pList->SetItemText(0, 2, L"Test item - row:0/column:2...");
-		m_pList->SetItemText(1, 2, L"Test item - row:1/column:2.");
-		m_pList->SetItemText(2, 2, L"Test item - row:2/column:2....");
-		m_pList->SetItemText(3, 2, L"Test item - row:3/column:2..");
-		m_pList->SetItemText(4, 2, L"Test item - row:4/column:2.....");
-
-		m_pList->SetCellColor(2, 0, GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
-		m_pList->SetCellColor(3, 1, GetSysColor(COLOR_GRADIENTACTIVECAPTION));
-		m_pList->SetCellColor(4, 2, RGB(255, 255, 0));
-		m_pList->SetRowColor(7, RGB(0, 220, 0));
-		m_pList->SetColumnColor(1, RGB(0, 220, 220));
-		m_pList->SetCellTooltip(0, 0, L"Tooltip text...", L"Caption of the tooltip:");
-		*/
+	/*	m_MyList.InsertItem(0, L"Test item - row:0/column:0");
+		m_MyList.InsertItem(1, L"Test item - row:1/column:0.");
+		m_MyList.InsertItem(2, L"Test item - row:2/column:0..");
+		m_MyList.InsertItem(3, L"Test item - row:3/column:0...");
+		m_MyList.InsertItem(4, L"Test item - row:4/column:0....");
+		m_MyList.SetItemText(0, 1, L"Test item - row:0/column:1....");
+		m_MyList.SetItemText(1, 1, L"Test item - row:1/column:1...");
+		m_MyList.SetItemText(2, 1, L"Test item - row:2/column:1..");
+		m_MyList.SetItemText(3, 1, L"Test item - row:3/column:1.");
+		m_MyList.SetItemText(4, 1, L"Test item - row:4/column:1");
+		m_MyList.SetItemText(0, 2, L"Test item - row:0/column:2...");
+		m_MyList.SetItemText(1, 2, L"Test item - row:1/column:2.");
+		m_MyList.SetItemText(2, 2, L"Test item - row:2/column:2....");
+		m_MyList.SetItemText(3, 2, L"Test item - row:3/column:2..");
+		m_MyList.SetItemText(4, 2, L"Test item - row:4/column:2.....");
+	*/
 
 	m_stImgList.Create(16, 16, ILC_COLOR | ILC_MASK, 0, 1);
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
 		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
-	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
-	m_pList->SetHdrImageList(&m_stImgList);
+	m_MyList.SetImageList(m_stImgList.m_hImageList, LVSIL_NORMAL);
+	m_MyList.SetHdrImageList(m_stImgList);
 
-	LISTEXHDRICON stHdrIcon;
-	stHdrIcon.iIndex = 0;
-	stHdrIcon.pt.x = 4;
-	stHdrIcon.pt.y = 4;
-	m_pList->SetHdrColumnIcon(0, stHdrIcon);
+	LISTEXHDRICON stHdrIcon { .pt { .x = 4, .y = 4 }, .iIndex = 0 };
+	m_MyList.SetHdrColumnIcon(0, stHdrIcon);
 
 	return TRUE;
 }
@@ -179,14 +177,24 @@ BOOL CListExSampleDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 
 	if (uState & MF_CHECKED) {
 		m_menuHdr.CheckMenuItem(wMenuID, MF_UNCHECKED | MF_BYCOMMAND);
-		m_pList->HideColumn(wMenuID - IDC_LIST_MENU_HDR_BEGIN, true);
+		m_MyList.HideColumn(wMenuID - IDC_LIST_MENU_HDR_BEGIN, true);
 	}
 	else {
 		m_menuHdr.CheckMenuItem(wMenuID, MF_CHECKED | MF_BYCOMMAND);
-		m_pList->HideColumn(wMenuID - IDC_LIST_MENU_HDR_BEGIN, false);
+		m_MyList.HideColumn(wMenuID - IDC_LIST_MENU_HDR_BEGIN, false);
 	}
 
 	return CDialogEx::OnCommand(wParam, lParam);
+}
+
+void CListExSampleDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (nIDCtl == IDC_LISTEX) {
+		m_MyList.DrawItem(lpDrawItemStruct);
+		return;
+	}
+
+	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
 BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
@@ -232,7 +240,7 @@ void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult)
+void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	//Virtual data colors.
 	const auto pLCI = reinterpret_cast<PLISTEXCOLORINFO>(pNMHDR);
@@ -242,15 +250,21 @@ void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult)
 	if (pLCI->iItem >= g_iDataSize)
 		return;
 
-	if (pLCI->iSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
-		pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
-		*pResult = TRUE;
+	const auto sItem = static_cast<size_t>(pLCI->iItem);
+	const auto sSubItem = pLCI->iSubItem;
+
+	if (m_vecData.at(sItem).fToolTip && sSubItem == 0) {
+		pLCI->stClr = { RGB(240, 240, 0) }; //Yellow Bk for cells with tooltip for 0 column only.
 		return;
 	}
 
-	if (m_vecData.at(static_cast<size_t>(pLCI->iItem)).fColor) {
-		pLCI->stClr = m_vecData[static_cast<size_t>(pLCI->iItem)].clr;
-		*pResult = TRUE;
+	if (sSubItem == 1) { //Column number 1 (for all rows) colored to RGB(0, 220, 220).
+		pLCI->stClr = { RGB(0, 220, 220), RGB(0, 0, 0) };
+		return;
+	}
+
+	if (m_vecData.at(sItem).fColor) {
+		pLCI->stClr = m_vecData[sItem].clr;
 		return;
 	}
 }
@@ -263,7 +277,7 @@ void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		return;
 
 	const auto index = pLII->iItem < g_iDataSize ? pLII->iItem : 1;
-	if (m_vecData.at(static_cast<size_t>(index)).fIcon && pLII->iSubItem == 1) {
+	if (m_vecData.at(static_cast<size_t>(index)).fIcon && (pLII->iSubItem == 0 || pLII->iSubItem == 1)) {
 		pLII->iIconIndex = 0; //Icon index in the list's image list.
 		return;
 	}
@@ -326,9 +340,19 @@ void CListExSampleDlg::OnListSetData(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
+void CListExSampleDlg::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
+{
+	if (nIDCtl == IDC_LISTEX) {
+		m_MyList.MeasureItem(lpMeasureItemStruct);
+		return;
+	}
+
+	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
+}
+
 void CListExSampleDlg::SortVecData()
 {
-	const auto iColumnIndex = m_pList->GetSortColumn();
+	const auto iColumnIndex = m_MyList.GetSortColumn();
 	if (iColumnIndex < 0)
 		return;
 
@@ -348,7 +372,7 @@ void CListExSampleDlg::SortVecData()
 		}
 
 		bool result { false };
-		if (m_pList->GetSortAscending()) {
+		if (m_MyList.GetSortAscending()) {
 			if (iCompare < 0)
 				result = true;
 		}
@@ -360,5 +384,5 @@ void CListExSampleDlg::SortVecData()
 		return result;
 		});
 
-	m_pList->RedrawWindow();
+	m_MyList.RedrawWindow();
 }
