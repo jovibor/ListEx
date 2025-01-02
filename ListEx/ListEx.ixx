@@ -433,7 +433,7 @@ auto CListExHdr::GetImageList(int iList)const->HIMAGELIST
 bool CListExHdr::GetItem(int iPos, HDITEMW* pHDI)const
 {
 	assert(IsWindow());
-	return ::SendMessageW(m_hWnd, HDM_GETITEM, iPos, reinterpret_cast<LPARAM>(pHDI));
+	return ::SendMessageW(m_hWnd, HDM_GETITEMW, iPos, reinterpret_cast<LPARAM>(pHDI));
 }
 
 int CListExHdr::GetItemCount()const
@@ -773,7 +773,7 @@ auto CListExHdr::GetHdrIcon(UINT ID)->CListExHdr::HDRICON*
 void CListExHdr::SetItem(int nPos, const HDITEMW& item)
 {
 	assert(IsWindow());
-	::SendMessageW(m_hWnd, HDM_SETITEM, nPos, reinterpret_cast<LPARAM>(&item));
+	::SendMessageW(m_hWnd, HDM_SETITEMW, nPos, reinterpret_cast<LPARAM>(&item));
 }
 
 auto CListExHdr::GetListParent()->HWND
@@ -978,9 +978,10 @@ auto CListExHdr::OnLButtonUp(const MSG& msg)->LRESULT
 					iterData.icon.fLMPressed = false; //Remove fLMPressed flag from all columns.
 				}
 
-				const auto hParent = GetParent();
-				const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hParent));
-				const NMHEADERW hdr { .hdr { hParent, uCtrlId, LISTEX_MSG_HDRICONCLICK }, .iItem { ColumnIDToIndex(ref.uID) } };
+				const auto hWndParent = GetParent();
+				const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hWndParent));
+				const NMHEADERW hdr { .hdr { hWndParent, uCtrlId, LISTEX_MSG_HDRICONCLICK },
+					.iItem { ColumnIDToIndex(ref.uID) } };
 				::SendMessageW(GetListParent(), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
 			}
 			break;
@@ -1030,11 +1031,11 @@ auto CListExHdr::OnPaint()->LRESULT
 auto CListExHdr::OnRButtonDown(const MSG& msg)->LRESULT
 {
 	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
-	const auto hParent = GetParent();
-	const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hParent));
+	const auto hWndParent = GetParent();
+	const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hWndParent));
 	const auto iItem = HitTest({ .pt { pt } });
-	NMHEADERW hdr { .hdr { hParent, uCtrlId, LISTEX_MSG_HDRRBTNDOWN }, .iItem { iItem } };
-	SendMessageW(GetListParent(), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
+	NMHEADERW hdr { .hdr { hWndParent, uCtrlId, LISTEX_MSG_HDRRBTNDOWN }, .iItem { iItem } };
+	::SendMessageW(GetListParent(), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
 
 	return wnd::DefSubclassProc(msg);
 }
@@ -1042,12 +1043,12 @@ auto CListExHdr::OnRButtonDown(const MSG& msg)->LRESULT
 auto CListExHdr::OnRButtonUp(const MSG& msg)->LRESULT
 {
 	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
-	const auto hParent = GetParent();
-	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID(hParent));
+	const auto hWndParent = GetParent();
+	const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hWndParent));
 	const auto iItem = HitTest({ .pt { pt } });
-	NMHEADERW hdr { { hParent, uCtrlId, LISTEX_MSG_HDRRBTNUP } };
+	NMHEADERW hdr { { hWndParent, uCtrlId, LISTEX_MSG_HDRRBTNUP } };
 	hdr.iItem = iItem;
-	SendMessageW(GetListParent(), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
+	::SendMessageW(GetListParent(), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&hdr));
 
 	return wnd::DefSubclassProc(msg);
 }
@@ -1076,6 +1077,7 @@ namespace LISTEX {
 		bool EnsureVisible(int iItem, bool fPartialOK)const;
 		[[nodiscard]] auto GetColors()const->const LISTEXCOLORS &;
 		[[nodiscard]] auto GetColumnSortMode(int iColumn)const->EListExSortMode;
+		[[nodiscard]] int GetDlgCtrlID()const;
 		[[nodiscard]] auto GetExtendedStyle()const->DWORD;
 		[[nodiscard]] auto GetFont()const->LOGFONTW;
 		[[nodiscard]] auto GetHWND()const->HWND;
@@ -1127,8 +1129,11 @@ namespace LISTEX {
 		bool SetItemState(int iItem, LVITEMW* pItem)const;
 		bool SetItemState(int iItem, UINT uState, UINT uStateMask)const;
 		void SetItemText(int iItem, int iSubItem, LPCWSTR pwszText);
+		void SetRedraw(bool fRedraw)const;
 		void SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare = nullptr,
 			EListExSortMode eSortMode = EListExSortMode::SORT_LEX);
+		void SetWindowPos(HWND hWndAfter, int iX, int iY, int iWidth, int iHeight, UINT uFlags = SWP_NOACTIVATE | SWP_NOZORDER);
+		bool ShowWindow(int iCmdShow)const;
 		void SortItemsEx(PFNLVCOMPARE pfnCompare, DWORD_PTR dwData)const;
 		void Update(int iItem)const;
 		static auto CALLBACK DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)->int;
@@ -1168,10 +1173,10 @@ namespace LISTEX {
 		static auto CALLBACK EditSubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 			UINT_PTR uIDSubclass, DWORD_PTR dwRefData)->LRESULT;
 	private:
-		static constexpr ULONG_PTR m_uIDTCellTTActivate { 0x01 }; //Cell tool-tip activate-timer ID.
-		static constexpr ULONG_PTR m_uIDTCellTTCheck { 0x02 };    //Cell tool-tip check-timer ID.
-		static constexpr ULONG_PTR m_uIDTLinkTTActivate { 0x03 }; //Link tool-tip activate-timer ID.
-		static constexpr ULONG_PTR m_uIDTLinkTTCheck { 0x04 };    //Link tool-tip check-timer ID.
+		static constexpr ULONG_PTR m_uIDTTTCellActivate { 0x01 }; //Cell tool-tip activate-timer ID.
+		static constexpr ULONG_PTR m_uIDTTTCellCheck { 0x02 };    //Cell tool-tip check-timer ID.
+		static constexpr ULONG_PTR m_uIDTTTLinkActivate { 0x03 }; //Link tool-tip activate-timer ID.
+		static constexpr ULONG_PTR m_uIDTTTLinkCheck { 0x04 };    //Link tool-tip check-timer ID.
 		static constexpr auto m_uIDEditInPlace { 0x01U };         //In place edit-box ID.
 		struct COLUMNDATA {
 			int iIndex { };
@@ -1245,7 +1250,8 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 	}
 
 	HWND hWnd { }; //Main window.
-	auto dwStyle = lcs.dwStyle | WS_CHILD | LVS_OWNERDRAWFIXED;
+	//Header subclassing is available only in the LVS_REPORT mode.
+	auto dwStyle = lcs.dwStyle | WS_CHILD | LVS_REPORT | LVS_OWNERDRAWFIXED;
 	if (lcs.fDialogCtrl) {
 		hWnd = ::GetDlgItem(lcs.hWndParent, lcs.uID);
 		if (hWnd == nullptr) {
@@ -1441,6 +1447,16 @@ auto CListEx::GetColumnSortMode(int iColumn)const->EListExSortMode
 	return m_eDefSortMode;
 }
 
+int CListEx::GetDlgCtrlID()const
+{
+	assert(IsCreated());
+	if (!IsCreated()) {
+		return { };
+	}
+
+	return ::GetDlgCtrlID(m_hWnd);
+}
+
 auto CListEx::GetExtendedStyle()const->DWORD
 {
 	assert(IsCreated());
@@ -1538,11 +1554,15 @@ auto CListEx::GetItemText(int iItem, int iSubItem)const->std::wstring
 		return { };
 	}
 
+	//Temporary buffer for a string data to receive.
+	//In virtual mode when responding to the LVN_GETDISPINFO notification message, client code can copy
+	//data to the .pszText pointed buffer, or can set the .pszText pointer to client own data. 
+	//But list control will copy that data to the provided original buffer anyway.
 	wchar_t buff[256];
-	LVITEMW item { .mask { LVIF_TEXT }, .iItem { iItem }, .iSubItem { iSubItem },
-		.pszText { buff }, .cchTextMax { 256 } };
-	GetItem(&item);
-	return item.pszText;
+	LVITEMW item { .iSubItem { iSubItem }, .pszText { buff }, .cchTextMax { 256 } };
+	::SendMessageW(m_hWnd, LVM_GETITEMTEXTW, static_cast<WPARAM>(iItem), reinterpret_cast<LPARAM>(&item));
+
+	return buff;
 }
 
 int CListEx::GetNextItem(int iItem, int iFlags)const
@@ -1796,7 +1816,7 @@ void CListEx::SetColumn(int iCol, const LVCOLUMNW* pColumn)const
 		return;
 	}
 
-	::SendMessageW(m_hWnd, LVM_SETCOLUMN, iCol, reinterpret_cast<LPARAM>(pColumn));
+	::SendMessageW(m_hWnd, LVM_SETCOLUMNW, iCol, reinterpret_cast<LPARAM>(pColumn));
 }
 
 void CListEx::SetColumnEditable(int iColumn, bool fEditable)
@@ -1943,6 +1963,16 @@ void CListEx::SetItemText(int iItem, int iSubItem, LPCWSTR pwszText)
 	::SendMessageW(m_hWnd, LVM_SETITEMTEXTW, iItem, reinterpret_cast<LPARAM>(&lvi));
 }
 
+void CListEx::SetRedraw(bool fRedraw)const
+{
+	assert(IsCreated());
+	if (!IsCreated()) {
+		return;
+	}
+
+	::SendMessageW(m_hWnd, WM_SETREDRAW, fRedraw, 0);
+}
+
 void CListEx::SetHdrFont(const LOGFONTW& lf)
 {
 	assert(IsCreated());
@@ -1989,6 +2019,26 @@ void CListEx::SetSortable(bool fSortable, PFNLVCOMPARE pfnCompare, EListExSortMo
 	m_eDefSortMode = eSortMode;
 
 	GetHeader().SetSortable(fSortable);
+}
+
+void CListEx::SetWindowPos(HWND hWndAfter, int iX, int iY, int iWidth, int iHeight, UINT uFlags)
+{
+	assert(IsCreated());
+	if (!IsCreated()) {
+		return;
+	}
+
+	::SetWindowPos(m_hWnd, hWndAfter, iX, iY, iWidth, iHeight, uFlags);
+}
+
+bool CListEx::ShowWindow(int iCmdShow)const
+{
+	assert(IsCreated());
+	if (!IsCreated()) {
+		return false;
+	}
+
+	return ::ShowWindow(m_hWnd, iCmdShow) != FALSE;
 }
 
 void CListEx::SortItemsEx(PFNLVCOMPARE pfnCompare, DWORD_PTR dwData)const
@@ -2061,7 +2111,7 @@ int CALLBACK CListEx::DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPar
 
 void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 {
-	if (pDIS->hwndItem != m_hWnd)
+	if (!IsCreated() || pDIS->hwndItem != m_hWnd)
 		return;
 
 	const auto iItem = pDIS->itemID;
@@ -2173,11 +2223,11 @@ auto CListEx::GetCustomColor(int iItem, int iSubItem)const->std::optional<LISTEX
 	}
 
 	//Asking parent for color.
-	const auto iCtrlID = ::GetDlgCtrlID(m_hWnd);
+	const auto iCtrlID = GetDlgCtrlID();
 	const LISTEXCOLORINFO lci { .hdr { .hwndFrom { m_hWnd }, .idFrom { static_cast<UINT>(iCtrlID) },
 		.code { LISTEX_MSG_GETCOLOR } }, .iItem { iItem }, .iSubItem { iSubItem },
 		.stClr { .clrBk { 0xFFFFFFFFUL }, .clrText { 0xFFFFFFFFUL } } };
-	::SendMessageW(GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(iCtrlID), reinterpret_cast<LPARAM>(&lci));
+	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(iCtrlID), reinterpret_cast<LPARAM>(&lci));
 	if (lci.stClr.clrBk != -1 || lci.stClr.clrText != -1) {
 		return lci.stClr;
 	}
@@ -2192,10 +2242,10 @@ int CListEx::GetIcon(int iItem, int iSubItem)const
 	}
 
 	//Asking parent for the icon index in image list.
-	const auto uCtrlID = static_cast<UINT>(::GetDlgCtrlID(m_hWnd));
+	const auto uCtrlID = static_cast<UINT>(GetDlgCtrlID());
 	const LISTEXICONINFO lii { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlID }, .code { LISTEX_MSG_GETICON } },
 		.iItem { iItem }, .iSubItem { iSubItem } };
-	::SendMessageW(GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlID), reinterpret_cast<LPARAM>(&lii));
+	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlID), reinterpret_cast<LPARAM>(&lii));
 	return lii.iIconIndex; //By default it's -1, meaning no icon.
 }
 
@@ -2206,7 +2256,7 @@ auto CListEx::GetTooltip(int iItem, int iSubItem)const->std::optional<LISTEXTTDA
 	}
 
 	//Asking parent for tooltip.
-	const auto iCtrlID = ::GetDlgCtrlID(m_hWnd);
+	const auto iCtrlID = GetDlgCtrlID();
 	const LISTEXTTINFO ltti { .hdr { .hwndFrom { m_hWnd }, .idFrom { static_cast<UINT>(iCtrlID) },
 		.code { LISTEX_MSG_GETTOOLTIP } }, .iItem { iItem }, .iSubItem { iSubItem } };
 	if (::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(iCtrlID), reinterpret_cast<LPARAM>(&ltti));
@@ -2224,7 +2274,7 @@ bool CListEx::IsWindow()const
 
 void CListEx::MeasureItem(LPMEASUREITEMSTRUCT pMIS)
 {
-	if (pMIS->CtlID != static_cast<UINT>(GetDlgCtrlID(m_hWnd)))
+	if (!IsCreated() || pMIS->CtlID != static_cast<UINT>(GetDlgCtrlID()))
 		return;
 
 	//Set row height according to current font's height.
@@ -2268,7 +2318,7 @@ void CListEx::OnEditInPlaceEnterPressed()
 	wchar_t buffText[256];
 	::GetWindowTextW(m_hWndEditInPlace, buffText, 256);
 	if (m_fVirtual) {
-		const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(m_hWnd));
+		const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
 		const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_SETDATA } },
 			.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem }, .pwszData { buffText } };
 		::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
@@ -2308,7 +2358,7 @@ auto CListEx::OnLButtonDblClk(const MSG& msg)->LRESULT
 		return wnd::DefSubclassProc(msg);
 	}
 
-	const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(m_hWnd));
+	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
 	const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_EDITBEGIN } },
 		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem } };
 	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
@@ -2379,7 +2429,7 @@ auto CListEx::OnLButtonUp(const MSG& msg)->LRESULT
 			return item.fLink && item.rc == m_rcLinkCurr; }); iterFind != vecText.end()) {
 			m_rcLinkCurr.SetRectEmpty();
 			fLinkUp = true;
-			const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(m_hWnd));
+			const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
 			const LISTEXLINKINFO lli { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_LINKCLICK } },
 				.iItem { hti.iItem }, .iSubItem { hti.iSubItem }, .ptClick { pt }, .pwszText { iterFind->wstrLink.data() } };
 			::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&lli));
@@ -2433,7 +2483,7 @@ auto CListEx::OnMouseMove(const MSG& msg)->LRESULT
 				m_htiCurrLink.iSubItem = hti.iSubItem;
 				m_wstrTTText = itLink->fTitle ? std::move(itLink->wstrTitle) : std::move(itLink->wstrLink);
 				if (m_dwTTDelayTime > 0) {
-					::SetTimer(m_hWnd, m_uIDTLinkTTActivate, m_dwTTDelayTime, nullptr); //Activate link's tooltip after delay.
+					::SetTimer(m_hWnd, m_uIDTTTLinkActivate, m_dwTTDelayTime, nullptr); //Activate link's tooltip after delay.
 				}
 				else { TTLinkShow(true); } //Activate immediately.
 			}
@@ -2465,7 +2515,7 @@ auto CListEx::OnMouseMove(const MSG& msg)->LRESULT
 			m_wstrTTText = optTT->pwszText; //Tooltip text.
 			m_wstrTTCaption = optTT->pwszCaption ? optTT->pwszCaption : L""; //Tooltip caption.
 			if (m_dwTTDelayTime > 0) {
-				::SetTimer(m_hWnd, m_uIDTCellTTActivate, m_dwTTDelayTime, nullptr); //Activate cell's tooltip after delay.
+				::SetTimer(m_hWnd, m_uIDTTTCellActivate, m_dwTTDelayTime, nullptr); //Activate cell's tooltip after delay.
 			}
 			else { TTCellShow(true); }; //Activate immediately.
 		}
@@ -2577,27 +2627,32 @@ auto CListEx::OnPaint()->LRESULT
 auto CListEx::OnTimer(const MSG& msg)->LRESULT
 {
 	const auto nIDEvent = static_cast<UINT_PTR>(msg.wParam);
-	POINT ptScreen;
-	::GetCursorPos(&ptScreen);
-	POINT ptClient = ptScreen;
-	::ScreenToClient(m_hWnd, &ptClient);
-	LVHITTESTINFO hitInfo { .pt { ptClient } };
+	if (nIDEvent != m_uIDTTTCellActivate && nIDEvent != m_uIDTTTLinkActivate
+		&& nIDEvent != m_uIDTTTCellCheck && nIDEvent != m_uIDTTTLinkCheck) {
+		return wnd::DefSubclassProc(msg);
+	}
+
+	POINT ptCur;
+	::GetCursorPos(&ptCur);
+	POINT ptCurClient = ptCur;
+	::ScreenToClient(m_hWnd, &ptCurClient);
+	LVHITTESTINFO hitInfo { .pt { ptCurClient } };
 	HitTest(&hitInfo);
 
 	switch (nIDEvent) {
-	case m_uIDTCellTTActivate:
-		::KillTimer(m_hWnd, m_uIDTCellTTActivate);
+	case m_uIDTTTCellActivate:
+		::KillTimer(m_hWnd, m_uIDTTTCellActivate);
 		if (m_htiCurrCell.iItem == hitInfo.iItem && m_htiCurrCell.iSubItem == hitInfo.iSubItem) {
 			TTCellShow(true);
 		}
 		break;
-	case m_uIDTLinkTTActivate:
-		::KillTimer(m_hWnd, m_uIDTLinkTTActivate);
-		if (m_rcLinkCurr.PtInRect(ptClient)) {
+	case m_uIDTTTLinkActivate:
+		::KillTimer(m_hWnd, m_uIDTTTLinkActivate);
+		if (m_rcLinkCurr.PtInRect(ptCurClient)) {
 			TTLinkShow(true);
 		}
 		break;
-	case m_uIDTCellTTCheck:
+	case m_uIDTTTCellCheck:
 	{
 		//If cursor has left cell's rect, or time run out.
 		const auto msElapsed = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - m_tmTT).count();
@@ -2609,7 +2664,7 @@ auto CListEx::OnTimer(const MSG& msg)->LRESULT
 		}
 	}
 	break;
-	case m_uIDTLinkTTCheck:
+	case m_uIDTTTLinkCheck:
 	{
 		//If cursor has left link subitem's rect, or time run out.
 		const auto msElapsed = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - m_tmTT).count();
@@ -2868,18 +2923,18 @@ void CListEx::TTCellShow(bool fShow, bool fTimer)
 {
 	TTTOOLINFOW ttiCell { .cbSize { sizeof(TTTOOLINFOW) }, .lpszText { m_wstrTTText.data() } };
 	if (fShow) {
-		wnd::CPoint ptCurr;
-		GetCursorPos(&ptCurr);
-		ptCurr.Offset(m_ptTTOffset);
-		::SendMessageW(m_hWndCellTT, TTM_TRACKPOSITION, 0, static_cast<LPARAM>(MAKELONG(ptCurr.x, ptCurr.y)));
+		wnd::CPoint ptCur;
+		::GetCursorPos(&ptCur);
+		ptCur.Offset(m_ptTTOffset);
+		::SendMessageW(m_hWndCellTT, TTM_TRACKPOSITION, 0, static_cast<LPARAM>(MAKELONG(ptCur.x, ptCur.y)));
 		::SendMessageW(m_hWndCellTT, TTM_SETTITLEW, TTI_NONE, reinterpret_cast<LPARAM>(m_wstrTTCaption.data()));
 		::SendMessageW(m_hWndCellTT, TTM_UPDATETIPTEXTW, 0, reinterpret_cast<LPARAM>(&ttiCell));
 		::SendMessageW(m_hWndCellTT, TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&ttiCell));
 		m_tmTT = std::chrono::high_resolution_clock::now();
-		::SetTimer(m_hWnd, m_uIDTCellTTCheck, 300, nullptr); //Timer to check whether mouse has left subitem's rect.
+		::SetTimer(m_hWnd, m_uIDTTTCellCheck, 300, nullptr); //Timer to check whether mouse has left subitem's rect.
 	}
 	else {
-		::KillTimer(m_hWnd, m_uIDTCellTTCheck);
+		::KillTimer(m_hWnd, m_uIDTTTCellCheck);
 
 		//When hiding tooltip by timer we not nullify the m_htiCurrCell.
 		//Otherwise tooltip will be shown again after mouse movement,
@@ -2898,17 +2953,17 @@ void CListEx::TTLinkShow(bool fShow, bool fTimer)
 {
 	TTTOOLINFOW ttiLink { .cbSize { sizeof(TTTOOLINFOW) }, .lpszText { m_wstrTTText.data() } };
 	if (fShow) {
-		wnd::CPoint ptCurr;
-		GetCursorPos(&ptCurr);
-		ptCurr.Offset(m_ptTTOffset);
-		::SendMessageW(m_hWndLinkTT, TTM_TRACKPOSITION, 0, static_cast<LPARAM>(MAKELONG(ptCurr.x, ptCurr.y)));
+		wnd::CPoint ptCur;
+		::GetCursorPos(&ptCur);
+		ptCur.Offset(m_ptTTOffset);
+		::SendMessageW(m_hWndLinkTT, TTM_TRACKPOSITION, 0, static_cast<LPARAM>(MAKELONG(ptCur.x, ptCur.y)));
 		::SendMessageW(m_hWndLinkTT, TTM_UPDATETIPTEXTW, 0, reinterpret_cast<LPARAM>(&ttiLink));
 		::SendMessageW(m_hWndLinkTT, TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&ttiLink));
 		m_tmTT = std::chrono::high_resolution_clock::now();
-		::SetTimer(m_hWnd, m_uIDTLinkTTCheck, 300, nullptr); //Timer to check whether mouse has left link's rect.
+		::SetTimer(m_hWnd, m_uIDTTTLinkCheck, 300, nullptr); //Timer to check whether mouse has left link's rect.
 	}
 	else {
-		::KillTimer(m_hWnd, m_uIDTLinkTTCheck);
+		::KillTimer(m_hWnd, m_uIDTTTLinkCheck);
 		if (!fTimer) {
 			m_htiCurrLink.iItem = -1;
 			m_htiCurrLink.iSubItem = -1;
@@ -2923,12 +2978,12 @@ void CListEx::TTLinkShow(bool fShow, bool fTimer)
 void CListEx::TTHLShow(bool fShow, UINT uRow)
 {
 	if (fShow) {
-		POINT ptCurr;
-		GetCursorPos(&ptCurr);
+		POINT ptCur;
+		::GetCursorPos(&ptCur);
 		wchar_t warrOffset[32];
 		*std::format_to(warrOffset, L"Row: {}", uRow) = L'\0';
 		TTTOOLINFOW ttiHL { .cbSize { sizeof(TTTOOLINFOW) }, .lpszText { warrOffset } };
-		::SendMessageW(m_hWndRowTT, TTM_TRACKPOSITION, 0, static_cast<LPARAM>(MAKELONG(ptCurr.x - 5, ptCurr.y - 20)));
+		::SendMessageW(m_hWndRowTT, TTM_TRACKPOSITION, 0, static_cast<LPARAM>(MAKELONG(ptCur.x - 5, ptCur.y - 20)));
 		::SendMessageW(m_hWndRowTT, TTM_UPDATETIPTEXTW, 0, reinterpret_cast<LPARAM>(&ttiHL));
 	}
 

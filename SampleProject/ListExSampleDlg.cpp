@@ -221,10 +221,7 @@ void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	const auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDispInfo->item;
 	const auto iItem = pItem->iItem;
-	if (iItem >= g_iDataSize)
-		return;
-
-	if ((pItem->mask & LVIF_TEXT) == 0)
+	if (iItem >= g_iDataSize || (pItem->mask & LVIF_TEXT) == 0)
 		return;
 
 	switch (pItem->iSubItem) {
