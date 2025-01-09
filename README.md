@@ -34,7 +34,7 @@
 * [Hyperlinks](#listex_msg_linkclick) in a cells' text
 * [Tooltips](#setcelltooltip) for individual cells
 * [Background and text color](#setcellcolor) for individual cells
-* Many options to set individual colors for lots of list aspects with the [`LISTEXCOLORSTRUCT`](#listexcolors)
+* Many options to set individual colors for lots of list aspects with the [LISTEXCOLOR]
 * Set header height and font
 * Set header color for individual columns
 * Individual text alignment for a header and column itself
@@ -223,7 +223,7 @@ Sent in Virtual Mode when cell's text has been changed.
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
     const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
     
-    const pwszNewText = pLDI->pwszData;
+    const auto pwszNewText = pLDI->pwszData;
     ...
 }
 ```

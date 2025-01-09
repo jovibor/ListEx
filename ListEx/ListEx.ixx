@@ -150,6 +150,7 @@ export namespace LISTEX {
 		bool            fLinkUnderline { true }; //Links are displayed underlined or not.
 		bool            fLinkTooltip { true };   //Show links' toolips or not.
 		bool            fHighLatency { false };  //Do not redraw window until scroll thumb is released.
+		bool            fEditSingleClick { false }; //Cells editable with single mouse click or double?
 	};
 
 	/********************************************
@@ -841,9 +842,8 @@ void CListExHdr::OnDrawItem(HDC hDC, int iItem, RECT rc, bool fPressed, bool fHi
 	dc.SelectObject(m_hFntHdr);
 
 	//Set item's text buffer first char to zero, then getting item's text and Draw it.
-	wchar_t warrHdrText[MAX_PATH];
-	warrHdrText[0] = L'\0';
-	HDITEMW hdItem { .mask { HDI_FORMAT | HDI_TEXT }, .pszText { warrHdrText }, .cchTextMax { MAX_PATH } };
+	wchar_t buffText[256] { L'\0' };
+	HDITEMW hdItem { .mask { HDI_FORMAT | HDI_TEXT }, .pszText { buffText }, .cchTextMax { std::size(buffText) } };
 	GetItem(iItem, &hdItem);
 
 	//Draw icon for column, if any.
@@ -872,12 +872,12 @@ void CListExHdr::OnDrawItem(HDC hDC, int iItem, RECT rc, bool fPressed, bool fHi
 
 	constexpr auto iTextIndentRight { 4 };
 	wnd::CRect rcText { rcOrig.left + iTextIndentLeft, rcOrig.top, rcOrig.right - iTextIndentRight, rcOrig.bottom };
-	if (std::wstring_view(warrHdrText).find(L'\n') != std::wstring_view::npos) {
+	if (std::wstring_view(buffText).find(L'\n') != std::wstring_view::npos) {
 		//If it's multiline text, first — calculate rect for the text,
 		//with DT_CALCRECT flag (not drawing anything),
 		//and then calculate rect for final vertical text alignment.
 		wnd::CRect rcCalcText;
-		dc.DrawTextW(warrHdrText, rcCalcText, uFormat | DT_CALCRECT);
+		dc.DrawTextW(buffText, rcCalcText, uFormat | DT_CALCRECT);
 		rcText.top = rcText.Height() / 2 - rcCalcText.Height() / 2;
 	}
 	else {
@@ -885,7 +885,7 @@ void CListExHdr::OnDrawItem(HDC hDC, int iItem, RECT rc, bool fPressed, bool fHi
 	}
 
 	//Draw Header Text.
-	dc.DrawTextW(warrHdrText, rcText, uFormat);
+	dc.DrawTextW(buffText, rcText, uFormat);
 
 	//Draw sortable triangle (arrow).
 	if (m_fSortable && IsSortable(ID) && ID == m_uSortColumn) {
@@ -1139,6 +1139,7 @@ namespace LISTEX {
 		static auto CALLBACK DefCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)->int;
 	private:
 		struct ITEMDATA;
+		bool EditInPlaceShow(bool fShow = true);
 		[[nodiscard]] long GetFontSize()const;
 		[[nodiscard]] auto GetHeader() -> CListExHdr& { return m_Hdr; }
 		void FontSizeIncDec(bool fInc);
@@ -1214,8 +1215,9 @@ namespace LISTEX {
 		bool m_fSortable { false };     //Is list sortable.
 		bool m_fSortAsc { false };      //Sorting type (ascending, descending).
 		bool m_fLinks { false };        //Enable links support.
-		bool m_fLinkUnderl { false };   //Links are displayed underlined or not.
+		bool m_fLinkUnderline { false };//Links are displayed underlined or not.
 		bool m_fLinkTooltip { false };  //Show links toolips.
+		bool m_fEditSingleClick { false };//Cells editable with single mouse click or double?
 		bool m_fVirtual { false };      //Whether list is virtual (LVS_OWNERDATA) or not.
 		bool m_fCellTTActive { false }; //Is cell's tool-tip shown atm.
 		bool m_fLinkTTActive { false }; //Is link's tool-tip shown atm.
@@ -1288,9 +1290,10 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 
 	m_fSortable = lcs.fSortable;
 	m_fLinks = lcs.fLinks;
-	m_fLinkUnderl = lcs.fLinkUnderline;
+	m_fLinkUnderline = lcs.fLinkUnderline;
 	m_fLinkTooltip = lcs.fLinkTooltip;
 	m_fHighLatency = lcs.fHighLatency;
+	m_fEditSingleClick = lcs.fEditSingleClick;
 	m_dwGridWidth = lcs.dwWidthGrid;
 	m_dwTTDelayTime = lcs.dwTTDelayTime;
 	m_dwTTShowTime = lcs.dwTTShowTime;
@@ -1478,6 +1481,44 @@ auto CListEx::GetFont()const->LOGFONTW
 	::GetObjectW(m_hFntList, sizeof(lf), &lf);
 
 	return lf;
+}
+
+bool CListEx::EditInPlaceShow(bool fShow)
+{
+	if (!fShow) {
+		::DestroyWindow(m_hWndEditInPlace);
+		return false;
+	}
+
+	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
+	const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_EDITBEGIN } },
+		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem } };
+	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
+	if (!ldi.fAllowEdit) { //User explicitly declined to display edit-box.
+		return false;
+	}
+
+	//Get Column data alignment.
+	const auto iAlignment = GetHeader().GetColumnDataAlign(m_htiEdit.iSubItem);
+	const DWORD dwStyle = iAlignment == LVCFMT_LEFT ? ES_LEFT : (iAlignment == LVCFMT_RIGHT ? ES_RIGHT : ES_CENTER);
+	auto rcCell = GetSubItemRect(m_htiEdit.iItem, m_htiEdit.iSubItem, LVIR_BOUNDS);
+	if (m_htiEdit.iSubItem == 0) { //Clicked on item (first column).
+		rcCell.right = GetItemRect(m_htiEdit.iItem, LVIR_LABEL).right;
+	}
+
+	::DestroyWindow(m_hWndEditInPlace);
+	const auto iWidth = rcCell.right - rcCell.left;
+	const auto iHeight = rcCell.bottom - rcCell.top;
+	m_hWndEditInPlace = ::CreateWindowExW(0, WC_EDITW, nullptr, dwStyle | WS_BORDER | WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
+		rcCell.left, rcCell.top, iWidth, iHeight, m_hWnd, reinterpret_cast<HMENU>(static_cast<UINT_PTR>(m_uIDEditInPlace)),
+		nullptr, nullptr);
+	::SetWindowSubclass(m_hWndEditInPlace, EditSubclassProc, reinterpret_cast<UINT_PTR>(this), 0);
+	::SendMessageW(m_hWndEditInPlace, WM_SETFONT, reinterpret_cast<WPARAM>(m_hFntList), FALSE);
+	const auto wstrText = GetItemText(m_htiEdit.iItem, m_htiEdit.iSubItem);
+	::SetWindowTextW(m_hWndEditInPlace, wstrText.data());
+	::SetFocus(m_hWndEditInPlace);
+
+	return true;
 }
 
 long CListEx::GetFontSize()const
@@ -2168,7 +2209,7 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 
 				if (itItemData.fLink) {
 					cdc.SetTextColor(clrTextLink);
-					if (m_fLinkUnderl) {
+					if (m_fLinkUnderline) {
 						cdc.SelectObject(m_hFntListUnderline);
 					}
 				}
@@ -2352,39 +2393,15 @@ auto CListEx::OnHScroll(const MSG& msg)->LRESULT
 auto CListEx::OnLButtonDblClk(const MSG& msg)->LRESULT
 {
 	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
-	m_htiEdit.pt = pt;
-	HitTest(&m_htiEdit);
-	if (m_htiEdit.iItem < 0 || m_htiEdit.iSubItem < 0 || !GetHeader().IsColumnEditable(m_htiEdit.iSubItem)) {
+	LVHITTESTINFO hti { .pt { pt } };
+	HitTest(&hti);
+	if (hti.iItem < 0 || hti.iSubItem < 0)
 		return wnd::DefSubclassProc(msg);
-	}
 
-	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
-	const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_EDITBEGIN } },
-		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem } };
-	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
-	if (!ldi.fAllowEdit) { //User explicitly declined to display edit-box.
-		return wnd::DefSubclassProc(msg);
+	if (!m_fEditSingleClick && GetHeader().IsColumnEditable(hti.iSubItem)) {
+		m_htiEdit = hti;
+		return EditInPlaceShow() ? 0 : wnd::DefSubclassProc(msg);
 	}
-
-	//Get Column data alignment.
-	const auto iAlignment = GetHeader().GetColumnDataAlign(m_htiEdit.iSubItem);
-	const DWORD dwStyle = iAlignment == LVCFMT_LEFT ? ES_LEFT : (iAlignment == LVCFMT_RIGHT ? ES_RIGHT : ES_CENTER);
-	auto rcCell = GetSubItemRect(m_htiEdit.iItem, m_htiEdit.iSubItem, LVIR_BOUNDS);
-	if (m_htiEdit.iSubItem == 0) { //Clicked on item (first column).
-		rcCell.right = GetItemRect(m_htiEdit.iItem, LVIR_LABEL).right;
-	}
-
-	const auto wstrText = GetItemText(m_htiEdit.iItem, m_htiEdit.iSubItem);
-	::DestroyWindow(m_hWndEditInPlace);
-	const auto iWidth = rcCell.right - rcCell.left;
-	const auto iHeight = rcCell.bottom - rcCell.top;
-	m_hWndEditInPlace = ::CreateWindowExW(0, WC_EDITW, nullptr, dwStyle | WS_BORDER | WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
-		rcCell.left, rcCell.top, iWidth, iHeight, m_hWnd, reinterpret_cast<HMENU>(static_cast<UINT_PTR>(m_uIDEditInPlace)),
-		nullptr, nullptr);
-	::SetWindowSubclass(m_hWndEditInPlace, EditSubclassProc, reinterpret_cast<UINT_PTR>(this), 0);
-	::SendMessageW(m_hWndEditInPlace, WM_SETFONT, reinterpret_cast<WPARAM>(m_hFntList), FALSE);
-	::SetWindowTextW(m_hWndEditInPlace, wstrText.data());
-	::SetFocus(m_hWndEditInPlace);
 
 	return wnd::DefSubclassProc(msg);
 }
@@ -2392,56 +2409,59 @@ auto CListEx::OnLButtonDblClk(const MSG& msg)->LRESULT
 auto CListEx::OnLButtonDown(const MSG& msg)->LRESULT
 {
 	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
-	bool fLinkDown { false };
 	LVHITTESTINFO hti { .pt { pt } };
 	HitTest(&hti);
-	if (hti.iItem >= 0 && hti.iSubItem >= 0) {
-		const auto vecText = ParseItemData(hti.iItem, hti.iSubItem);
-		if (const auto iterFind = std::find_if(vecText.begin(), vecText.end(), [&](const ITEMDATA& item) {
-			return item.fLink && item.rc.PtInRect(pt); }); iterFind != vecText.end()) {
-			m_fLDownAtLink = true;
-			m_rcLinkCurr = iterFind->rc;
-			fLinkDown = true;
-		}
+
+	//Destroy edit-box if clicked in any place other than current edit-box cell.
+	if (hti.iItem != m_htiEdit.iItem || hti.iSubItem != m_htiEdit.iSubItem) {
+		EditInPlaceShow(false);
 	}
 
-	if (!fLinkDown) {
+	if (hti.iItem < 0 || hti.iSubItem < 0)
 		return wnd::DefSubclassProc(msg);
+
+	const auto vecText = ParseItemData(hti.iItem, hti.iSubItem);
+	if (const auto itFind = std::find_if(vecText.begin(), vecText.end(), [&](const ITEMDATA& item) {
+		return item.fLink && item.rc.PtInRect(pt); }); itFind != vecText.end()) {
+		m_fLDownAtLink = true;
+		m_rcLinkCurr = itFind->rc;
+		return 0; //Do not call default handler.
 	}
 
-	return 0;
+	if (m_fEditSingleClick && GetHeader().IsColumnEditable(hti.iSubItem)) {
+		m_htiEdit = hti;
+		return EditInPlaceShow() ? 0 : wnd::DefSubclassProc(msg);
+	}
+
+	return wnd::DefSubclassProc(msg);
 }
 
 auto CListEx::OnLButtonUp(const MSG& msg)->LRESULT
 {
-	bool fLinkUp { false };
-	if (m_fLDownAtLink) {
-		const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
-		LVHITTESTINFO hti { .pt { pt } };
-		HitTest(&hti);
-		if (hti.iItem < 0 || hti.iSubItem < 0) {
-			m_fLDownAtLink = false;
-			return 0;
-		}
+	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	LVHITTESTINFO hti { .pt { pt } };
+	HitTest(&hti);
+	if (hti.iItem < 0 || hti.iSubItem < 0) {
+		m_fLDownAtLink = false;
+		return wnd::DefSubclassProc(msg);
+	}
 
+	if (m_fLDownAtLink) {
 		const auto vecText = ParseItemData(hti.iItem, hti.iSubItem);
 		if (const auto iterFind = std::find_if(vecText.begin(), vecText.end(), [&](const ITEMDATA& item) {
 			return item.fLink && item.rc == m_rcLinkCurr; }); iterFind != vecText.end()) {
 			m_rcLinkCurr.SetRectEmpty();
-			fLinkUp = true;
 			const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
 			const LISTEXLINKINFO lli { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_LINKCLICK } },
 				.iItem { hti.iItem }, .iSubItem { hti.iSubItem }, .ptClick { pt }, .pwszText { iterFind->wstrLink.data() } };
 			::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&lli));
+			return 0;
 		}
 	}
 
 	m_fLDownAtLink = false;
-	if (!fLinkUp) {
-		return wnd::DefSubclassProc(msg);
-	}
 
-	return 0;
+	return wnd::DefSubclassProc(msg);
 }
 
 auto CListEx::OnMouseWheel(const MSG& msg)->LRESULT
