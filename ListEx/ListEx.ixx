@@ -1347,19 +1347,19 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 	m_iLOGPIXELSY = ::GetDeviceCaps(hDC, LOGPIXELSY);
 	NONCLIENTMETRICSW ncm { .cbSize { sizeof(NONCLIENTMETRICSW) } };
 	::SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0); //Get System Default UI Font.
-	ncm.lfMessageFont.lfHeight = -MulDiv(lcs.dwSizeFontList, m_iLOGPIXELSY, 72);
+	ncm.lfMessageFont.lfHeight = -::MulDiv(lcs.dwSizeFontList, m_iLOGPIXELSY, 72);
 	LOGFONTW lfList { lcs.pLFList != nullptr ? *lcs.pLFList : ncm.lfMessageFont };
 	m_hFntList = ::CreateFontIndirectW(&lfList);
 	lfList.lfUnderline = TRUE;
 	m_hFntListUnderline = ::CreateFontIndirectW(&lfList);
-	ncm.lfMessageFont.lfHeight = -MulDiv(lcs.dwSizeFontHdr, m_iLOGPIXELSY, 72);
+	ncm.lfMessageFont.lfHeight = -::MulDiv(lcs.dwSizeFontHdr, m_iLOGPIXELSY, 72);
 	const LOGFONTW lfHdr { lcs.pLFHdr != nullptr ? *lcs.pLFHdr : ncm.lfMessageFont };
 	const auto fntDefault = ::CreateFontIndirectW(&lfHdr);
 	TEXTMETRICW tm;
 	::SelectObject(hDC, fntDefault);
 	::GetTextMetricsW(hDC, &tm);
 	const DWORD dwHdrHeight = lcs.dwHdrHeight == 0 ?
-		tm.tmHeight + tm.tmExternalLeading + MulDiv(5, m_iLOGPIXELSY, 72) : lcs.dwHdrHeight; //Header is a bit higher than list rows.
+		tm.tmHeight + tm.tmExternalLeading + ::MulDiv(5, m_iLOGPIXELSY, 72) : lcs.dwHdrHeight; //Header is a bit higher than list rows.
 	::ReleaseDC(m_hWnd, hDC);
 
 	m_hPenGrid = ::CreatePen(PS_SOLID, m_dwGridWidth, m_stColors.clrListGrid);

@@ -5,7 +5,7 @@
 ## Table of Contents
 * [Features](#features)
 * [Installation](#installation)
-* [Create](#create)
+* [Creating](#creating)
     * [Manually](#manually)
     * [In Dialog](#in-dialog)
 * [Sorting](#sorting)
@@ -51,20 +51,20 @@ import ListEx;
 LISTEX::CListEx myList;
 ```
 
-## [](#)Create
+## [](#)Creating
 
 ### [](#)Manually
-`Create` is the main method to create **CListEx** control, it takes [`LISTEXCREATE`](#listexcreate) structure as an argument.  
-Below is a simple example of the **CListEx** creation:
+`Create` is the main method to create **CListEx** control, it takes [`LISTEXCREATE`](#listexcreate) structure as an argument. It's also important to add handlers for two Windows messages, `WM_DRAWITEM` and `WM_MEASUREITEM`.
+#### Example:
 ```cpp
 CListEx myList;
 
 LISTEXCREATE lcs;
-lcs.pParent = this;
 lcs.uID = ID_MY_LIST;
+lcs.hWndParent = m_hWnd;
 lcs.rect = CRect(0, 0, 500, 300);
+//lcs.fDialogCtrl = true; //If it's control in a Dialog.
 myList.Create(lcs);
-
 
 void CMyDialog::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 {

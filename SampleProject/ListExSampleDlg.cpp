@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "ListExSample.h"
 #include "ListExSampleDlg.h"
 #include "afxdialogex.h"
