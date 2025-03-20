@@ -22,6 +22,9 @@ export module ListEx;
 #pragma comment(lib, "Comctl32.lib")
 #pragma comment(lib, "Shlwapi.lib") //StrToInt64ExW().
 #pragma comment(lib, "UxTheme.lib") //SetWindowTheme().
+//Setting manifest for the ComCtl32.dll version 6.
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' \
+version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 export namespace LISTEX {
 	/****************************************************************
@@ -173,14 +176,20 @@ export namespace LISTEX {
 	constexpr auto LISTEX_MSG_HDRRBTNUP { 0x1006U };    //Header's WM_RBUTTONUP message.
 	constexpr auto LISTEX_MSG_LINKCLICK { 0x1007U };    //Hyperlink has been clicked.
 	constexpr auto LISTEX_MSG_SETDATA { 0x1008U };      //Item text has been edited/changed.
-
-	//Setting a manifest for the ComCtl32.dll version 6.
-#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 }
 
 namespace LISTEX::INTERNAL::wnd {
 	auto DefSubclassProc(const MSG& msg) -> LRESULT {
 		return ::DefSubclassProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
+	}
+
+	//Replicates GET_X_LPARAM macro from the windowsx.h.
+	[[nodiscard]] constexpr int GetXLPARAM(LPARAM lParam) {
+		return (static_cast<int>(static_cast<short>(static_cast<WORD>((static_cast<DWORD_PTR>(lParam)) & 0xFFFF))));
+	}
+
+	[[nodiscard]] constexpr int GetYLPARAM(LPARAM lParam) {
+		return GetXLPARAM(lParam >> 16);
 	}
 
 	class CPoint : public POINT {
@@ -237,11 +246,23 @@ namespace LISTEX::INTERNAL::wnd {
 	public:
 		CDC() = default;
 		CDC(HDC hDC) : m_hDC(hDC) { }
+		~CDC() = default;
 		operator HDC()const { return m_hDC; }
+		void AbortDoc()const { ::AbortDoc(m_hDC); }
+		void DeleteDC()const { ::DeleteDC(m_hDC); }
+		HDC GetHDC()const { return m_hDC; }
+		void GetTextMetricsW(LPTEXTMETRICW pTM)const { ::GetTextMetricsW(m_hDC, pTM); }
+		auto SetBkColor(COLORREF clr)const->COLORREF { return ::SetBkColor(m_hDC, clr); }
+		void DrawEdge(LPRECT pRC, UINT uEdge, UINT uFlags)const { ::DrawEdge(m_hDC, pRC, uEdge, uFlags); }
 		void DrawFocusRect(LPCRECT pRc)const { ::DrawFocusRect(m_hDC, pRc); }
 		int DrawTextW(std::wstring_view wsv, LPRECT pRect, UINT uFormat)const {
-			return ::DrawTextW(m_hDC, wsv.data(), static_cast<int>(wsv.size()), pRect, uFormat);
+			return DrawTextW(wsv.data(), static_cast<int>(wsv.size()), pRect, uFormat);
 		}
+		int DrawTextW(LPCWSTR pwszText, int iSize, LPRECT pRect, UINT uFormat)const {
+			return ::DrawTextW(m_hDC, pwszText, iSize, pRect, uFormat);
+		}
+		int EndDoc()const { return ::EndDoc(m_hDC); }
+		int EndPage()const { return ::EndPage(m_hDC); }
 		void FillSolidRect(LPCRECT pRC, COLORREF clr)const {
 			::SetBkColor(m_hDC, clr); ::ExtTextOutW(m_hDC, 0, 0, ETO_OPAQUE, pRC, nullptr, 0, nullptr);
 		}
@@ -251,60 +272,58 @@ namespace LISTEX::INTERNAL::wnd {
 		bool MoveTo(POINT pt)const { return MoveTo(pt.x, pt.y); }
 		bool MoveTo(int x, int y)const { return ::MoveToEx(m_hDC, x, y, nullptr); }
 		bool Polygon(const POINT* pPT, int iCount)const { return ::Polygon(m_hDC, pPT, iCount); }
+		int SetMapMode(int iMode)const { return ::SetMapMode(m_hDC, iMode); }
 		auto SetTextColor(COLORREF clr)const->COLORREF { return ::SetTextColor(m_hDC, clr); }
+		void SetViewportOrg(int iX, int iY)const { POINT pt; ::OffsetViewportOrgEx(m_hDC, iX, iY, &pt); }
 		auto SelectObject(HGDIOBJ hObj)const->HGDIOBJ { return ::SelectObject(m_hDC, hObj); }
+		int StartDocW(const DOCINFO* pDI)const { return ::StartDocW(m_hDC, pDI); }
+		int StartPage()const { return ::StartPage(m_hDC); }
+		void TextOutW(int iX, int iY, LPCWSTR pwszText, int iSize)const { ::TextOutW(m_hDC, iX, iY, pwszText, iSize); }
+		void TextOutW(int iX, int iY, std::wstring_view wsv)const {
+			TextOutW(iX, iY, wsv.data(), static_cast<int>(wsv.size()));
+		}
 	protected:
 		HDC m_hDC;
 	};
 
-	class CPaintDC : public CDC {
+	class CPaintDC final : public CDC {
 	public:
 		CPaintDC(HWND hWnd) : m_hWnd(hWnd) { assert(::IsWindow(hWnd)); m_hDC = ::BeginPaint(m_hWnd, &m_PS); }
 		~CPaintDC() { ::EndPaint(m_hWnd, &m_PS); }
-		HDC GetHDC()const { return m_PS.hdc; }
-		operator HDC()const { return m_PS.hdc; }
 	private:
 		PAINTSTRUCT m_PS;
 		HWND m_hWnd;
 	};
 
-	class CMemDC : public CDC {
+	class CMemDC final : public CDC {
 	public:
-		CMemDC(HDC hDC, HWND hWnd) : m_hDCOrig(hDC) { assert(::IsWindow(hWnd)); ::GetClientRect(hWnd, &m_rc); Init(); }
-		CMemDC(HDC hDC, RECT rc) : m_hDCOrig(hDC), m_rc(rc) { Init(); }
+		CMemDC(HDC hDC, RECT rc);
 		~CMemDC();
-		HDC GetHDC()const { return m_hDCMem; }
-		operator HDC()const { return m_hDCMem; }
-	private:
-		void Init();
 	private:
 		HDC m_hDCOrig;
-		HDC m_hDCMem;
 		HBITMAP m_hBmp;
 		RECT m_rc;
 	};
 
-	void CMemDC::Init()
+	CMemDC::CMemDC(HDC hDC, RECT rc) : m_hDCOrig(hDC), m_rc(rc)
 	{
-		m_hDCMem = m_hDC = ::CreateCompatibleDC(m_hDCOrig);
+		m_hDC = ::CreateCompatibleDC(m_hDCOrig);
+		assert(m_hDC != nullptr);
 		const auto iWidth = m_rc.right - m_rc.left;
 		const auto iHeight = m_rc.bottom - m_rc.top;
 		m_hBmp = ::CreateCompatibleBitmap(m_hDCOrig, iWidth, iHeight);
-		assert(m_hDCMem != nullptr && m_hBmp != nullptr);
-		::SelectObject(m_hDCMem, m_hBmp);
+		assert(m_hBmp != nullptr);
+		::SelectObject(m_hDC, m_hBmp);
 	}
 
 	CMemDC::~CMemDC()
 	{
 		const auto iWidth = m_rc.right - m_rc.left;
 		const auto iHeight = m_rc.bottom - m_rc.top;
-		::BitBlt(m_hDCOrig, m_rc.left, m_rc.top, iWidth, iHeight, m_hDCMem, m_rc.left, m_rc.top, SRCCOPY);
+		::BitBlt(m_hDCOrig, m_rc.left, m_rc.top, iWidth, iHeight, m_hDC, m_rc.left, m_rc.top, SRCCOPY);
 		::DeleteObject(m_hBmp);
-		::DeleteDC(m_hDCMem);
+		::DeleteDC(m_hDC);
 	}
-
-#define	GET_X_LPARAM(lParam) (static_cast<int>(static_cast<short>(LOWORD(lParam))))
-#define	GET_Y_LPARAM(lParam) (static_cast<int>(static_cast<short>(HIWORD(lParam))))
 }
 
 namespace LISTEX::INTERNAL {
@@ -926,7 +945,7 @@ auto CListExHdr::OnLButtonDown(const MSG& msg)->LRESULT
 {
 	wnd::DefSubclassProc(msg);
 
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	if (const auto iItem = HitTest({ .pt { pt } }); iItem >= 0) {
 		m_fLMousePressed = true;
 		::SetCapture(m_hWnd);
@@ -957,7 +976,7 @@ auto CListExHdr::OnLButtonUp(const MSG& msg)->LRESULT
 	::ReleaseCapture();
 	RedrawWindow();
 
-	const POINT point { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT point { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	if (const auto iItem = HitTest({ .pt { point } }); iItem >= 0) {
 		for (auto& ref : m_vecColumnData) {
 			if (!ref.icon.fLMPressed || ref.icon.stIcon.iIndex == -1) {
@@ -991,11 +1010,11 @@ auto CListExHdr::OnLButtonUp(const MSG& msg)->LRESULT
 
 auto CListExHdr::OnPaint()->LRESULT
 {
-	const wnd::CPaintDC dc(m_hWnd);
-	const wnd::CMemDC memDC(dc, m_hWnd);
+	const wnd::CPaintDC dcPaint(m_hWnd);
 	wnd::CRect rcClient;
 	::GetClientRect(m_hWnd, rcClient);
-	wnd::CRect rectItem;
+	const wnd::CMemDC dcMem(dcPaint, rcClient);
+	wnd::CRect rcItem;
 	const auto iItems = GetItemCount();
 	LONG lMax = 0;
 
@@ -1006,29 +1025,29 @@ auto CListExHdr::OnPaint()->LRESULT
 		const auto iHit = HitTest({ .pt { ptCur } });
 		const auto fHighl = iHit == iItem;
 		const auto fPressed = m_fLMousePressed && fHighl;
-		rectItem = GetItemRect(iItem);
-		OnDrawItem(memDC, iItem, rectItem, fPressed, fHighl);
-		lMax = (std::max)(lMax, rectItem.right);
+		rcItem = GetItemRect(iItem);
+		OnDrawItem(dcMem, iItem, rcItem, fPressed, fHighl);
+		lMax = (std::max)(lMax, rcItem.right);
 	}
 
 	// Draw "tail border":
 	if (iItems == 0) {
-		rectItem = rcClient;
-		rectItem.right++;
+		rcItem = rcClient;
+		++rcItem.right;
 	}
 	else {
-		rectItem.left = lMax;
-		rectItem.right = rcClient.right + 1;
+		rcItem.left = lMax;
+		rcItem.right = rcClient.right + 1;
 	}
 
-	OnDrawItem(memDC, -1, rectItem, FALSE, FALSE);
+	OnDrawItem(dcMem, -1, rcItem, FALSE, FALSE);
 
 	return 0;
 }
 
 auto CListExHdr::OnRButtonDown(const MSG& msg)->LRESULT
 {
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	const auto hWndParent = GetParent();
 	const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hWndParent));
 	const auto iItem = HitTest({ .pt { pt } });
@@ -1040,7 +1059,7 @@ auto CListExHdr::OnRButtonDown(const MSG& msg)->LRESULT
 
 auto CListExHdr::OnRButtonUp(const MSG& msg)->LRESULT
 {
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	const auto hWndParent = GetParent();
 	const auto uCtrlId = static_cast<UINT>(::GetDlgCtrlID(hWndParent));
 	const auto iItem = HitTest({ .pt { pt } });
@@ -2386,7 +2405,7 @@ auto CListEx::OnHScroll(const MSG& msg)->LRESULT
 
 auto CListEx::OnLButtonDblClk(const MSG& msg)->LRESULT
 {
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	LVHITTESTINFO hti { .pt { pt } };
 	HitTest(&hti);
 	if (hti.iItem < 0 || hti.iSubItem < 0)
@@ -2402,7 +2421,7 @@ auto CListEx::OnLButtonDblClk(const MSG& msg)->LRESULT
 
 auto CListEx::OnLButtonDown(const MSG& msg)->LRESULT
 {
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	LVHITTESTINFO hti { .pt { pt } };
 	HitTest(&hti);
 
@@ -2432,7 +2451,7 @@ auto CListEx::OnLButtonDown(const MSG& msg)->LRESULT
 
 auto CListEx::OnLButtonUp(const MSG& msg)->LRESULT
 {
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 	LVHITTESTINFO hti { .pt { pt } };
 	HitTest(&hti);
 	if (hti.iItem < 0 || hti.iSubItem < 0) {
@@ -2478,7 +2497,7 @@ auto CListEx::OnMouseMove(const MSG& msg)->LRESULT
 		LR_DEFAULTSIZE | LR_SHARED));
 	static const auto hCurHand = static_cast<HCURSOR>(::LoadImageW(nullptr, IDC_HAND, IMAGE_CURSOR, 0, 0,
 		LR_DEFAULTSIZE | LR_SHARED));
-	const POINT pt { .x { GET_X_LPARAM(msg.lParam) }, .y { GET_Y_LPARAM(msg.lParam) } };
+	const POINT pt { .x { wnd::GetXLPARAM(msg.lParam) }, .y { wnd::GetYLPARAM(msg.lParam) } };
 
 	LVHITTESTINFO hti { .pt { pt } };
 	HitTest(&hti);
@@ -2621,7 +2640,7 @@ void CListEx::OnNotifyEditInPlace(NMHDR* pNMHDR)
 
 auto CListEx::OnPaint()->LRESULT
 {
-	const wnd::CPaintDC dc(m_hWnd);
+	const wnd::CPaintDC dcPaint(m_hWnd);
 	wnd::CRect rcClient;
 	::GetClientRect(m_hWnd, rcClient);
 	const wnd::CRect rcHdr = GetHeader().GetClientRect();
@@ -2631,7 +2650,7 @@ auto CListEx::OnPaint()->LRESULT
 		return 0;
 	}
 
-	const wnd::CMemDC dcMem(dc, rcClient); //To avoid flickering drawing to CMemDC, excluding list header area.
+	const wnd::CMemDC dcMem(dcPaint, rcClient); //To avoid flickering drawing to CMemDC, excluding list header area.
 	::GetClipBox(dcMem, rcClient);
 	dcMem.FillSolidRect(rcClient, m_stColors.clrNWABk);
 
