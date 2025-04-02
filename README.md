@@ -153,7 +153,7 @@ These messages are sent to the parent window in form of `WM_NOTIFY` Windows mess
 The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
 
 ### [](#)LISTEX_MSG_GETCOLOR
-When in Virtual Mode this message is sent to the parent window to retrieve cell's color information.
+Sent to the parent window to retrieve cell's color information.
 ```cpp
 void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
     const auto pLCI = reinterpret_cast<PLISTEXCOLORINFO>(pNMHDR);
@@ -164,7 +164,7 @@ void CListDlg::OnListExGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 ```
 
 ### [](#)LISTEX_MSG_GETICON
-When in Virtual Mode this message is sent to the parent window to retrieve cell's icon index in the list internal image list.
+Sent to the parent window to retrieve cell's icon index in the list internal image list.
 ```cpp
 void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
     const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
@@ -173,7 +173,7 @@ void CListDlg::OnListExGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 }
 ```
 ### [](#)LISTEX_MSG_GETTOOLTIP
-Sent to the parent window in Virtual Mode to retrieve cell's tooltip information.
+Sent to the parent window to retrieve cell's tooltip information.
 ```cpp
 void CListDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
     const auto pTTI = reinterpret_cast<PLISTEXTTINFO>(pNMHDR);
@@ -208,7 +208,7 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
 ```
 
 ### [](#)LISTEX_MSG_EDITBEGIN
-Sent when an edit box for cell's data editing is about to show up. If you don't want it to show up, you can set the `PLISTEXDATAINFO::fAllowEdit` to `false` in response.
+Sent to the parent window when an edit box for cell's data editing is about to show up. If you don't want it to show up, you can set the `PLISTEXDATAINFO::fAllowEdit` to `false` in response.
 ```cpp
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
     const auto pLDI = reinterpret_cast<LISTEX::PLISTEXDATAINFO>(pNMHDR);
@@ -218,7 +218,7 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
 ```
 
 ### [](#)LISTEX_MSG_SETDATA
-Sent in Virtual Mode when cell's text has been changed. 
+Sent to the parent window when cell's text has been changed. 
 ```cpp
 BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
     const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
