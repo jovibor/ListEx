@@ -58,11 +58,12 @@ export namespace LISTEX {
 	* LISTEXDATAINFO - struct for the LISTEX_MSG_SETDATA message.   *
 	****************************************************************/
 	struct LISTEXDATAINFO {
-		NMHDR   hdr { };
-		int     iItem { };
-		int     iSubItem { };
-		LPCWSTR pwszData { };        //Text that has been set for a cell.
-		bool    fAllowEdit { true }; //Allow cell editing or not, in case of LISTEX_MSG_EDITBEGIN.
+		NMHDR  hdr { };
+		int    iItem { };
+		int    iSubItem { };
+		HWND   hWndEdit { };        //Handle of the edit box control.
+		LPWSTR pwszData { };        //Text that is set, or is about to be set in case of LISTEX_MSG_EDITBEFORETEXT.
+		bool   fAllowEdit { true }; //Allow cell editing or not, in case of LISTEX_MSG_EDITBEGIN.
 	};
 	using PLISTEXDATAINFO = LISTEXDATAINFO*;
 
@@ -167,7 +168,7 @@ export namespace LISTEX {
 
 	//WM_NOTIFY codes (NMHDR.code values).
 
-	constexpr auto LISTEX_MSG_EDITBEGIN { 0x1000U };    //Edit in-place field is about to display.
+	constexpr auto LISTEX_MSG_EDITBEGIN { 0x1000U };    //Edit in-place box is about to display.
 	constexpr auto LISTEX_MSG_GETCOLOR { 0x1001U };     //Get cell color.
 	constexpr auto LISTEX_MSG_GETICON { 0x1002U };      //Get cell icon.
 	constexpr auto LISTEX_MSG_GETTOOLTIP { 0x1003U };   //Get cell tool-tip data.
@@ -274,7 +275,7 @@ namespace LISTEX::INTERNAL::wnd {
 		bool Polygon(const POINT* pPT, int iCount)const { return ::Polygon(m_hDC, pPT, iCount); }
 		int SetMapMode(int iMode)const { return ::SetMapMode(m_hDC, iMode); }
 		auto SetTextColor(COLORREF clr)const->COLORREF { return ::SetTextColor(m_hDC, clr); }
-		void SetViewportOrg(int iX, int iY)const { POINT pt; ::OffsetViewportOrgEx(m_hDC, iX, iY, &pt); }
+		auto SetViewportOrg(int iX, int iY)const->POINT { POINT pt; ::SetViewportOrgEx(m_hDC, iX, iY, &pt); return pt; }
 		auto SelectObject(HGDIOBJ hObj)const->HGDIOBJ { return ::SelectObject(m_hDC, hObj); }
 		int StartDocW(const DOCINFO* pDI)const { return ::StartDocW(m_hDC, pDI); }
 		int StartPage()const { return ::StartPage(m_hDC); }
@@ -343,6 +344,7 @@ namespace LISTEX::INTERNAL {
 		[[nodiscard]] bool IsColumnEditable(int iIndex)const;
 		auto ProcessMsg(const MSG& msg) -> LRESULT;
 		void RedrawWindow()const;
+		void SetDPIScale(float flScale);
 		void SetHeight(DWORD dwHeight);
 		void SetFont(const LOGFONTW& lf);
 		void SetColor(const LISTEXCOLORS& lcs);
@@ -395,6 +397,8 @@ namespace LISTEX::INTERNAL {
 		static auto CALLBACK SubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 			UINT_PTR uIDSubclass, DWORD_PTR dwRefData)->LRESULT;
 	private:
+		std::vector<HIDDEN> m_vecHidden; //Hidden columns.
+		std::vector<COLUMNDATA> m_vecColumnData;
 		HWND m_hWnd { };         //Header window.
 		HFONT m_hFntHdr { };
 		COLORREF m_clrBkNWA { }; //Bk of non working area.
@@ -404,8 +408,7 @@ namespace LISTEX::INTERNAL {
 		COLORREF m_clrHglActive { };
 		DWORD m_dwHeaderHeight { 19 }; //Standard (default) height.
 		UINT m_uSortColumn { 0 };   //ColumnID to draw sorting triangle at. 0 is to avoid triangle before first clicking.
-		std::vector<HIDDEN> m_vecHidden; //Hidden columns.
-		std::vector<COLUMNDATA> m_vecColumnData;
+		float m_flDPIScale { 1.0F };
 		bool m_fSortable { false }; //List-is-sortable global flog. Need to draw sortable triangle or not?
 		bool m_fSortAscending { };  //Sorting type.
 		bool m_fLMousePressed { };
@@ -563,6 +566,12 @@ void CListExHdr::RedrawWindow()const
 {
 	assert(IsWindow());
 	::RedrawWindow(m_hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
+}
+
+void CListExHdr::SetDPIScale(float flScale)
+{
+	m_flDPIScale = flScale;
+	RedrawWindow();
 }
 
 void CListExHdr::SetFont(const LOGFONTW& lf)
@@ -909,19 +918,32 @@ void CListExHdr::OnDrawItem(HDC hDC, int iItem, RECT rc, bool fPressed, bool fHi
 		static const auto penArrow = ::CreatePen(PS_SOLID, 1, RGB(90, 90, 90));
 		dc.SelectObject(penArrow);
 		dc.SelectObject(::GetSysColorBrush(COLOR_3DFACE));
+
 		if (m_fSortAscending) { //Draw the UP arrow.
-			const POINT arrPt[] { { rcOrig.right - 10, 3 },
-				{ rcOrig.right - 15, 8 }, { rcOrig.right - 5, 8 } };
+			const auto lXTop = static_cast<long>(10 * m_flDPIScale);
+			const auto lYTop = static_cast<long>(3 * m_flDPIScale);
+			const auto lXLeft = static_cast<long>(15 * m_flDPIScale);
+			const auto lXRight = static_cast<long>(5 * m_flDPIScale);
+			const auto lYLeftRight = static_cast<long>(8 * m_flDPIScale);
+			const POINT arrPt[] { { .x { rcOrig.right - lXTop }, .y { lYTop } },
+				{ .x { rcOrig.right - lXLeft }, .y { lYLeftRight } },
+				{ .x { rcOrig.right - lXRight }, .y { lYLeftRight } } };
 			dc.Polygon(arrPt, 3);
 		}
 		else { //Draw the DOWN arrow.
-			const POINT arrPt[] { { rcOrig.right - 10, 8 },
-				{ rcOrig.right - 15, 3 }, { rcOrig.right - 5, 3 } };
+			const auto lXLeft = static_cast<long>(15 * m_flDPIScale);
+			const auto lXRight = static_cast<long>(5 * m_flDPIScale);
+			const auto lYLeftRight = static_cast<long>(3 * m_flDPIScale);
+			const auto lXBottom = static_cast<long>(10 * m_flDPIScale);
+			const auto lYBottom = static_cast<long>(8 * m_flDPIScale);
+			const POINT arrPt[] { { .x { rcOrig.right - lXLeft }, .y { lYLeftRight } },
+				{ .x { rcOrig.right - lXRight }, .y { lYLeftRight } },
+				{ .x { rcOrig.right - lXBottom }, .y { lYBottom } }, };
 			dc.Polygon(arrPt, 3);
 		}
 	}
 
-	static const auto penGrid = ::CreatePen(PS_SOLID, 2, GetSysColor(COLOR_3DFACE));
+	static const auto penGrid = ::CreatePen(PS_SOLID, 2, ::GetSysColor(COLOR_3DFACE));
 	dc.SelectObject(penGrid);
 	dc.MoveTo(rcOrig.TopLeft());
 	dc.LineTo(rcOrig.left, rcOrig.bottom);
@@ -1327,7 +1349,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 
 	//The TTF_TRACK flag should not be used with the TTS_BALLOON tooltips, because in this case
 	//the balloon will always be positioned _below_ provided coordinates.
-	TTTOOLINFOW ttiCell { .cbSize { sizeof(TTTOOLINFOW) },
+	const TTTOOLINFOW ttiCell { .cbSize { sizeof(TTTOOLINFOW) },
 		.uFlags { static_cast<UINT>(lcs.dwTTStyleCell & TTS_BALLOON ? 0 : TTF_TRACK) } };
 	::SendMessageW(m_hWndCellTT, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&ttiCell));
 	::SendMessageW(m_hWndCellTT, TTM_SETMAXTIPWIDTH, 0, static_cast<LPARAM>(400)); //to allow use of newline \n.
@@ -1347,7 +1369,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 		return false;
 	}
 
-	TTTOOLINFOW ttiLink { .cbSize { sizeof(TTTOOLINFOW) },
+	const TTTOOLINFOW ttiLink { .cbSize { sizeof(TTTOOLINFOW) },
 		.uFlags { static_cast<UINT>(lcs.dwTTStyleLink & TTS_BALLOON ? 0 : TTF_TRACK) } };
 	::SendMessageW(m_hWndLinkTT, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&ttiLink));
 	::SendMessageW(m_hWndLinkTT, TTM_SETMAXTIPWIDTH, 0, static_cast<LPARAM>(400)); //to allow use of newline \n.
@@ -1360,7 +1382,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 			return false;
 		}
 
-		TTTOOLINFOW ttiHL { .cbSize { sizeof(TTTOOLINFOW) }, .uFlags { static_cast<UINT>(TTF_TRACK) } };
+		const TTTOOLINFOW ttiHL { .cbSize { sizeof(TTTOOLINFOW) }, .uFlags { static_cast<UINT>(TTF_TRACK) } };
 		::SendMessageW(m_hWndRowTT, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&ttiHL));
 	}
 
@@ -1389,6 +1411,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 
 	m_fCreated = true;
 
+	GetHeader().SetDPIScale(static_cast<float>(m_iLOGPIXELSY) / USER_DEFAULT_SCREEN_DPI);
 	GetHeader().SetColor(m_stColors);
 	GetHeader().SetSortable(lcs.fSortable);
 	SetHdrHeight(dwHdrHeight);
@@ -1504,14 +1527,6 @@ bool CListEx::EditInPlaceShow(bool fShow)
 		return false;
 	}
 
-	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
-	const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_EDITBEGIN } },
-		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem } };
-	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
-	if (!ldi.fAllowEdit) { //User explicitly declined to display edit-box.
-		return false;
-	}
-
 	//Get Column data alignment.
 	const auto iAlignment = GetHeader().GetColumnDataAlign(m_htiEdit.iSubItem);
 	const DWORD dwStyle = iAlignment == LVCFMT_LEFT ? ES_LEFT : (iAlignment == LVCFMT_RIGHT ? ES_RIGHT : ES_CENTER);
@@ -1523,13 +1538,27 @@ bool CListEx::EditInPlaceShow(bool fShow)
 	::DestroyWindow(m_hWndEditInPlace);
 	const auto iWidth = rcCell.right - rcCell.left;
 	const auto iHeight = rcCell.bottom - rcCell.top;
-	m_hWndEditInPlace = ::CreateWindowExW(0, WC_EDITW, nullptr, dwStyle | WS_BORDER | WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
+	m_hWndEditInPlace = ::CreateWindowExW(0, WC_EDITW, nullptr, dwStyle | WS_BORDER | WS_CHILD | ES_AUTOHSCROLL,
 		rcCell.left, rcCell.top, iWidth, iHeight, m_hWnd, reinterpret_cast<HMENU>(static_cast<UINT_PTR>(m_uIDEditInPlace)),
 		nullptr, nullptr);
 	::SetWindowSubclass(m_hWndEditInPlace, EditSubclassProc, reinterpret_cast<UINT_PTR>(this), 0);
-	::SendMessageW(m_hWndEditInPlace, WM_SETFONT, reinterpret_cast<WPARAM>(m_hFntList), FALSE);
+
+	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
 	const auto wstrText = GetItemText(m_htiEdit.iItem, m_htiEdit.iSubItem);
-	::SetWindowTextW(m_hWndEditInPlace, wstrText.data());
+	wchar_t buff[256];
+	buff[wstrText.copy(buff, 255)] = 0; //Null terminating the buffer after copy not more than 255 wchars.
+	const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_EDITBEGIN } },
+		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem }, .hWndEdit { m_hWndEditInPlace },
+		.pwszData { buff } };
+	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
+	if (!ldi.fAllowEdit) { //User explicitly declined displaying of the edit-box.
+		::DestroyWindow(m_hWndEditInPlace);
+		return false;
+	}
+
+	::SendMessageW(m_hWndEditInPlace, WM_SETFONT, reinterpret_cast<WPARAM>(m_hFntList), FALSE);
+	::SetWindowTextW(m_hWndEditInPlace, ldi.pwszData);
+	::ShowWindow(m_hWndEditInPlace, SW_SHOW);
 	::SetFocus(m_hWndEditInPlace);
 
 	return true;
@@ -1617,13 +1646,13 @@ auto CListEx::GetItemText(int iItem, int iSubItem)const->std::wstring
 		return { };
 	}
 
-	//Temporary buffer for a string data to receive.
-	//In virtual mode when responding to the LVN_GETDISPINFO notification message, client code can copy
+	//Temporary buffer for string data to receive.
+	//In virtual mode, when responding to the LVN_GETDISPINFO notification message, client code can copy
 	//data to the .pszText pointed buffer, or can set the .pszText pointer to client own data. 
 	//But list control will copy that data to the provided original buffer anyway.
 	wchar_t buff[256];
-	LVITEMW item { .iSubItem { iSubItem }, .pszText { buff }, .cchTextMax { 256 } };
-	::SendMessageW(m_hWnd, LVM_GETITEMTEXTW, static_cast<WPARAM>(iItem), reinterpret_cast<LPARAM>(&item));
+	const LVITEMW lvi { .iSubItem { iSubItem }, .pszText { buff }, .cchTextMax { 256 } };
+	::SendMessageW(m_hWnd, LVM_GETITEMTEXTW, static_cast<WPARAM>(iItem), reinterpret_cast<LPARAM>(&lvi));
 
 	return buff;
 }
@@ -1737,12 +1766,12 @@ int CListEx::InsertColumn(int iCol, const LVCOLUMNW* pColumn, int iDataAlign, bo
 	}
 
 	auto& refHdr = GetHeader();
-	const auto nHiddenCount = refHdr.GetHiddenCount();
+	const auto uHiddenCount = refHdr.GetHiddenCount();
 
 	//Checking that the new column ID (nCol) not greater than the count of 
 	//the header items minus count of the already hidden columns.
-	if (nHiddenCount > 0 && iCol >= static_cast<int>(refHdr.GetItemCount() - nHiddenCount)) {
-		iCol = refHdr.GetItemCount() - nHiddenCount;
+	if (uHiddenCount > 0 && iCol >= static_cast<int>(refHdr.GetItemCount() - uHiddenCount)) {
+		iCol = refHdr.GetItemCount() - uHiddenCount;
 	}
 
 	const auto iNewIndex = InsertColumn(iCol, pColumn);
@@ -2391,15 +2420,16 @@ auto CListEx::OnDestroy()->LRESULT
 void CListEx::OnEditInPlaceEnterPressed()
 {
 	//Notifying parent about cell's text changing.
-	wchar_t buffText[256];
-	::GetWindowTextW(m_hWndEditInPlace, buffText, 256);
+	wchar_t buff[256];
+	::GetWindowTextW(m_hWndEditInPlace, buff, 256);
 	const auto uCtrlId = static_cast<UINT>(GetDlgCtrlID());
 	const LISTEXDATAINFO ldi { .hdr { .hwndFrom { m_hWnd }, .idFrom { uCtrlId }, .code { LISTEX_MSG_SETDATA } },
-		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem }, .pwszData { buffText } };
+		.iItem { m_htiEdit.iItem }, .iSubItem { m_htiEdit.iSubItem }, .hWndEdit { m_hWndEditInPlace },
+		.pwszData { buff } };
 	::SendMessageW(::GetParent(m_hWnd), WM_NOTIFY, static_cast<WPARAM>(uCtrlId), reinterpret_cast<LPARAM>(&ldi));
 
 	if (!m_fVirtual) { //If it's not Virtual mode we set new text to a cell. 
-		SetItemText(m_htiEdit.iItem, m_htiEdit.iSubItem, buffText);
+		SetItemText(m_htiEdit.iItem, m_htiEdit.iSubItem, buff);
 	}
 
 	OnEditInPlaceKillFocus();

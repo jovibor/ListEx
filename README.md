@@ -18,6 +18,7 @@
    * [SetHdrHeight](#sethdrheight)
    * [SetSortable](#setsortable)
 * [Notification Messages](#notification-messages) <details><summary>_Expand_</summary>
+   * [LISTEX_MSG_EDITBEGIN](#listex_msg_editbegin)
    * [LISTEX_MSG_GETCOLOR](#listex_msg_getcolor)
    * [LISTEX_MSG_GETICON](#listex_msg_geticon)
    * [LISTEX_MSG_GETTOOLTIP](#)
@@ -25,7 +26,6 @@
    * [LISTEX_MSG_HDRICONCLICK](#listex_msg_hdriconclick)
    * [LISTEX_MSG_HDRRBTNDOWN](#)
    * [LISTEX_MSG_HDRRBTNUP](#)
-   * [LISTEX_MSG_EDITBEGIN](#listex_msg_editbegin)
    * [LISTEX_MSG_SETDATA](#listex_msg_setdata)
 * [Example](#example)
 
@@ -150,7 +150,19 @@ Default sorting mode for the list.
 
 ## [](#)Notification Messages
 These messages are sent to the parent window in form of `WM_NOTIFY` Windows messages.  
-The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_...` messages described below.
+The `lParam` will contain a pointer to the `NMHDR` standard Windows struct. `NMHDR::code` can be one of the `LISTEX_MSG_[XXXXX]` messages described below.
+
+### [](#)LISTEX_MSG_EDITBEGIN
+Sent to the parent window when edit box for cell's data editing is about to show up. If you don't want it to show up set the `PLISTEXDATAINFO::fAllowEdit` to `false` in response.  
+The `pwszData` member points to the text string for the edit box to display, you can change this text by setting your own pointer in responce, or you can copy new text straight to the buffer pointed to by the `pwszData`. The text limit is 256 `wchar_t` characters including terminating null.  
+The `hWndEdit` member is a Windows handle to the edit box.
+```cpp
+BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
+    const auto pLDI = reinterpret_cast<LISTEX::PLISTEXDATAINFO>(pNMHDR);
+    ...
+    pLDI->fAllowEdit = false; //Edit-box won't show up.
+}
+```
 
 ### [](#)LISTEX_MSG_GETCOLOR
 Sent to the parent window to retrieve cell's color information.
@@ -204,16 +216,6 @@ BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
     	//pNMI->iItem holds clicked column index.
     }
     ...
-}
-```
-
-### [](#)LISTEX_MSG_EDITBEGIN
-Sent to the parent window when an edit box for cell's data editing is about to show up. If you don't want it to show up, you can set the `PLISTEXDATAINFO::fAllowEdit` to `false` in response.
-```cpp
-BOOL CMyDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* /*pResult*/) {
-    const auto pLDI = reinterpret_cast<LISTEX::PLISTEXDATAINFO>(pNMHDR);
-    ...
-    pLDI->fAllowEdit = false; //Edit-box won't show up.
 }
 ```
 

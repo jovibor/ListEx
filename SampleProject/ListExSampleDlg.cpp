@@ -20,6 +20,7 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LISTEX, &CListExSampleDlg::OnListGetDispInfo)
+	ON_NOTIFY(LISTEX_MSG_EDITBEGIN, IDC_LISTEX, &CListExSampleDlg::OnListEditBegin)
 	ON_NOTIFY(LISTEX_MSG_GETCOLOR, IDC_LISTEX, &CListExSampleDlg::OnListGetColor)
 	ON_NOTIFY(LISTEX_MSG_GETICON, IDC_LISTEX, &CListExSampleDlg::OnListGetIcon)
 	ON_NOTIFY(LISTEX_MSG_GETTOOLTIP, IDC_LISTEX, &CListExSampleDlg::OnListGetToolTip)
@@ -66,7 +67,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	//lcs.fHighLatency = true;
 	//lcs.dwTTDelayTime = 500;
 
-	LISTEXCOLORS stColor { .clrHdrText = RGB(250, 250, 250) };
+	LISTEXCOLORS stColor { .clrHdrText { RGB(250, 250, 250) } };
 	lcs.pColors = &stColor;
 	m_MyList.Create(lcs);
 
@@ -129,8 +130,8 @@ BOOL CListExSampleDlg::OnInitDialog()
 	*/
 
 	m_stImgList.Create(16, 16, ILC_COLOR | ILC_MASK, 0, 1);
-	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
-		MAKEINTRESOURCEW(IDI_TEST), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
+	m_stImgList.Add(static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDI_TEST),
+		IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR)));
 	m_MyList.SetImageList(m_stImgList.m_hImageList, LVSIL_NORMAL);
 	m_MyList.SetHdrImageList(m_stImgList);
 
@@ -215,6 +216,13 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 
 void CListExSampleDlg::OnOK()
 {
+}
+
+void CListExSampleDlg::OnListEditBegin(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
+	pLDI->fAllowEdit = true;
+	//pLDI->fAllowEdit = false; //Edit-box won't show up.
 }
 
 void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)

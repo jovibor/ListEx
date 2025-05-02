@@ -27,6 +27,7 @@ protected:
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 	virtual void OnOK();
 	afx_msg HCURSOR OnQueryDragIcon();
+	afx_msg void OnListEditBegin(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult);
