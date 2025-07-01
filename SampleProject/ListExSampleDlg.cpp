@@ -54,7 +54,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.uID = IDC_LISTEX;
 	lcs.hWndParent = m_hWnd;
 	lcs.fDialogCtrl = true;
-	lcs.dwHdrHeight = 30;
+	lcs.dwHdrHeight = 35;
 	lcs.fSortable = true;
 	lcs.dwTTStyleCell = TTS_BALLOON;
 	lcs.dwTTStyleLink = TTS_NOANIMATE;
