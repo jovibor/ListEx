@@ -63,6 +63,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.dwSizeFontList = 10;
 	lcs.dwSizeFontHdr = 10;
 	lcs.fLinks = true;
+	//lcs.dwGridWidth = 0;
 	//lcs.fEditSingleClick = true;
 	//lcs.fHighLatency = true;
 	//lcs.dwTTDelayTime = 500;
@@ -71,8 +72,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	lcs.pColors = &stColor;
 	m_MyList.Create(lcs);
 
-	m_MyList.SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-//	m_MyList.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES);
+	m_MyList.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT /*| LVS_EX_GRIDLINES*/);
 	m_MyList.InsertColumn(0, L"Test column 0\n Multiline", LVCFMT_LEFT, 170, -1, LVCFMT_LEFT, true);
 
 	//Header menu.

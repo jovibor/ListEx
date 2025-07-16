@@ -145,7 +145,7 @@ export namespace LISTEX {
 		DWORD           dwTTStyleLink { };       //Link's tooltip Window styles.
 		DWORD           dwTTDelayTime { };       //Tooltip delay before showing up, in ms.
 		DWORD           dwTTShowTime { 5000 };   //Tooltip show up time, in ms.
-		DWORD           dwWidthGrid { 1 };       //Width of the list grid.
+		DWORD           dwGridWidth { 1 };       //Width of the list grid.
 		DWORD           dwHdrHeight { };         //Header height.
 		POINT           ptTTOffset { .x { 3 }, .y { -20 } }; //Tooltip offset from a cursor pos. Doesn't work for TTS_BALLOON.
 		bool            fDialogCtrl { false };   //If it's a list within dialog?
@@ -1373,7 +1373,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 	m_fLinkTooltip = lcs.fLinkTooltip;
 	m_fHighLatency = lcs.fHighLatency;
 	m_fEditSingleClick = lcs.fEditSingleClick;
-	m_dwGridWidth = lcs.dwWidthGrid;
+	m_dwGridWidth = lcs.dwGridWidth;
 	m_dwTTDelayTime = lcs.dwTTDelayTime;
 	m_dwTTShowTime = lcs.dwTTShowTime;
 	m_ptTTOffset = lcs.ptTTOffset;
@@ -1442,10 +1442,8 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 	const DWORD dwHdrHeight = lcs.dwHdrHeight == 0 ?
 		tm.tmHeight + tm.tmExternalLeading + ::MulDiv(5, m_iLOGPIXELSY, 72) : lcs.dwHdrHeight; //Header is a bit higher than list rows.
 	::ReleaseDC(m_hWnd, hDC);
-
 	m_hPenGrid = ::CreatePen(PS_SOLID, m_dwGridWidth, m_stColors.clrListGrid);
 	::SetClassLongPtrW(m_hWnd, GCLP_HCURSOR, 0); //To prevent cursor from blinking.
-	RecalcMeasure();
 
 	m_fCreated = true;
 
@@ -1454,6 +1452,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 	GetHeaderCtrl().SetSortable(lcs.fSortable);
 	SetHdrHeight(dwHdrHeight);
 	SetHdrFont(lfHdr);
+	RecalcMeasure();
 	Update(0);
 
 	return true;
@@ -1498,9 +1497,10 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 	if (!IsCreated() || pDIS->hwndItem != m_hWnd)
 		return;
 
-	const auto iItem = pDIS->itemID;
 	constexpr auto iTextIndentTop = 1; //To compensate what is added in the MeasureItem.
 	constexpr auto iTextIndentLeft = 2;
+	const auto iItem = pDIS->itemID;
+	const auto fFullRowSelect = GetExtendedStyle() & LVS_EX_FULLROWSELECT;
 
 	switch (pDIS->itemAction) {
 	case ODA_SELECT:
@@ -1508,10 +1508,10 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 	{
 		const GDIUT::CDC cdc(pDIS->hDC);
 		const auto clrBkCurrRow = (iItem % 2) ? m_stColors.clrListBkEven : m_stColors.clrListBkOdd;
-		const auto& refHdr = GetHeaderCtrl();
-		const auto iColumns = refHdr.GetItemCount();
+		const auto& hdr = GetHeaderCtrl();
+		const auto iColumns = hdr.GetItemCount();
 		for (auto iSubitem = 0; iSubitem < iColumns; ++iSubitem) {
-			if (refHdr.IsColumnHidden(iSubitem)) {
+			if (hdr.IsColumnHidden(iSubitem)) {
 				continue;
 			}
 
@@ -1519,16 +1519,13 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 			COLORREF clrBk;
 			COLORREF clrTextLink;
 
-			//Subitems' draw routine.
-			//Colors depending on whether subitem selected or not, and has tooltip or not.
-			if (pDIS->itemState & ODS_SELECTED) {
+			//Colors depending on if subitem is selected or not.
+			if (fFullRowSelect && (pDIS->itemState & ODS_SELECTED)) {
 				clrText = m_stColors.clrListTextSel;
 				clrBk = m_stColors.clrListBkSel;
 				clrTextLink = m_stColors.clrListTextLinkSel;
 			}
 			else {
-				clrTextLink = m_stColors.clrListTextLink;
-
 				if (const auto optClr = GetCustomColor(iItem, iSubitem); optClr) {
 					//Check for default colors (-1).
 					clrText = optClr->clrText == -1 ? m_stColors.clrListText : optClr->clrText;
@@ -1538,10 +1535,11 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 					clrText = m_stColors.clrListText;
 					clrBk = clrBkCurrRow;
 				}
+				clrTextLink = m_stColors.clrListTextLink;
 			}
 
-			GDIUT::CRect rcBounds = GetSubItemRect(iItem, iSubitem, LVIR_BOUNDS);
-			cdc.FillSolidRect(rcBounds, clrBk);
+			GDIUT::CRect rcSubItemBounds = GetSubItemRect(iItem, iSubitem, LVIR_BOUNDS);
+			cdc.FillSolidRect(rcSubItemBounds, clrBk);
 
 			for (const auto& itItemData : ParseItemData(iItem, iSubitem)) {
 				if (itItemData.iIconIndex > -1) {
@@ -1562,30 +1560,38 @@ void CListEx::DrawItem(LPDRAWITEMSTRUCT pDIS)
 				}
 
 				::ExtTextOutW(cdc, itItemData.rc.left + iTextIndentLeft, itItemData.rc.top + iTextIndentTop,
-					ETO_CLIPPED, rcBounds, itItemData.wstrText.data(), static_cast<UINT>(itItemData.wstrText.size()), nullptr);
+					ETO_CLIPPED, rcSubItemBounds, itItemData.wstrText.data(), static_cast<UINT>(itItemData.wstrText.size()), nullptr);
 			}
 
-			//Drawing subitem's rect lines.
-			//If SetExtendedStyle(LVS_EX_GRIDLINES) is set, lines are drawn automatically but through whole client rect.
+			//Drawing subitem's grid lines.
+			//If the LVS_EX_GRIDLINES style is set lines are drawn automatically, but through the whole client rect.
 			if (m_dwGridWidth > 0) {
 				cdc.SelectObject(m_hPenGrid);
-				cdc.MoveTo(rcBounds.TopLeft());
-				cdc.LineTo(rcBounds.right, rcBounds.top);   //Top line.
-				cdc.MoveTo(rcBounds.TopLeft());
-				cdc.LineTo(rcBounds.left, rcBounds.bottom); //Left line.
-				cdc.MoveTo(rcBounds.left, rcBounds.bottom);
-				cdc.LineTo(rcBounds.BottomRight());         //Bottom line.
-				if (iSubitem == iColumns - 1) { //Drawing a right line only for the last column.
-					rcBounds.right -= 1; //To overcome a glitch with a last line disappearing if resizing a header.
-					cdc.MoveTo(rcBounds.right, rcBounds.top);
-					cdc.LineTo(rcBounds.BottomRight());     //Right line.
+				cdc.MoveTo(rcSubItemBounds.TopLeft());
+				cdc.LineTo(rcSubItemBounds.right, rcSubItemBounds.top);   //Top line.
+				cdc.MoveTo(rcSubItemBounds.TopLeft());
+				cdc.LineTo(rcSubItemBounds.left, rcSubItemBounds.bottom); //Left line.
+				cdc.MoveTo(rcSubItemBounds.left, rcSubItemBounds.bottom);
+				cdc.LineTo(rcSubItemBounds.BottomRight());     //Bottom line.
+				if (iSubitem == iColumns - 1) { //Drawing the right line only for the last column.
+					rcSubItemBounds.right -= 1; //To overcome a glitch with the last line disappearing if resizing a header.
+					cdc.MoveTo(rcSubItemBounds.right, rcSubItemBounds.top);
+					cdc.LineTo(rcSubItemBounds.BottomRight()); //Right line.
 				}
 			}
+		}
 
-			//Draw focus rect (marquee).
-			if ((pDIS->itemState & ODS_FOCUS) && !(pDIS->itemState & ODS_SELECTED)) {
-				cdc.DrawFocusRect(rcBounds);
-			}
+		//Draw the focus rect (marquee), for the whole item.
+		//It's not drawn if the LVS_EX_FULLROWSELECT style is set and the item is selected.
+		if ((pDIS->itemState & ODS_FOCUS) && (!fFullRowSelect || !(pDIS->itemState & ODS_SELECTED))) {
+			//This is a Boolean XOR (^) function, calling this function a second time 
+			//with the same rectangle removes the rectangle from the display.
+			//Foreground and background colors must be set to the black and white respectively.
+			//When the LVS_EX_GRIDLINES style is set, the bottom focus line becomes hidden for some reason.
+			cdc.SetTextColor(RGB(0, 0, 0));
+			cdc.SetBkColor(RGB(250, 250, 250));
+			const auto rcItem = GetItemRect(iItem, LVIR_BOUNDS);
+			cdc.DrawFocusRect(&rcItem);
 		}
 	}
 	break;
@@ -1936,6 +1942,20 @@ auto CListEx::MapIDToIndex(UINT uID)const->UINT
 	if (!IsCreated()) { return { }; }
 
 	return static_cast<UINT>(::SendMessageW(m_hWnd, LVM_MAPIDTOINDEX, static_cast<WPARAM>(uID), 0));
+}
+
+void CListEx::MeasureItem(LPMEASUREITEMSTRUCT pMIS)
+{
+	if (!IsCreated() || pMIS->CtlID != static_cast<UINT>(GetDlgCtrlID()))
+		return;
+
+	//Set row height according to the current font's height.
+	const auto hDC = ::GetDC(m_hWnd);
+	::SelectObject(hDC, m_hFntList);
+	TEXTMETRICW tm;
+	::GetTextMetricsW(hDC, &tm);
+	::ReleaseDC(m_hWnd, hDC);
+	pMIS->itemHeight = tm.tmHeight + tm.tmExternalLeading + 2;
 }
 
 auto CListEx::ProcessMsg(const MSG& msg)->LRESULT
@@ -2362,20 +2382,6 @@ bool CListEx::IsWindow()const
 	return ::IsWindow(m_hWnd);
 }
 
-void CListEx::MeasureItem(LPMEASUREITEMSTRUCT pMIS)
-{
-	if (!IsCreated() || pMIS->CtlID != static_cast<UINT>(GetDlgCtrlID()))
-		return;
-
-	//Set row height according to current font's height.
-	const auto hDC = ::GetDC(m_hWnd);
-	::SelectObject(hDC, m_hFntList);
-	TEXTMETRICW tm;
-	::GetTextMetricsW(hDC, &tm);
-	::ReleaseDC(m_hWnd, hDC);
-	pMIS->itemHeight = tm.tmHeight + tm.tmExternalLeading + 2;
-}
-
 auto CListEx::OnCommand(const MSG& msg)->LRESULT
 {
 	const auto uCtrlID = LOWORD(msg.wParam); //Control ID.
@@ -2688,7 +2694,6 @@ auto CListEx::OnPaint()->LRESULT
 	}
 
 	const GDIUT::CMemDC dcMem(dcPaint, rcClient); //To avoid flickering drawing to CMemDC, excluding list header area.
-	::GetClipBox(dcMem, rcClient);
 	dcMem.FillSolidRect(rcClient, m_stColors.clrNWABk);
 
 	return ::DefSubclassProc(m_hWnd, WM_PAINT, reinterpret_cast<WPARAM>(dcMem.GetHDC()), 0);
@@ -2756,9 +2761,8 @@ auto CListEx::OnTimer(const MSG& msg)->LRESULT
 
 auto CListEx::OnVScroll(const MSG& msg)->LRESULT
 {
-	const auto nSBCode = LOWORD(msg.wParam);
 	if (m_fVirtual && m_fHighLatency) {
-		if (nSBCode != SB_THUMBTRACK) {
+		if (const auto nSBCode = LOWORD(msg.wParam); nSBCode != SB_THUMBTRACK) {
 			//If there was SB_THUMBTRACK message previously, calculate the scroll amount (up/down)
 			//by multiplying item's row height by difference between current (top) and nPos row.
 			//Scroll may be negative therefore.
@@ -2956,7 +2960,7 @@ auto CListEx::ParseItemData(int iItem, int iSubitem)->std::vector<CListEx::ITEMD
 void CListEx::RedrawWindow()const
 {
 	assert(IsWindow());
-	::RedrawWindow(m_hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
+	::RedrawWindow(m_hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
 }
 
 void CListEx::RecalcMeasure()const
