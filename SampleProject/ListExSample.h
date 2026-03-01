@@ -1,4 +1,5 @@
 #pragma once
+#include <afxwin.h>
 
 class CListExSampleApp : public CWinApp {
 public:

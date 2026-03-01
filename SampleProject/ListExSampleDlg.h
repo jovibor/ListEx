@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <afxcontrolbars.h>
 
 import ListEx;
 using namespace LISTEX;

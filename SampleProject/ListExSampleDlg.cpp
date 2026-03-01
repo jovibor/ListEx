@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "Resource.h"
 #include "ListExSampleDlg.h"
-#include "afxdialogex.h"
-#include "framework.h"
 #include <algorithm>
 #include <ctime>
 
