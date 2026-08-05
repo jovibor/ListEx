@@ -152,6 +152,7 @@ export namespace LISTEX {
 		bool            fLinks { false };        //Enable links support.
 		bool            fLinkUnderline { true }; //Links are displayed underlined or not.
 		bool            fLinkTooltip { true };   //Show links' toolips or not.
+		bool            fLinkCursor { true };    //Show hand cursor when hovering over a link or not.
 		bool            fHighLatency { false };  //Do not redraw window until scroll thumb is released.
 		bool            fEditSingleClick { false }; //Cells editable with single mouse click or double?
 	};
@@ -1402,6 +1403,7 @@ namespace LISTEX {
 		bool m_fLinks { false };           //Enable links support.
 		bool m_fLinkUnderline { false };   //Links are displayed underlined or not.
 		bool m_fLinkTooltip { false };     //Show links toolips.
+		bool m_fLinkCursor { true };       //Show hand cursor when hovering over a link.
 		bool m_fEditSingleClick { false }; //Cells editable with single mouse click or double?
 		bool m_fVirtual { false };         //Whether list is virtual (LVS_OWNERDATA) or not.
 		bool m_fCellTTActive { false };    //Is cell's tool-tip shown atm.
@@ -1471,6 +1473,7 @@ bool CListEx::Create(const LISTEXCREATE& lcs)
 	m_fLinks = lcs.fLinks;
 	m_fLinkUnderline = lcs.fLinkUnderline;
 	m_fLinkTooltip = lcs.fLinkTooltip;
+	m_fLinkCursor = lcs.fLinkCursor;
 	m_fHighLatency = lcs.fHighLatency;
 	m_fEditSingleClick = lcs.fEditSingleClick;
 	m_dwGridWidth = lcs.dwGridWidth;
@@ -2694,7 +2697,7 @@ auto CListEx::OnMouseMove(const MSG& msg)->LRESULT
 		}
 	}
 
-	m_fHandCursor = fCurLinkRc;
+	m_fHandCursor = fCurLinkRc && m_fLinkCursor;
 
 	if (fCurLinkRc) { //Link's rect is under the cursor.
 		if (m_fCellTTActive) { //If there is a cell's tooltip atm, hide it.
