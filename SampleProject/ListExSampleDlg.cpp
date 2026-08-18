@@ -213,8 +213,7 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 }
 
 void CListExSampleDlg::OnOK()
-{
-}
+{ }
 
 void CListExSampleDlg::OnListEditBegin(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
@@ -233,13 +232,13 @@ void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 	switch (pItem->iSubItem) {
 	case 0:
-		pItem->pszText = m_vecData[static_cast<size_t>(iItem)].wstr0.data();
+		pItem->pszText = m_vecData[static_cast<std::size_t>(iItem)].wstr0.data();
 		break;
 	case 1:
-		pItem->pszText = m_vecData[static_cast<size_t>(iItem)].wstr1.data();
+		pItem->pszText = m_vecData[static_cast<std::size_t>(iItem)].wstr1.data();
 		break;
 	case 2:
-		pItem->pszText = m_vecData[static_cast<size_t>(iItem)].wstr2.data();
+		pItem->pszText = m_vecData[static_cast<std::size_t>(iItem)].wstr2.data();
 		break;
 	}
 }
@@ -254,7 +253,7 @@ void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (pLCI->iItem >= g_iDataSize)
 		return;
 
-	const auto sItem = static_cast<size_t>(pLCI->iItem);
+	const auto sItem = static_cast<std::size_t>(pLCI->iItem);
 	const auto sSubItem = pLCI->iSubItem;
 
 	if (m_vecData.at(sItem).fToolTip && sSubItem == 0) {
@@ -281,7 +280,7 @@ void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		return;
 
 	const auto index = pLII->iItem < g_iDataSize ? pLII->iItem : 1;
-	if (m_vecData.at(static_cast<size_t>(index)).fIcon && (pLII->iSubItem == 0 || pLII->iSubItem == 1)) {
+	if (m_vecData.at(static_cast<std::size_t>(index)).fIcon && (pLII->iSubItem == 0 || pLII->iSubItem == 1)) {
 		pLII->iIconIndex = 0; //Icon index in the list's image list.
 		return;
 	}
@@ -295,7 +294,7 @@ void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (iItem < 0 || pTTI->iSubItem != 0 || iItem >= g_iDataSize)
 		return;
 
-	if (m_vecData[static_cast<size_t>(iItem)].fToolTip) {
+	if (m_vecData[static_cast<std::size_t>(iItem)].fToolTip) {
 		static constexpr const wchar_t* ttData[2] { L"Cell tooltip text...", L"Caption of the cell tooltip:" };
 		pTTI->stData.pwszText = ttData[0];
 		pTTI->stData.pwszCaption = ttData[1];
@@ -313,7 +312,7 @@ void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	CPoint pt;
-	GetCursorPos(&pt);
+	::GetCursorPos(&pt);
 	m_menuHdr.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, pt.x, pt.y, this);
 }
 
