@@ -31,18 +31,15 @@ BEGIN_MESSAGE_MAP(CListExSampleDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 CListExSampleDlg::CListExSampleDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_LISTEXSAMPLE_DIALOG, pParent)
-{
+	: CDialogEx(IDD_LISTEXSAMPLE_DIALOG, pParent) {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
-void CListExSampleDlg::DoDataExchange(CDataExchange* pDX)
-{
+void CListExSampleDlg::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-BOOL CListExSampleDlg::OnInitDialog()
-{
+BOOL CListExSampleDlg::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	SetIcon(m_hIcon, TRUE);
@@ -139,8 +136,7 @@ BOOL CListExSampleDlg::OnInitDialog()
 	return TRUE;
 }
 
-void CListExSampleDlg::OnPaint()
-{
+void CListExSampleDlg::OnPaint() {
 	if (IsIconic()) {
 		CPaintDC dc(this); // device context for painting
 
@@ -162,13 +158,11 @@ void CListExSampleDlg::OnPaint()
 	}
 }
 
-HCURSOR CListExSampleDlg::OnQueryDragIcon()
-{
+HCURSOR CListExSampleDlg::OnQueryDragIcon() {
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-BOOL CListExSampleDlg::OnCommand(WPARAM wParam, LPARAM lParam)
-{
+BOOL CListExSampleDlg::OnCommand(WPARAM wParam, LPARAM lParam) {
 	const auto wMenuID = LOWORD(wParam);
 	if (wMenuID < IDC_LIST_MENU_HDR_BEGIN || wMenuID > IDC_LIST_MENU_HDR_BEGIN + g_iColumns)
 		return CDialogEx::OnCommand(wParam, lParam);
@@ -187,8 +181,7 @@ BOOL CListExSampleDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	return CDialogEx::OnCommand(wParam, lParam);
 }
 
-void CListExSampleDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
+void CListExSampleDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) {
 	if (nIDCtl == IDC_LISTEX) {
 		m_MyList.DrawItem(lpDrawItemStruct);
 		return;
@@ -197,8 +190,7 @@ void CListExSampleDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
-BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
-{
+BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) {
 	const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
 	if (pNMI->hdr.idFrom == IDC_LISTEX) {
@@ -212,18 +204,15 @@ BOOL CListExSampleDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 
-void CListExSampleDlg::OnOK()
-{ }
+void CListExSampleDlg::OnOK() { }
 
-void CListExSampleDlg::OnListEditBegin(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListEditBegin(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
 	pLDI->fAllowEdit = true;
 	//pLDI->fAllowEdit = false; //Edit-box won't show up.
 }
 
-void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pDispInfo = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDispInfo->item;
 	const auto iItem = pItem->iItem;
@@ -243,8 +232,7 @@ void CListExSampleDlg::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	//Virtual data colors.
 	const auto pLCI = reinterpret_cast<PLISTEXCOLORINFO>(pNMHDR);
 	if (pLCI->iItem < 0 || pLCI->iSubItem < 0)
@@ -272,8 +260,7 @@ void CListExSampleDlg::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	//Virtual data icons.
 	const auto pLII = reinterpret_cast<PLISTEXICONINFO>(pNMHDR);
 	if (pLII->iItem < 0 || pLII->iSubItem < 0)
@@ -286,8 +273,7 @@ void CListExSampleDlg::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	//Virtual data tooltips.
 	const auto pTTI = reinterpret_cast<PLISTEXTTINFO>(pNMHDR);
 	const auto iItem = pTTI->iItem;
@@ -302,33 +288,28 @@ void CListExSampleDlg::OnListGetToolTip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListHdrIconClick(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pNMI = reinterpret_cast<NMHEADERW*>(pNMHDR);
 	const auto wstr = L"Header icon clicked at column: " + std::to_wstring(pNMI->iItem);
 	MessageBoxW(wstr.data());
 }
 
-void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListHdrRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	CPoint pt;
 	::GetCursorPos(&pt);
 	m_menuHdr.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, pt.x, pt.y, this);
 }
 
-void CListExSampleDlg::OnListLinkClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListLinkClick(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pLLI = reinterpret_cast<PLISTEXLINKINFO>(pNMHDR);
 	MessageBoxW(pLLI->pwszText);
 }
 
-void CListExSampleDlg::OnListLClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListLClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	//const auto p = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 }
 
-void CListExSampleDlg::OnListSetData(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CListExSampleDlg::OnListSetData(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	//Changing virtual data in internal m_vecData.
 	const auto pLDI = reinterpret_cast<PLISTEXDATAINFO>(pNMHDR);
 	auto& ref = m_vecData[pLDI->iItem];
@@ -348,8 +329,7 @@ void CListExSampleDlg::OnListSetData(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CListExSampleDlg::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
-{
+void CListExSampleDlg::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) {
 	if (nIDCtl == IDC_LISTEX) {
 		m_MyList.MeasureItem(lpMeasureItemStruct);
 		return;
@@ -358,8 +338,7 @@ void CListExSampleDlg::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureIt
 	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
-void CListExSampleDlg::SortVecData()
-{
+void CListExSampleDlg::SortVecData() {
 	const auto iColumnIndex = m_MyList.GetSortColumn();
 	if (iColumnIndex < 0)
 		return;
